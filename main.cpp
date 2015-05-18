@@ -3,7 +3,6 @@
 #include <QtQuick/QQuickView>
 
 #include "mp.h"
-#include "glyph.h"
 #include "scatterplot.h"
 
 arma::uvec getSample(arma::uword n)
