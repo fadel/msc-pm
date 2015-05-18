@@ -11,15 +11,14 @@ arma::mat mp::forceScheme(const arma::mat &D,
         double tol,
         double fraction)
 {
-    
-    arma::uword n = (arma::uword) Y.n_rows;
+    arma::uword n = Y.n_rows;
     V i(n), j(n);
     for (arma::uword k = 0; k < n; k++)
         i[k] = j[k] = k;
 
-    double prev_delta_sum = 1. / 0.;
+    double prevDeltaSum = 1. / 0.;
     for (size_t iter = 0; iter < maxIter; iter++) {
-        double delta_sum = 0;
+        double deltaSum = 0;
 
         arma::shuffle(i);
         for (V::iterator a = i.begin(); a != i.end(); a++) {
@@ -31,14 +30,14 @@ arma::mat mp::forceScheme(const arma::mat &D,
                 arma::rowvec direction(Y.row(*b) - Y.row(*a));
                 double d2 = std::max(arma::norm(direction, 2), mp::EPSILON);
                 double delta = (D(*a, *b) - d2) / fraction;
-                delta_sum += fabs(delta);
+                deltaSum += fabs(delta);
                 Y.row(*b) += delta * (direction / d2);
             }
         }
 
-        if (fabs(prev_delta_sum - delta_sum) < tol)
+        if (fabs(prevDeltaSum - deltaSum) < tol)
             break;
-        prev_delta_sum = delta_sum;
+        prevDeltaSum = deltaSum;
     }
 
     return Y;

@@ -1,11 +1,9 @@
 QT += qml quick
 
 QMAKE_LIBS += -larmadillo
-HEADERS += glyph.h \
-    scatterplot.h \
+HEADERS += scatterplot.h \
     mp.h
 SOURCES += main.cpp \
-    glyph.cpp \
     scatterplot.cpp \
     lamp.cpp \
     forceScheme.cpp \
