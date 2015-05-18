@@ -1,9 +1,12 @@
 QT += qml quick
 
+QMAKE_CXXFLAGS += -std=c++11
 QMAKE_LIBS += -larmadillo
-HEADERS += scatterplot.h \
+HEADERS += colorscale.h \
+    scatterplot.h \
     mp.h
 SOURCES += main.cpp \
+    colorscale.cpp \
     scatterplot.cpp \
     lamp.cpp \
     forceScheme.cpp \
