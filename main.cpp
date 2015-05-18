@@ -35,9 +35,12 @@ int main(int argc, char **argv)
     if (argc > 1) {
         arma::mat X;
         X.load(argv[1], arma::raw_ascii);
-        arma::mat projection = getProjection(X);
-        Scatterplot *plot = view.rootObject()->findChild<Scatterplot *>("plot", Qt::FindDirectChildrenOnly);
-        plot->setData(projection);
+
+        Scatterplot *plot = view.rootObject()->findChild<Scatterplot *>("plot");
+        arma::mat scatterData(X.n_rows, 3);
+        scatterData.cols(0, 1) = getProjection(X.cols(0, X.n_cols - 2));
+        scatterData.col(2) = X.col(X.n_cols - 1);
+        plot->setData(scatterData);
     }
 
     view.show();
