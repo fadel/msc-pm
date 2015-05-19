@@ -1,23 +1,10 @@
 #include <cmath>
+#include <QSurfaceFormat>
 #include <QGuiApplication>
-#include <QtQuick/QQuickView>
+#include <QQmlApplicationEngine>
 
 #include "mp.h"
 #include "scatterplot.h"
-
-arma::uvec getSample(arma::uword n)
-{
-    return arma::randi<arma::uvec>((arma::uword) 3*sqrt(n), arma::distr_param(0, n-1));
-}
-
-arma::mat getProjection(const arma::mat &X)
-{
-    arma::uword n = X.n_rows;
-    arma::uvec sampleIndices = getSample(n);
-    arma::mat Ys = arma::randn(sampleIndices.n_elem, 2);
-    Ys = mp::forceScheme(mp::dist(X.rows(sampleIndices)), Ys);
-    return mp::lamp(X, sampleIndices, Ys);
-}
 
 int main(int argc, char **argv)
 {
@@ -25,25 +12,43 @@ int main(int argc, char **argv)
 
     qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
 
-    QQuickView view;
+    /*QQuickView view;
     QSurfaceFormat format = view.format();
     format.setSamples(16);
     view.setFormat(format);
     view.setResizeMode(QQuickView::SizeRootObjectToView);
-    view.setSource(QUrl("qrc:///main_view.qml"));
+    view.setSource(QUrl("qrc:///main_view.qml"));*/
+    QSurfaceFormat fmt;
+    fmt.setSamples(16);
+    QSurfaceFormat::setDefaultFormat(fmt);
+    QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
 
     if (argc > 1) {
-        arma::mat X;
-        X.load(argv[1], arma::raw_ascii);
+        arma::mat dataset;
+        dataset.load(argv[1], arma::raw_ascii);
+        arma::mat X = dataset.cols(0, dataset.n_cols - 2);
+        arma::vec labels = dataset.col(dataset.n_cols - 1);
 
-        Scatterplot *plot = view.rootObject()->findChild<Scatterplot *>("plot");
-        arma::mat scatterData(X.n_rows, 3);
-        scatterData.cols(0, 1) = getProjection(X.cols(0, X.n_cols - 2));
-        scatterData.col(2) = X.col(X.n_cols - 1);
-        plot->setData(scatterData);
+        arma::uword n = dataset.n_rows;
+        arma::uword subsampleSize = (arma::uword) sqrt(n) * 3;
+        arma::uvec sampleIndices = arma::randi<arma::uvec>(subsampleSize, arma::distr_param(0, n-1));
+        arma::mat Ys = arma::randn(subsampleSize, 2);
+        Ys = mp::forceScheme(mp::dist(X.rows(sampleIndices)), Ys);
+
+        // Plot the subsample
+        Scatterplot *plot = engine.rootObjects()[0]->findChild<Scatterplot *>("subsamplePlot");
+        arma::mat subsampleData(subsampleSize, 3);
+        subsampleData.cols(0, 1) = Ys;
+        subsampleData.col(2) = labels(sampleIndices);
+        plot->setData(subsampleData);
+
+        // Plot entire dataset
+        plot = engine.rootObjects()[0]->findChild<Scatterplot *>("plot");
+        arma::mat reducedData(n, 3);
+        reducedData.cols(0, 1) = mp::lamp(X, sampleIndices, Ys);
+        reducedData.col(2) = labels;
+        plot->setData(reducedData);
     }
-
-    view.show();
 
     return app.exec();
 }
