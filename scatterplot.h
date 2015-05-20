@@ -2,8 +2,8 @@
 #define SCATTERPLOT_H
 
 #include <armadillo>
-#include <vector>
 #include <QQuickItem>
+#include <QSGNode>
 
 #include "colorscale.h"
 
@@ -14,11 +14,11 @@ public:
     Scatterplot(QQuickItem *parent = 0);
     ~Scatterplot();
 
-    void setData(const arma::mat &data);
-
 signals:
+    void dataChanged(const arma::mat &data);
 
 public slots:
+    void setData(const arma::mat &data);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
@@ -28,6 +28,8 @@ protected:
 
 private:
     QSGNode *newGlyphNodeTree();
+    bool selectGlyphs(bool mergeSelection);
+    void updateData();
 
     enum InteractionState {
         INTERACTION_NONE,
@@ -36,6 +38,7 @@ private:
         INTERACTION_MOVING
     } m_currentState;
     QPointF m_dragOriginPos, m_dragCurrentPos;
+    QList<bool> m_selectedGlyphs;
 
     arma::mat m_data;
     ColorScale m_colorScale;
