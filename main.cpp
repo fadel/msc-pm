@@ -1,10 +1,12 @@
 #include <cmath>
+#include <memory>
 #include <QSurfaceFormat>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 
 #include "mp.h"
 #include "scatterplot.h"
+#include "interactionhandler.h"
 
 int main(int argc, char **argv)
 {
@@ -12,17 +14,12 @@ int main(int argc, char **argv)
 
     qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
 
-    /*QQuickView view;
-    QSurfaceFormat format = view.format();
-    format.setSamples(16);
-    view.setFormat(format);
-    view.setResizeMode(QQuickView::SizeRootObjectToView);
-    view.setSource(QUrl("qrc:///main_view.qml"));*/
     QSurfaceFormat fmt;
     fmt.setSamples(16);
     QSurfaceFormat::setDefaultFormat(fmt);
     QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
 
+    std::unique_ptr<InteractionHandler> interactionHandler((InteractionHandler *) 0);
     if (argc > 1) {
         arma::mat dataset;
         dataset.load(argv[1], arma::raw_ascii);
@@ -34,20 +31,22 @@ int main(int argc, char **argv)
         arma::uvec sampleIndices = arma::randi<arma::uvec>(subsampleSize, arma::distr_param(0, n-1));
         arma::mat Ys = arma::randn(subsampleSize, 2);
         Ys = mp::forceScheme(mp::dist(X.rows(sampleIndices)), Ys);
-
-        // Plot the subsample
-        Scatterplot *plot = engine.rootObjects()[0]->findChild<Scatterplot *>("subsamplePlot");
         arma::mat subsampleData(subsampleSize, 3);
         subsampleData.cols(0, 1) = Ys;
         subsampleData.col(2) = labels(sampleIndices);
-        plot->setData(subsampleData);
 
-        // Plot entire dataset
-        plot = engine.rootObjects()[0]->findChild<Scatterplot *>("plot");
-        arma::mat reducedData(n, 3);
-        reducedData.cols(0, 1) = mp::lamp(X, sampleIndices, Ys);
-        reducedData.col(2) = labels;
-        plot->setData(reducedData);
+        Scatterplot *subsamplePlot = engine.rootObjects()[0]->findChild<Scatterplot *>("subsamplePlot");
+        subsamplePlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
+        subsamplePlot->setData(subsampleData);
+        Scatterplot *plot = engine.rootObjects()[0]->findChild<Scatterplot *>("plot");
+
+        // connect both plots through interaction handler
+        interactionHandler = std::unique_ptr<InteractionHandler>(new InteractionHandler(X, labels, sampleIndices));
+        QObject::connect(subsamplePlot, SIGNAL(dataChanged(const arma::mat &)),
+                         interactionHandler.get(), SLOT(setSubsample(const arma::mat &)));
+        QObject::connect(interactionHandler.get(), SIGNAL(subsampleChanged(const arma::mat &)),
+                         plot, SLOT(setData(const arma::mat &)));
+
     }
 
     return app.exec();
