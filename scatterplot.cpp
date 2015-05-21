@@ -3,13 +3,17 @@
 #include <cmath>
 #include <QSGGeometry>
 #include <QSGGeometryNode>
+#include <QSGOpacityNode>
 #include <QSGMaterial>
 #include <QSGFlatColorMaterial>
 #include <QSGSimpleRectNode>
 
-const int GLYPH_SIZE = 8;
-const float PADDING = 10;
-const float PI = 3.1415f;
+static const qreal GLYPH_OPACITY = 0.3;
+static const qreal GLYPH_OPACITY_SELECTED = 1.0;
+static const QColor SELECTION_COLOR(QColor(128, 128, 128, 96));
+static const int GLYPH_SIZE = 8;
+static const float PADDING = 10;
+static const float PI = 3.1415f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
@@ -90,15 +94,6 @@ void updateSquareGeometry(QSGGeometry *geometry, float size, float cx, float cy)
     vertexData[3].set(cx - r, cy + r);
 }
 
-void updateSelectionGeometry(QSGGeometry *geometry, const QPointF &p1, const QPointF &p2)
-{
-    QSGGeometry::Point2D *vertexData = geometry->vertexDataAsPoint2D();
-    vertexData[0].set(p1.x(), p1.y());
-    vertexData[1].set(p2.x(), p1.y());
-    vertexData[2].set(p2.x(), p2.y());
-    vertexData[3].set(p1.x(), p2.y());
-}
-
 float Scatterplot::fromDataXToScreenX(float x)
 {
     return PADDING + (x - m_xmin) / (m_xmax - m_xmin) * (width() - 2*PADDING);
@@ -117,7 +112,7 @@ QSGNode *Scatterplot::newGlyphNodeTree() {
         QSGGeometryNode *glyphNode = new QSGGeometryNode;
 
         QSGGeometry *geometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
-        geometry->setDrawingMode(GL_LINE_LOOP);
+        geometry->setDrawingMode(GL_POLYGON);
         glyphNode->setGeometry(geometry);
         glyphNode->setFlag(QSGNode::OwnsGeometry);
 
@@ -126,7 +121,10 @@ QSGNode *Scatterplot::newGlyphNodeTree() {
         glyphNode->setMaterial(material);
         glyphNode->setFlag(QSGNode::OwnsMaterial);
 
-        node->appendChildNode(glyphNode);
+        // Place the glyph geometry node under a opacity node
+        QSGOpacityNode *glyphOpacityNode = new QSGOpacityNode;
+        glyphOpacityNode->appendChildNode(glyphNode);
+        node->appendChildNode(glyphOpacityNode);
     }
 
     return node;
@@ -137,7 +135,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     if (m_data.n_rows < 1)
         return 0;
 
-    qreal x, y, xt, yt, selected;
+    qreal x, y, xt, yt, moveTranslationF;
 
     QSGNode *root = 0;
     if (!oldNode) {
@@ -147,47 +145,42 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         root = oldNode;
     }
 
-    QSGNode *glyphNode = root->firstChild()->firstChild();
     if (m_currentState != INTERACTION_MOVING)
         xt = yt = 0;
     else {
         xt = m_dragCurrentPos.x() - m_dragOriginPos.x();
         yt = m_dragCurrentPos.y() - m_dragOriginPos.y();
     }
+
+    QSGNode *glyphOpacityNode = root->firstChild()->firstChild();
     for (arma::uword i = 0; i < m_data.n_rows; i++) {
         arma::rowvec row = m_data.row(i);
-        selected = m_selectedGlyphs[i] ? 1.0 : 0.0;
-        x = fromDataXToScreenX(row[0]) + xt * selected;
-        y = fromDataYToScreenY(row[1]) + yt * selected;
+        moveTranslationF = m_selectedGlyphs[i] ? 1.0 : 0.0;
+        x = fromDataXToScreenX(row[0]) + xt * moveTranslationF;
+        y = fromDataYToScreenY(row[1]) + yt * moveTranslationF;
 
+        QSGNode *glyphNode = glyphOpacityNode->firstChild();
         QSGGeometry *geometry = static_cast<QSGGeometryNode *>(glyphNode)->geometry();
-        geometry->setDrawingMode(!m_selectedGlyphs[i] ? GL_POLYGON : GL_LINE_LOOP);
         updateCircleGeometry(geometry, GLYPH_SIZE, x, y);
         glyphNode->markDirty(QSGNode::DirtyGeometry);
-        glyphNode = glyphNode->nextSibling();
+
+        static_cast<QSGOpacityNode *>(glyphOpacityNode)->setOpacity(m_selectedGlyphs[i] ? GLYPH_OPACITY_SELECTED : GLYPH_OPACITY);
+
+        glyphOpacityNode = glyphOpacityNode->nextSibling();
     }
 
     // Draw selection
     if (m_currentState == INTERACTION_SELECTING) {
-        QSGGeometryNode *selectionNode = 0;
+        QSGSimpleRectNode *selectionNode = 0;
         if (!root->firstChild()->nextSibling()) {
-            selectionNode = new QSGGeometryNode;
-            QSGGeometry *geometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 4);
-            geometry->setDrawingMode(GL_LINE_LOOP);
-            selectionNode->setGeometry(geometry);
-            selectionNode->setFlag(QSGNode::OwnsGeometry);
-
-            QSGFlatColorMaterial *material = new QSGFlatColorMaterial;
-            material->setColor(QColor(0, 0, 0, 128));
-            selectionNode->setMaterial(material);
-            selectionNode->setFlag(QSGNode::OwnsMaterial);
-
+            selectionNode = new QSGSimpleRectNode;
+            selectionNode->setColor(SELECTION_COLOR);
             root->appendChildNode(selectionNode);
         } else {
-            selectionNode = static_cast<QSGGeometryNode *>(root->firstChild()->nextSibling());
+            selectionNode = static_cast<QSGSimpleRectNode *>(root->firstChild()->nextSibling());
         }
 
-        updateSelectionGeometry(selectionNode->geometry(), m_dragOriginPos, m_dragCurrentPos);
+        selectionNode->setRect(QRectF(m_dragOriginPos, m_dragCurrentPos));
         selectionNode->markDirty(QSGNode::DirtyGeometry);
     } else {
         if (root->firstChild()->nextSibling()) {
