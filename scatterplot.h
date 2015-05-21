@@ -31,6 +31,9 @@ private:
     bool selectGlyphs(bool mergeSelection);
     void updateData();
 
+    float fromDataXToScreenX(float x);
+    float fromDataYToScreenY(float y);
+
     enum InteractionState {
         INTERACTION_NONE,
         INTERACTION_SELECTING,
@@ -41,6 +44,8 @@ private:
     QList<bool> m_selectedGlyphs;
 
     arma::mat m_data;
+    float m_xmin, m_xmax, m_ymin, m_ymax;
+
     ColorScale m_colorScale;
 };
 

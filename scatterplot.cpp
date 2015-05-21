@@ -40,8 +40,13 @@ void Scatterplot::setData(const arma::mat &data)
         return;
 
     m_data = data;
+    m_xmin = data.col(0).min();
+    m_xmax = data.col(0).max();
+    m_ymin = data.col(1).min();
+    m_ymax = data.col(1).max();
 
     m_colorScale.setExtents(m_data.col(2).min(), m_data.col(2).max());
+
     m_selectedGlyphs.clear();
     for (arma::uword i = 0; i < m_data.n_rows; i++)
         m_selectedGlyphs.append(false);
@@ -94,6 +99,16 @@ void updateSelectionGeometry(QSGGeometry *geometry, const QPointF &p1, const QPo
     vertexData[3].set(p1.x(), p2.y());
 }
 
+float Scatterplot::fromDataXToScreenX(float x)
+{
+    return PADDING + (x - m_xmin) / (m_xmax - m_xmin) * (width() - 2*PADDING);
+}
+
+float Scatterplot::fromDataYToScreenY(float y)
+{
+    return PADDING + (y - m_ymin) / (m_ymax - m_ymin) * (height() - 2*PADDING);
+}
+
 QSGNode *Scatterplot::newGlyphNodeTree() {
     QSGNode *node = new QSGNode;
     int vertexCount = calculateCircleVertexCount(GLYPH_SIZE / 2);
@@ -122,11 +137,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     if (m_data.n_rows < 1)
         return 0;
 
-    qreal xmin = m_data.col(0).min(),
-          xmax = m_data.col(0).max(),
-          ymin = m_data.col(1).min(),
-          ymax = m_data.col(1).max(),
-          x, y, xt, yt, selected;
+    qreal x, y, xt, yt, selected;
 
     QSGNode *root = 0;
     if (!oldNode) {
@@ -146,8 +157,8 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     for (arma::uword i = 0; i < m_data.n_rows; i++) {
         arma::rowvec row = m_data.row(i);
         selected = m_selectedGlyphs[i] ? 1.0 : 0.0;
-        x = PADDING + (row[0] - xmin) / (xmax - xmin) * (width() - 2*PADDING) + xt * selected;
-        y = PADDING + (row[1] - ymin) / (ymax - ymin) * (height() - 2*PADDING) + yt * selected;
+        x = fromDataXToScreenX(row[0]) + xt * selected;
+        y = fromDataYToScreenY(row[1]) + yt * selected;
 
         QSGGeometry *geometry = static_cast<QSGGeometryNode *>(glyphNode)->geometry();
         geometry->setDrawingMode(!m_selectedGlyphs[i] ? GL_POLYGON : GL_LINE_LOOP);
@@ -242,18 +253,14 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
 
 bool Scatterplot::selectGlyphs(bool mergeSelection)
 {
-    qreal xmin = m_data.col(0).min(),
-          xmax = m_data.col(0).max(),
-          ymin = m_data.col(1).min(),
-          ymax = m_data.col(1).max(),
-          x, y;
+    qreal x, y;
 
     QRectF selectionRect(m_dragOriginPos, m_dragCurrentPos);
     bool anySelected = false;
     for (arma::uword i = 0; i < m_data.n_rows; i++) {
         arma::rowvec row = m_data.row(i);
-        x = PADDING + (row[0] - xmin) / (xmax - xmin) * (width()  - 2*PADDING);
-        y = PADDING + (row[1] - ymin) / (ymax - ymin) * (height() - 2*PADDING);
+        x = fromDataXToScreenX(row[0]);
+        y = fromDataYToScreenY(row[1]);
 
         bool contains = selectionRect.contains(x, y);
         anySelected = anySelected || contains;
@@ -265,11 +272,6 @@ bool Scatterplot::selectGlyphs(bool mergeSelection)
 
 void Scatterplot::updateData()
 {
-    qreal xmin = m_data.col(0).min(),
-          xmax = m_data.col(0).max(),
-          ymin = m_data.col(1).min(),
-          ymax = m_data.col(1).max();
-
     float xt = m_dragCurrentPos.x() - m_dragOriginPos.x();
     float yt = m_dragCurrentPos.y() - m_dragOriginPos.y();
 
@@ -280,8 +282,8 @@ void Scatterplot::updateData()
             continue;
 
         arma::rowvec row = m_data.row(i);
-        row[0] = ((row[0] - xmin) / (xmax - xmin) + xt) * (xmax - xmin) + xmin;
-        row[1] = ((row[1] - ymin) / (ymax - ymin) + yt) * (ymax - ymin) + ymin;
+        row[0] = ((row[0] - m_xmin) / (m_xmax - m_xmin) + xt) * (m_xmax - m_xmin) + m_xmin;
+        row[1] = ((row[1] - m_ymin) / (m_ymax - m_ymin) + yt) * (m_ymax - m_ymin) + m_ymin;
         m_data.row(i) = row;
     }
 
