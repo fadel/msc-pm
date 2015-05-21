@@ -150,7 +150,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         y = PADDING + (row[1] - ymin) / (ymax - ymin) * (height() - 2*PADDING) + yt * selected;
 
         QSGGeometry *geometry = static_cast<QSGGeometryNode *>(glyphNode)->geometry();
-        geometry->setDrawingMode(m_selectedGlyphs[i] ? GL_POLYGON : GL_LINE_LOOP);
+        geometry->setDrawingMode(!m_selectedGlyphs[i] ? GL_POLYGON : GL_LINE_LOOP);
         updateCircleGeometry(geometry, GLYPH_SIZE, x, y);
         glyphNode->markDirty(QSGNode::DirtyGeometry);
         glyphNode = glyphNode->nextSibling();

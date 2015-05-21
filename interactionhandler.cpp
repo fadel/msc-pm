@@ -23,7 +23,7 @@ void InteractionHandler::setSubsample(const arma::mat &Ys)
         break;
     }
 
-    arma::mat Y(embedding.n_rows, embedding.n_cols);
+    arma::mat Y(embedding.n_rows, embedding.n_cols + 1);
     Y.cols(0, embedding.n_cols - 1) = embedding;
     Y.col(Y.n_cols - 1) = m_labels;
 

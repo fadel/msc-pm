@@ -14,6 +14,7 @@ int main(int argc, char **argv)
 
     qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
 
+    // Set up multisampling
     QSurfaceFormat fmt;
     fmt.setSamples(16);
     QSurfaceFormat::setDefaultFormat(fmt);
@@ -46,7 +47,7 @@ int main(int argc, char **argv)
                          interactionHandler.get(), SLOT(setSubsample(const arma::mat &)));
         QObject::connect(interactionHandler.get(), SIGNAL(subsampleChanged(const arma::mat &)),
                          plot, SLOT(setData(const arma::mat &)));
-
+        interactionHandler.get()->setSubsample(Ys);
     }
 
     return app.exec();
