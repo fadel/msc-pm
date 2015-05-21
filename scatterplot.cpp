@@ -17,7 +17,6 @@ static const float PI = 3.1415f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
-    , m_dragOriginPos(-1.0, -1.0)
     , m_colorScale{
         QColor("#1f77b4"),
         QColor("#ff7f0e"),
@@ -27,7 +26,7 @@ Scatterplot::Scatterplot(QQuickItem *parent)
         QColor("#8c564b"),
         QColor("#e377c2"),
         QColor("#7f7f7f"),
-        QColor("#bcbd22"),
+        QColor("#17becf"),
     }
 {
     setClip(true);
@@ -218,6 +217,7 @@ void Scatterplot::mouseMoveEvent(QMouseEvent *event)
     case INTERACTION_MOVING:
         m_dragCurrentPos = event->localPos();
         update();
+        break;
     }
 }
 
