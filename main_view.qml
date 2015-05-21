@@ -1,8 +1,10 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.3
+import QtQuick.Dialogs 1.2
 import PM 1.0
 
 ApplicationWindow {
+    title: "Projection Manipulation"
     visible: true
     width: 1200
     height: 600
@@ -59,6 +61,14 @@ ApplicationWindow {
         }
     }
 
+    FileDialog {
+        id: fileDialog
+        title: "Choose a file..."
+        onAccepted: {
+            // datasetLoader.load(fileDialog.fileUrls)
+        }
+    }
+
     Action {
         id: quitAction
         text: "&Quit"
@@ -70,7 +80,7 @@ ApplicationWindow {
         id: openAction
         text: "&Open..."
         shortcut: "Ctrl+O"
-        onTriggered: console.log("Open file")
+        onTriggered: fileDialog.open()
     }
 
     Action {

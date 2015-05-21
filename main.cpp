@@ -1,7 +1,7 @@
 #include <cmath>
 #include <memory>
 #include <QSurfaceFormat>
-#include <QGuiApplication>
+#include <QApplication>
 #include <QQmlApplicationEngine>
 
 #include "mp.h"
@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv)
 {
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
 
     qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
 
