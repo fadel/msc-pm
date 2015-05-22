@@ -9,7 +9,6 @@ InteractionHandler::InteractionHandler(const arma::mat &X,
     , m_Y(X.n_rows, 3)
     , m_labels(labels)
     , m_sampleIndices(sampleIndices)
-    , m_Y(X.n_rows, 3)
     , m_technique(TECHNIQUE_LAMP)
 {
     m_Y.col(2) = m_labels;
