@@ -214,9 +214,14 @@ void Scatterplot::mouseMoveEvent(QMouseEvent *event)
     case INTERACTION_SELECTED:
         return;
     case INTERACTION_SELECTING:
-    case INTERACTION_MOVING:
         m_dragCurrentPos = event->localPos();
         update();
+        break;
+    case INTERACTION_MOVING:
+        m_dragCurrentPos = event->localPos();
+        updateData();
+        update();
+        m_dragOriginPos = m_dragCurrentPos;
         break;
     }
 }
@@ -235,7 +240,6 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
 
     case INTERACTION_MOVING:
         m_currentState = INTERACTION_SELECTED;
-        updateData();
         update();
         break;
     case INTERACTION_NONE:
