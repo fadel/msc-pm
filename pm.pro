@@ -1,7 +1,7 @@
 QT += qml quick widgets
 
-QMAKE_CXXFLAGS += -std=c++11
-QMAKE_LIBS += -larmadillo
+QMAKE_CXXFLAGS += -std=c++11 -fopenmp
+QMAKE_LIBS += -larmadillo -fopenmp
 HEADERS += colorscale.h \
     scatterplot.h \
     interactionhandler.h \

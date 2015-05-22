@@ -4,12 +4,19 @@
 
 arma::mat mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys)
 {
-    arma::mat Xs = X.rows(sampleIndices);
-    arma::uword sampleSize = sampleIndices.n_elem;
     arma::mat projection(X.n_rows, 2);
+    lamp(X, sampleIndices, Ys, projection);
+    return projection;
+}
 
+void mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys, arma::mat &Y)
+{
+    const arma::mat &Xs = X.rows(sampleIndices);
+    arma::uword sampleSize = sampleIndices.n_elem;
+
+    #pragma omp parallel for shared(X, Xs, sampleIndices, Ys, Y)
     for (arma::uword i = 0; i < X.n_rows; i++) {
-        arma::rowvec point = X.row(i);
+        const arma::rowvec &point = X.row(i);
 
         // calculate alphas
         arma::rowvec alphas(sampleSize);
@@ -19,7 +26,6 @@ arma::mat mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const ar
         }
 
         double alphas_sum = arma::accu(alphas);
-        arma::rowvec alphas_sqrt = arma::sqrt(alphas);
 
         // calculate \tilde{X} and \tilde{Y}
         arma::rowvec Xtil = arma::sum(alphas * Xs, 0) / alphas_sum;
@@ -32,19 +38,19 @@ arma::mat mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const ar
         Yhat.each_row() -= Ytil;
 
         // calculate A and B
-        arma::mat At = Xhat.t();
-        At.each_row() %= alphas_sqrt;
-        arma::mat B = Yhat;
-        B.each_col() %= alphas_sqrt.t();
+        alphas = arma::sqrt(alphas);
+        arma::mat &At = Xhat;
+        inplace_trans(At);
+        At.each_row() %= alphas;
+        arma::mat &B = Yhat;
+        B.each_col() %= alphas.t();
 
-        arma::mat U, V;
-        arma::vec s;
+        arma::mat U(Ys.n_rows, Ys.n_cols), V(Ys.n_cols, Ys.n_cols);
+        arma::vec s(Ys.n_cols);
         arma::svd(U, s, V, At * B);
         arma::mat M = U.cols(0, 1) * V.t();
 
         // the projection of point i
-        projection.row(i) = (point - Xtil) * M + Ytil;
+        Y(i, arma::span(0, 1)) = (point - Xtil) * M + Ytil;
     }
-
-    return projection;
 }

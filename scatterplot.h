@@ -2,8 +2,7 @@
 #define SCATTERPLOT_H
 
 #include <armadillo>
-#include <QQuickItem>
-#include <QSGNode>
+#include <QtQuick>
 
 #include "colorscale.h"
 
@@ -34,6 +33,11 @@ private:
     float fromDataXToScreenX(float x);
     float fromDataYToScreenY(float y);
 
+    arma::mat m_data;
+    float m_xmin, m_xmax, m_ymin, m_ymax;
+
+    ColorScale m_colorScale;
+
     enum InteractionState {
         INTERACTION_NONE,
         INTERACTION_SELECTING,
@@ -41,12 +45,8 @@ private:
         INTERACTION_MOVING
     } m_currentState;
     QPointF m_dragOriginPos, m_dragCurrentPos;
-    QList<bool> m_selectedGlyphs;
 
-    arma::mat m_data;
-    float m_xmin, m_xmax, m_ymin, m_ymax;
-
-    ColorScale m_colorScale;
+    QSet<int> m_selectedGlyphs;
 };
 
 #endif // SCATTERPLOT_H

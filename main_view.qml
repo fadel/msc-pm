@@ -11,15 +11,11 @@ ApplicationWindow {
 
     menuBar: MenuBar {
         Menu {
-            title: "Application"
-            MenuItem { action: quitAction }
-        }
-
-        Menu {
             title: "File"
             MenuItem { action: openAction }
             MenuItem { action: savePlotAction }
             MenuItem { action: saveDataAction }
+            MenuItem { action: quitAction }
         }
     }
 

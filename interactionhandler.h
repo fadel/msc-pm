@@ -24,7 +24,7 @@ public slots:
     void setSubsample(const arma::mat &Ys);
 
 private:
-    arma::mat m_X;
+    arma::mat m_X, m_Y;
     arma::vec m_labels;
     arma::uvec m_sampleIndices;
     InteractiveTechnique m_technique;
