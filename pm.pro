@@ -12,6 +12,7 @@ SOURCES += main.cpp \
     interactionhandler.cpp \
     lamp.cpp \
     forceScheme.cpp \
+    tsne.cpp \
     dist.cpp
 RESOURCES += pm.qrc
 

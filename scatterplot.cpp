@@ -74,22 +74,12 @@ void updateCircleGeometry(QSGGeometry *geometry, float size, float cx, float cy)
     }
 }
 
-void updateSquareGeometry(QSGGeometry *geometry, float size, float cx, float cy)
-{
-    float r = size / 2;
-    QSGGeometry::Point2D *vertexData = geometry->vertexDataAsPoint2D();
-    vertexData[0].set(cx - r, cy - r);
-    vertexData[1].set(cx + r, cy - r);
-    vertexData[2].set(cx + r, cy + r);
-    vertexData[3].set(cx - r, cy + r);
-}
-
-float Scatterplot::fromDataXToScreenX(float x)
+inline float Scatterplot::fromDataXToScreenX(float x)
 {
     return PADDING + (x - m_xmin) / (m_xmax - m_xmin) * (width() - 2*PADDING);
 }
 
-float Scatterplot::fromDataYToScreenY(float y)
+inline float Scatterplot::fromDataYToScreenY(float y)
 {
     return PADDING + (y - m_ymin) / (m_ymax - m_ymin) * (height() - 2*PADDING);
 }
@@ -111,7 +101,7 @@ QSGNode *Scatterplot::newGlyphNodeTree() {
         glyphNode->setMaterial(material);
         glyphNode->setFlag(QSGNode::OwnsMaterial);
 
-        // Place the glyph geometry node under a opacity node
+        // Place the glyph geometry node under an opacity node
         QSGOpacityNode *glyphOpacityNode = new QSGOpacityNode;
         glyphOpacityNode->appendChildNode(glyphNode);
         node->appendChildNode(glyphOpacityNode);

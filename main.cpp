@@ -51,5 +51,6 @@ int main(int argc, char **argv)
     QObject::connect(interactionHandler.get(), SIGNAL(subsampleChanged(const arma::mat &)),
                         plot, SLOT(setData(const arma::mat &)));
     interactionHandler.get()->setSubsample(Ys);
+
     return app.exec();
 }

@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <vector>
 
+static const double EPSILON = 1e-3;
+
 typedef arma::uvec V;
 
 arma::mat mp::forceScheme(const arma::mat &D,
@@ -28,7 +30,7 @@ arma::mat mp::forceScheme(const arma::mat &D,
                     continue;
 
                 arma::rowvec direction(Y.row(*b) - Y.row(*a));
-                double d2 = std::max(arma::norm(direction, 2), mp::EPSILON);
+                double d2 = std::max(arma::norm(direction, 2), EPSILON);
                 double delta = (D(*a, *b) - d2) / fraction;
                 deltaSum += fabs(delta);
                 Y.row(*b) += delta * (direction / d2);

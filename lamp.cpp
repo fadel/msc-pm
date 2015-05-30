@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+static const double EPSILON = 1e-3;
+
 arma::mat mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys)
 {
     arma::mat projection(X.n_rows, 2);
@@ -22,7 +24,7 @@ void mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::m
         arma::rowvec alphas(sampleSize);
         for (arma::uword j = 0; j < sampleSize; j++) {
             double dist = arma::accu(arma::square(Xs.row(j) - point));
-            alphas[j] = 1. / std::max(dist, mp::EPSILON);
+            alphas[j] = 1. / std::max(dist, EPSILON);
         }
 
         double alphas_sum = arma::accu(alphas);
