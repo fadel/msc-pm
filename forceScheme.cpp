@@ -1,7 +1,6 @@
 #include "mp.h"
 
 #include <algorithm>
-#include <vector>
 
 static const double EPSILON = 1e-3;
 

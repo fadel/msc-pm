@@ -16,7 +16,7 @@ void mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::m
     const arma::mat &Xs = X.rows(sampleIndices);
     arma::uword sampleSize = sampleIndices.n_elem;
 
-    #pragma omp parallel for shared(X, Xs, sampleIndices, Ys, Y)
+    #pragma omp parallel for shared(X, Xs, Ys, Y)
     for (arma::uword i = 0; i < X.n_rows; i++) {
         const arma::rowvec &point = X.row(i);
 
@@ -52,7 +52,6 @@ void mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::m
         arma::svd(U, s, V, At * B);
         arma::mat M = U.cols(0, 1) * V.t();
 
-        // the projection of point i
         Y(i, arma::span(0, 1)) = (point - Xtil) * M + Ytil;
     }
 }

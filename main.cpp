@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     arma::uword n = dataset.n_rows;
     arma::uword subsampleSize = (arma::uword) sqrt(n) * 3;
     arma::uvec sampleIndices = arma::randi<arma::uvec>(subsampleSize, arma::distr_param(0, n-1));
-    arma::mat Ys = arma::randn(subsampleSize, 2);
+    arma::mat Ys(subsampleSize, 2, arma::fill::randn);
     Ys = mp::forceScheme(mp::dist(X.rows(sampleIndices)), Ys);
     arma::mat subsampleData(subsampleSize, 3);
     subsampleData.cols(0, 1) = Ys;
@@ -45,12 +45,12 @@ int main(int argc, char **argv)
     Scatterplot *plot = engine.rootObjects()[0]->findChild<Scatterplot *>("plot");
 
     // connect both plots through interaction handler
-    std::unique_ptr<InteractionHandler> interactionHandler(new InteractionHandler(X, labels, sampleIndices));
+    InteractionHandler interactionHandler(X, labels, sampleIndices);
     QObject::connect(subsamplePlot, SIGNAL(dataChanged(const arma::mat &)),
-                        interactionHandler.get(), SLOT(setSubsample(const arma::mat &)));
-    QObject::connect(interactionHandler.get(), SIGNAL(subsampleChanged(const arma::mat &)),
-                        plot, SLOT(setData(const arma::mat &)));
-    interactionHandler.get()->setSubsample(Ys);
+            &interactionHandler, SLOT(setSubsample(const arma::mat &)));
+    QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
+            plot, SLOT(setData(const arma::mat &)));
+    interactionHandler.setSubsample(Ys);
 
     return app.exec();
 }
