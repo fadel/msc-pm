@@ -43,7 +43,8 @@ void mp::klDivergence(const arma::mat &P, const arma::mat &Q, arma::vec diver)
 
 double mp::klDivergence(const arma::rowvec &pi, const arma::rowvec &qi)
 {
-    return arma::accu(removeJ % (pi % arma::log(pi / qi)));
+    // Pii and Qii should both be 1, zeroing the i-th term in the sum below
+    return arma::accu(pi % arma::log(pi / qi));
 }
 
 arma::mat mp::d2p(const arma::mat &D, const arma::vec &sigmas)
@@ -58,7 +59,6 @@ void mp::d2p(const arma::mat &D, const arma::vec &sigmas, arma::mat &P)
     /*
      * WARNING: assumes D and sigmas are already squared
      */
-
     assert(D.n_rows == D.n_cols);
     assert(P.n_rows == P.n_cols);
     assert(D.n_rows == P.n_rows);
