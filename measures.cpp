@@ -29,7 +29,7 @@ arma::vec mp::klDivergence(const arma::mat &P, const arma::mat &Q)
     return diver;
 }
 
-void mp::klDivergence(const arma::mat &P, const arma::mat &Q, arma::vec diver)
+void mp::klDivergence(const arma::mat &P, const arma::mat &Q, arma::vec &diver)
 {
     assert(P.n_rows == P.n_cols);
     assert(Q.n_rows == Q.n_cols);
