@@ -8,6 +8,8 @@
 #include "mp.h"
 #include "scatterplot.h"
 #include "interactionhandler.h"
+#include "distortionobserver.h"
+#include "npdistortion.h"
 
 int main(int argc, char **argv)
 {
@@ -35,21 +37,27 @@ int main(int argc, char **argv)
     arma::uvec sampleIndices = arma::randi<arma::uvec>(subsampleSize, arma::distr_param(0, n-1));
     arma::mat Ys(subsampleSize, 2, arma::fill::randn);
     Ys = mp::forceScheme(mp::dist(X.rows(sampleIndices)), Ys);
-    arma::mat subsampleData(subsampleSize, 3);
-    subsampleData.cols(0, 1) = Ys;
-    subsampleData.col(2) = labels(sampleIndices);
 
     Scatterplot *subsamplePlot = engine.rootObjects()[0]->findChild<Scatterplot *>("subsamplePlot");
     subsamplePlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
-    subsamplePlot->setData(subsampleData);
+    subsamplePlot->setXY(Ys);
+    subsamplePlot->setColorData(labels(sampleIndices));
     Scatterplot *plot = engine.rootObjects()[0]->findChild<Scatterplot *>("plot");
 
     // connect both plots through interaction handler
-    InteractionHandler interactionHandler(X, labels, sampleIndices);
-    QObject::connect(subsamplePlot, SIGNAL(dataChanged(const arma::mat &)),
+    InteractionHandler interactionHandler(X, sampleIndices);
+    QObject::connect(subsamplePlot, SIGNAL(xyChanged(const arma::mat &)),
             &interactionHandler, SLOT(setSubsample(const arma::mat &)));
     QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
-            plot, SLOT(setData(const arma::mat &)));
+            plot, SLOT(setXY(const arma::mat &)));
+
+    // TODO: works; though it needs measures implementation
+    // std::unique_ptr<DistortionObserver> distortionObs(new NPDistortion(X, sampleIndices));
+    // QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
+    //         distortionObs.get(), SLOT(setMap(const arma::mat &)));
+    // QObject::connect(distortionObs.get(), SIGNAL(mapChanged(const arma::vec &)),
+    //         plot, SLOT(setColorData(const arma::vec &)));
+
     interactionHandler.setSubsample(Ys);
 
     return app.exec();

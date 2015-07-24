@@ -11,6 +11,8 @@ static const float PI = 3.1415f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
+    , m_shouldUpdateGeometry(false)
+    , m_shouldUpdateMaterials(false)
     , m_colorScale{
         QColor("#1f77b4"),
         QColor("#ff7f0e"),
@@ -27,24 +29,53 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     setFlag(QQuickItem::ItemHasContents);
 }
 
-Scatterplot::~Scatterplot()
+void Scatterplot::setColorScale(const ColorScale &colorScale)
 {
+    m_colorScale = colorScale;
+
+    if (m_colorData.n_elem > 0) {
+        m_colorScale.setExtents(m_colorData.min(), m_colorData.max());
+        updateMaterials();
+    }
 }
 
-void Scatterplot::setData(const arma::mat &data)
+void Scatterplot::setXY(const arma::mat &xy)
 {
-    if (data.n_cols != 3)
+    if (xy.n_cols != 2)
         return;
 
-    m_data = data;
-    m_xmin = data.col(0).min();
-    m_xmax = data.col(0).max();
-    m_ymin = data.col(1).min();
-    m_ymax = data.col(1).max();
-
-    m_colorScale.setExtents(m_data.col(2).min(), m_data.col(2).max());
+    m_xy = xy;
+    m_xmin = xy.col(0).min();
+    m_xmax = xy.col(0).max();
+    m_ymin = xy.col(1).min();
+    m_ymax = xy.col(1).max();
     m_selectedGlyphs.clear();
+    emit xyChanged(m_xy);
 
+    updateGeometry();
+}
+
+void Scatterplot::setColorData(const arma::vec &colorData)
+{
+    if (colorData.n_elem != m_xy.n_rows)
+        return;
+
+    m_colorData = colorData;
+    m_colorScale.setExtents(m_colorData.min(), m_colorData.max());
+    emit colorDataChanged(m_colorData);
+
+    updateMaterials();
+}
+
+void Scatterplot::updateGeometry()
+{
+    m_shouldUpdateGeometry = true;
+    update();
+}
+
+void Scatterplot::updateMaterials()
+{
+    m_shouldUpdateMaterials = true;
     update();
 }
 
@@ -84,11 +115,12 @@ inline float Scatterplot::fromDataYToScreenY(float y)
     return PADDING + (y - m_ymin) / (m_ymax - m_ymin) * (height() - 2*PADDING);
 }
 
-QSGNode *Scatterplot::newGlyphNodeTree() {
+QSGNode *Scatterplot::createGlyphNodeTree()
+{
     QSGNode *node = new QSGNode;
     int vertexCount = calculateCircleVertexCount(GLYPH_SIZE / 2);
 
-    for (arma::uword i = 0; i < m_data.n_rows; i++) {
+    for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         QSGGeometryNode *glyphNode = new QSGGeometryNode;
 
         QSGGeometry *geometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
@@ -97,7 +129,7 @@ QSGNode *Scatterplot::newGlyphNodeTree() {
         glyphNode->setFlag(QSGNode::OwnsGeometry);
 
         QSGFlatColorMaterial *material = new QSGFlatColorMaterial;
-        material->setColor(m_colorScale.color(m_data(i, 2)));
+        material->setColor(QColor());
         glyphNode->setMaterial(material);
         glyphNode->setFlag(QSGNode::OwnsMaterial);
 
@@ -112,44 +144,55 @@ QSGNode *Scatterplot::newGlyphNodeTree() {
 
 QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
-    if (m_data.n_rows < 1)
+    if (m_xy.n_rows < 1)
         return 0;
 
-    qreal x, y, xt, yt, moveTranslationF;
+    qreal x, y, tx, ty, moveTranslationF;
 
     QSGNode *root = 0;
     if (!oldNode) {
         root = new QSGNode;
-        root->appendChildNode(newGlyphNodeTree());
-    } else {
+        root->appendChildNode(createGlyphNodeTree());
+    } else
         root = oldNode;
-    }
 
-    if (m_currentState != INTERACTION_MOVING)
-        xt = yt = 0;
-    else {
-        xt = m_dragCurrentPos.x() - m_dragOriginPos.x();
-        yt = m_dragCurrentPos.y() - m_dragOriginPos.y();
-    }
+    if (m_currentState == INTERACTION_MOVING) {
+        tx = m_dragCurrentPos.x() - m_dragOriginPos.x();
+        ty = m_dragCurrentPos.y() - m_dragOriginPos.y();
+    } else
+        tx = ty = 0;
 
     QSGNode *node = root->firstChild()->firstChild();
-    for (arma::uword i = 0; i < m_data.n_rows; i++) {
-        arma::rowvec row = m_data.row(i);
+    for (arma::uword i = 0; i < m_xy.n_rows; i++) {
+        arma::rowvec row = m_xy.row(i);
         bool isSelected = m_selectedGlyphs.contains(i);
 
         QSGOpacityNode *glyphOpacityNode = static_cast<QSGOpacityNode *>(node);
         glyphOpacityNode->setOpacity(isSelected ? GLYPH_OPACITY_SELECTED : GLYPH_OPACITY);
 
         QSGGeometryNode *glyphNode = static_cast<QSGGeometryNode *>(node->firstChild());
-        QSGGeometry *geometry = glyphNode->geometry();
-        moveTranslationF = isSelected ? 1.0 : 0.0;
-        x = fromDataXToScreenX(row[0]) + xt * moveTranslationF;
-        y = fromDataYToScreenY(row[1]) + yt * moveTranslationF;
-        updateCircleGeometry(geometry, GLYPH_SIZE, x, y);
-        glyphNode->markDirty(QSGNode::DirtyGeometry);
+        if (m_shouldUpdateGeometry) {
+            QSGGeometry *geometry = glyphNode->geometry();
+            moveTranslationF = isSelected ? 1.0 : 0.0;
+            x = fromDataXToScreenX(row[0]) + tx * moveTranslationF;
+            y = fromDataYToScreenY(row[1]) + ty * moveTranslationF;
+            updateCircleGeometry(geometry, GLYPH_SIZE, x, y);
+            glyphNode->markDirty(QSGNode::DirtyGeometry);
+        }
+        if (m_shouldUpdateMaterials) {
+            QSGFlatColorMaterial *material = static_cast<QSGFlatColorMaterial *>(glyphNode->material());
+            material->setColor(m_colorScale.color(m_colorData[i]));
+            glyphNode->setMaterial(material);
+            glyphNode->markDirty(QSGNode::DirtyMaterial);
+        }
 
         node = node->nextSibling();
     }
+
+    if (m_shouldUpdateGeometry)
+        m_shouldUpdateGeometry = false;
+    if (m_shouldUpdateMaterials)
+        m_shouldUpdateMaterials = false;
 
     // Draw selection
     if (m_currentState == INTERACTION_SELECTING) {
@@ -200,8 +243,8 @@ void Scatterplot::mouseMoveEvent(QMouseEvent *event)
         break;
     case INTERACTION_MOVING:
         m_dragCurrentPos = event->localPos();
-        updateData();
-        update();
+        applyManipulation();
+        updateGeometry();
         m_dragOriginPos = m_dragCurrentPos;
         break;
     case INTERACTION_NONE:
@@ -225,7 +268,7 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
 
     case INTERACTION_MOVING:
         m_currentState = INTERACTION_SELECTED;
-        update();
+        updateGeometry();
         break;
     case INTERACTION_NONE:
     case INTERACTION_SELECTED:
@@ -242,8 +285,8 @@ bool Scatterplot::selectGlyphs(bool mergeSelection)
 
     QRectF selectionRect(m_dragOriginPos, m_dragCurrentPos);
     bool anySelected = false;
-    for (arma::uword i = 0; i < m_data.n_rows; i++) {
-        arma::rowvec row = m_data.row(i);
+    for (arma::uword i = 0; i < m_xy.n_rows; i++) {
+        arma::rowvec row = m_xy.row(i);
         x = fromDataXToScreenX(row[0]);
         y = fromDataYToScreenY(row[1]);
 
@@ -257,20 +300,23 @@ bool Scatterplot::selectGlyphs(bool mergeSelection)
     return anySelected;
 }
 
-void Scatterplot::updateData()
+void Scatterplot::applyManipulation()
 {
-    float xt = m_dragCurrentPos.x() - m_dragOriginPos.x();
-    float yt = m_dragCurrentPos.y() - m_dragOriginPos.y();
+    float tx = m_dragCurrentPos.x() - m_dragOriginPos.x();
+    float ty = m_dragCurrentPos.y() - m_dragOriginPos.y();
 
-    xt /= (width()  - PADDING);
-    yt /= (height() - PADDING);
+    tx /= (width()  - PADDING);
+    ty /= (height() - PADDING);
+
+    float x_extent = m_xmax - m_xmin;
+    float y_extent = m_ymax - m_ymin;
+
     for (auto it = m_selectedGlyphs.cbegin(); it != m_selectedGlyphs.cend(); it++) {
-        arma::rowvec row = m_data.row(*it);
-        row[0] = ((row[0] - m_xmin) / (m_xmax - m_xmin) + xt) * (m_xmax - m_xmin) + m_xmin;
-        row[1] = ((row[1] - m_ymin) / (m_ymax - m_ymin) + yt) * (m_ymax - m_ymin) + m_ymin;
-        m_data.row(*it) = row;
+        arma::rowvec row = m_xy.row(*it);
+        row[0] = ((row[0] - m_xmin) / x_extent + tx) * x_extent + m_xmin;
+        row[1] = ((row[1] - m_ymin) / y_extent + ty) * y_extent + m_ymin;
+        m_xy.row(*it) = row;
     }
 
-    // does not send last column (labels)
-    emit dataChanged(m_data.cols(0, m_data.n_cols - 2));
+    emit xyChanged(m_xy);
 }

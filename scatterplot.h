@@ -11,13 +11,16 @@ class Scatterplot : public QQuickItem
     Q_OBJECT
 public:
     Scatterplot(QQuickItem *parent = 0);
-    ~Scatterplot();
+
+    void setColorScale(const ColorScale &colorScale);
 
 signals:
-    void dataChanged(const arma::mat &data);
+    void xyChanged(const arma::mat &XY);
+    void colorDataChanged(const arma::vec &colorData);
 
 public slots:
-    void setData(const arma::mat &data);
+    void setXY(const arma::mat &xy);
+    void setColorData(const arma::vec &colorData);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
@@ -26,15 +29,23 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
 
 private:
-    QSGNode *newGlyphNodeTree();
+    QSGNode *createGlyphNodeTree();
     bool selectGlyphs(bool mergeSelection);
-    void updateData();
 
     float fromDataXToScreenX(float x);
     float fromDataYToScreenY(float y);
 
-    arma::mat m_data;
+    void applyManipulation();
+
+    void updateGeometry();
+    void updateMaterials();
+
+    arma::mat m_xy;
     float m_xmin, m_xmax, m_ymin, m_ymax;
+
+    bool m_shouldUpdateGeometry, m_shouldUpdateMaterials;
+
+    arma::vec m_colorData;
 
     ColorScale m_colorScale;
 
