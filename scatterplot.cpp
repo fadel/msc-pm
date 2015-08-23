@@ -13,6 +13,7 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
     , m_shouldUpdateGeometry(false)
     , m_shouldUpdateMaterials(false)
+    , m_currentState(INTERACTION_NONE)
     , m_colorScale{
         QColor("#1f77b4"),
         QColor("#ff7f0e"),
