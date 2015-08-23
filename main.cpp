@@ -60,5 +60,8 @@ int main(int argc, char **argv)
 
     interactionHandler.setSubsample(Ys);
 
+    // TODO: remove when proper measure coloring is done
+    plot->setColorData(labels);
+
     return app.exec();
 }
