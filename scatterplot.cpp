@@ -11,9 +11,9 @@ static const float PI = 3.1415f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
+    , m_currentInteractionState(INTERACTION_NONE)
     , m_shouldUpdateGeometry(false)
     , m_shouldUpdateMaterials(false)
-    , m_currentState(INTERACTION_NONE)
     , m_colorScale{
         QColor("#1f77b4"),
         QColor("#ff7f0e"),
@@ -157,7 +157,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     } else
         root = oldNode;
 
-    if (m_currentState == INTERACTION_MOVING) {
+    if (m_currentInteractionState == INTERACTION_MOVING) {
         tx = m_dragCurrentPos.x() - m_dragOriginPos.x();
         ty = m_dragCurrentPos.y() - m_dragOriginPos.y();
     } else
@@ -196,7 +196,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         m_shouldUpdateMaterials = false;
 
     // Draw selection
-    if (m_currentState == INTERACTION_SELECTING) {
+    if (m_currentInteractionState == INTERACTION_SELECTING) {
         QSGSimpleRectNode *selectionNode = 0;
         if (!root->firstChild()->nextSibling()) {
             selectionNode = new QSGSimpleRectNode;
@@ -220,10 +220,10 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
 void Scatterplot::mousePressEvent(QMouseEvent *event)
 {
-    switch (m_currentState) {
+    switch (m_currentInteractionState) {
     case INTERACTION_NONE:
     case INTERACTION_SELECTED:
-        m_currentState = (event->button() == Qt::MiddleButton) ? INTERACTION_MOVING
+        m_currentInteractionState = (event->button() == Qt::MiddleButton) ? INTERACTION_MOVING
                                                                : INTERACTION_SELECTING;
         m_dragOriginPos = event->localPos();
         m_dragCurrentPos = m_dragOriginPos;
@@ -237,7 +237,7 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
 
 void Scatterplot::mouseMoveEvent(QMouseEvent *event)
 {
-    switch (m_currentState) {
+    switch (m_currentInteractionState) {
     case INTERACTION_SELECTING:
         m_dragCurrentPos = event->localPos();
         update();
@@ -259,16 +259,16 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
 {
     bool mergeSelection;
 
-    switch (m_currentState) {
+    switch (m_currentInteractionState) {
     case INTERACTION_SELECTING:
         mergeSelection = (event->button() == Qt::RightButton);
-        m_currentState = selectGlyphs(mergeSelection) ? INTERACTION_SELECTED
+        m_currentInteractionState = selectGlyphs(mergeSelection) ? INTERACTION_SELECTED
                                                       : INTERACTION_NONE;
         update();
         break;
 
     case INTERACTION_MOVING:
-        m_currentState = INTERACTION_SELECTED;
+        m_currentInteractionState = INTERACTION_SELECTED;
         updateGeometry();
         break;
     case INTERACTION_NONE:

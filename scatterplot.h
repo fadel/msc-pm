@@ -43,21 +43,22 @@ private:
     arma::mat m_xy;
     float m_xmin, m_xmax, m_ymin, m_ymax;
 
-    bool m_shouldUpdateGeometry, m_shouldUpdateMaterials;
-
-    arma::vec m_colorData;
-
-    ColorScale m_colorScale;
-
     enum InteractionState {
         INTERACTION_NONE,
         INTERACTION_SELECTING,
         INTERACTION_SELECTED,
         INTERACTION_MOVING
-    } m_currentState;
+    } m_currentInteractionState;
+
     QPointF m_dragOriginPos, m_dragCurrentPos;
 
     QSet<int> m_selectedGlyphs;
+
+    bool m_shouldUpdateGeometry, m_shouldUpdateMaterials;
+
+    arma::vec m_colorData;
+
+    ColorScale m_colorScale;
 };
 
 #endif // SCATTERPLOT_H
