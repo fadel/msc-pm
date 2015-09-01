@@ -223,7 +223,7 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
     switch (m_currentInteractionState) {
     case INTERACTION_NONE:
     case INTERACTION_SELECTED:
-        m_currentInteractionState = (event->button() == Qt::MiddleButton) ? INTERACTION_MOVING
+        m_currentInteractionState = (event->modifiers() == Qt::AltModifier) ? INTERACTION_MOVING
                                                                : INTERACTION_SELECTING;
         m_dragOriginPos = event->localPos();
         m_dragCurrentPos = m_dragOriginPos;
@@ -261,7 +261,7 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
 
     switch (m_currentInteractionState) {
     case INTERACTION_SELECTING:
-        mergeSelection = (event->button() == Qt::RightButton);
+        mergeSelection = (event->modifiers() == Qt::ControlModifier);
         m_currentInteractionState = selectGlyphs(mergeSelection) ? INTERACTION_SELECTED
                                                       : INTERACTION_NONE;
         update();
