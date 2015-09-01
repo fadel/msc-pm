@@ -5,17 +5,17 @@
 
 namespace mp {
 
-// --- Distance-related
+// Distance-related
 typedef double (*DistFunc)(const arma::rowvec &, const arma::rowvec &);
 double euclidean(const arma::rowvec &x1, const arma::rowvec &x2);
 arma::mat dist(const arma::mat &X, DistFunc dfunc = euclidean);
 
-// --- Evaluation measures
+// Evaluation measures
 typedef arma::vec (*MeasureFunc)(const arma::mat &distA, const arma::mat &distB);
-arma::vec neighborhoodPreservation(const arma::mat &distA, const arma::mat &distB, int k = 10);
+arma::vec neighborhoodPreservation(const arma::mat &distA, const arma::mat &distB, arma::uword k = 10);
 arma::vec silhouette(const arma::mat &distA, const arma::mat &distB, const arma::vec &labels);
 
-// --- Techniques
+// Techniques
 arma::mat lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys);
 void lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys, arma::mat &Y);
 

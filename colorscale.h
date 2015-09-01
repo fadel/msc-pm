@@ -11,12 +11,12 @@ public:
     ColorScale(const QColor &firstColor, const QColor &lastColor);
     ColorScale(std::initializer_list<QColor> colors);
     ColorScale(const QList<QColor> &colors);
-    ~ColorScale();
+    virtual ~ColorScale();
 
+    virtual QColor color(qreal t) const;
     void setExtents(qreal min, qreal max);
-    QColor color(qreal t) const;
 
-private:
+protected:
     qreal m_min, m_max;
     QList<QColor> m_colors;
 };

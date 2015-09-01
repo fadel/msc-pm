@@ -1,15 +1,13 @@
 #ifndef NPDISTORTION_H
 #define NPDISTORTION_H
 
-#include "distortionobserver.h"
+#include "distortionmeasure.h"
 
-class NPDistortion : public DistortionObserver
+class NPDistortion : public DistortionMeasure
 {
 public:
-    NPDistortion(const arma::mat &X, const arma::uvec &sampleIndices, int k = 10);
-
-protected:
-    arma::vec measureFunc(const arma::mat &distA, const arma::mat &distB);
+    NPDistortion(int k = 10);
+    arma::vec measure(const arma::mat &distA, const arma::mat &distB);
 
 private:
     int m_k;

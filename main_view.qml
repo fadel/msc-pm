@@ -17,6 +17,26 @@ ApplicationWindow {
             MenuItem { action: saveDataAction }
             MenuItem { action: quitAction }
         }
+
+        Menu {
+            title: "View"
+            MenuItem {
+                action: noneColorAction
+                exclusiveGroup: coloringGroup
+            }
+            MenuItem {
+                action: npColorAction
+                exclusiveGroup: coloringGroup
+            }
+            MenuItem {
+                action: stressColorAction
+                exclusiveGroup: coloringGroup
+            }
+            MenuItem {
+                action: silhouetteColorAction
+                exclusiveGroup: coloringGroup
+            }
+        }
     }
 
     Item {
@@ -91,5 +111,42 @@ ApplicationWindow {
         text: "Save &data"
         shortcut: "Ctrl+D"
         onTriggered: console.log("Save data")
+    }
+
+    ExclusiveGroup {
+        id: coloringGroup
+
+        Action {
+            id: noneColorAction
+            text: "None"
+            shortcut: "Shift+O"
+            checked: true
+            checkable: true
+            onTriggered: console.log("None")
+        }
+
+        Action {
+            id: npColorAction
+            text: "Neighborhood Preservation"
+            shortcut: "Shift+N"
+            checkable: true
+            onTriggered: console.log("NP")
+        }
+
+        Action {
+            id: stressColorAction
+            text: "Stress"
+            shortcut: "Shift+S"
+            checkable: true
+            onTriggered: console.log("Stress")
+        }
+
+        Action {
+            id: silhouetteColorAction
+            text: "Silhouette"
+            shortcut: "Shift+T"
+            checkable: true
+            onTriggered: console.log("Silhouette")
+        }
     }
 }

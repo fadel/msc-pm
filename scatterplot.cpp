@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-static const qreal GLYPH_OPACITY = 0.3;
+static const qreal GLYPH_OPACITY = 0.4;
 static const qreal GLYPH_OPACITY_SELECTED = 1.0;
 static const QColor SELECTION_COLOR(QColor(128, 128, 128, 96));
 static const int GLYPH_SIZE = 8;
@@ -14,7 +14,8 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     , m_currentInteractionState(INTERACTION_NONE)
     , m_shouldUpdateGeometry(false)
     , m_shouldUpdateMaterials(false)
-    , m_colorScale{
+{
+    m_colorScale = new ColorScale{
         QColor("#1f77b4"),
         QColor("#ff7f0e"),
         QColor("#2ca02c"),
@@ -24,18 +25,20 @@ Scatterplot::Scatterplot(QQuickItem *parent)
         QColor("#e377c2"),
         QColor("#17becf"),
         QColor("#7f7f7f"),
-    }
-{
+    };
+
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
 }
 
-void Scatterplot::setColorScale(const ColorScale &colorScale)
+void Scatterplot::setColorScale(ColorScale *colorScale)
 {
-    m_colorScale = colorScale;
+    if (!colorScale) {
+        return;
+    }
 
+    m_colorScale = colorScale;
     if (m_colorData.n_elem > 0) {
-        m_colorScale.setExtents(m_colorData.min(), m_colorData.max());
         updateMaterials();
     }
 }
@@ -62,7 +65,6 @@ void Scatterplot::setColorData(const arma::vec &colorData)
         return;
 
     m_colorData = colorData;
-    m_colorScale.setExtents(m_colorData.min(), m_colorData.max());
     emit colorDataChanged(m_colorData);
 
     updateMaterials();
@@ -182,7 +184,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         }
         if (m_shouldUpdateMaterials) {
             QSGFlatColorMaterial *material = static_cast<QSGFlatColorMaterial *>(glyphNode->material());
-            material->setColor(m_colorScale.color(m_colorData[i]));
+            material->setColor(m_colorScale->color(m_colorData[i]));
             glyphNode->setMaterial(material);
             glyphNode->markDirty(QSGNode::DirtyMaterial);
         }

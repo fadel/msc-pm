@@ -6,6 +6,7 @@
 #include <QQmlApplicationEngine>
 
 #include "mp.h"
+#include "continuouscolorscale.h"
 #include "scatterplot.h"
 #include "interactionhandler.h"
 #include "distortionobserver.h"
@@ -51,17 +52,21 @@ int main(int argc, char **argv)
     QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
             plot, SLOT(setXY(const arma::mat &)));
 
-    // TODO: works; though it needs measures implementation
-    // std::unique_ptr<DistortionObserver> distortionObs(new NPDistortion(X, sampleIndices));
-    // QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
-    //         distortionObs.get(), SLOT(setMap(const arma::mat &)));
-    // QObject::connect(distortionObs.get(), SIGNAL(mapChanged(const arma::vec &)),
-    //         plot, SLOT(setColorData(const arma::vec &)));
+    DistortionObserver distortionObs(X, sampleIndices);
+    std::unique_ptr<DistortionMeasure> distortionMeasure(new NPDistortion());
+    distortionObs.setMeasure(distortionMeasure.get());
+    QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
+            &distortionObs, SLOT(setMap(const arma::mat &)));
+    QObject::connect(&distortionObs, SIGNAL(mapChanged(const arma::vec &)),
+            plot, SLOT(setColorData(const arma::vec &)));
 
+    ContinuousColorScale colorScale;
+    colorScale.setExtents(-1, 1);
+    plot->setColorScale(&colorScale);
     interactionHandler.setSubsample(Ys);
 
     // TODO: remove when proper measure coloring is done
-    plot->setColorData(labels);
+    // plot->setColorData(labels);
 
     return app.exec();
 }

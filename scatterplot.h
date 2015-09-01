@@ -12,7 +12,7 @@ class Scatterplot : public QQuickItem
 public:
     Scatterplot(QQuickItem *parent = 0);
 
-    void setColorScale(const ColorScale &colorScale);
+    void setColorScale(ColorScale *colorScale);
 
 signals:
     void xyChanged(const arma::mat &XY);
@@ -58,7 +58,7 @@ private:
 
     arma::vec m_colorData;
 
-    ColorScale m_colorScale;
+    ColorScale *m_colorScale;
 };
 
 #endif // SCATTERPLOT_H
