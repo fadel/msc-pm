@@ -24,8 +24,9 @@ ColorScale::~ColorScale()
 
 void ColorScale::setExtents(qreal min, qreal max)
 {
-    if (min >= max)
+    if (min >= max) {
         return;
+    }
 
     m_min = min;
     m_max = max;
@@ -48,23 +49,26 @@ static QColor lerp(const QColor &c1, const QColor &c2, qreal t)
 
 QColor ColorScale::color(qreal t) const
 {
-    if (t < m_min || t > m_max)
+    if (t < m_min || t > m_max) {
         return QColor();
+    }
 
     // normalize t
     t = (t - m_min) / (m_max - m_min);
 
     // two colors, use a simpler solution
-    if (m_colors.size() == 2)
+    if (m_colors.size() == 2) {
         return lerp(m_colors.first(), m_colors.last(), t);
+    }
 
     // find which colors in the scale are adjacent to ours
     qreal step = 1.0 / m_colors.size();
     int i = (int) (t / step);
     int j = i + 1;
 
-    if (i >= m_colors.size() - 1)
+    if (i >= m_colors.size() - 1) {
         return QColor(m_colors.last());
+    }
 
     // normalize t between the two colors
     t = (t - i*step) / (j*step - i*step);

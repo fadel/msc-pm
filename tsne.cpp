@@ -68,8 +68,9 @@ void mp::tSNE(const arma::mat &X, arma::mat &Y, double perplexity, arma::uword n
         Y += iY;
         Y.each_row() -= mean(Y, 0);
 
-        if (iter == EXAGGERATION_THRESHOLD_ITER)
+        if (iter == EXAGGERATION_THRESHOLD_ITER) {
             P /= EARLY_EXAGGERATION; // remove early exaggeration
+        }
     }
 }
 
@@ -94,19 +95,21 @@ static void calcP(const arma::mat &X, arma::mat &P, double perplexity, double to
         for (int tries = 0; fabs(hDiff) > tol && tries < MAX_BINSEARCH_TRIES; tries++) {
             if (hDiff > 0) {
                 betaMin = beta[i];
-                if (betaMax == arma::datum::inf || betaMax == -arma::datum::inf)
+                if (betaMax == arma::datum::inf || betaMax == -arma::datum::inf) {
                     beta[i] *= 2;
-                else
+                } else {
                     beta[i] = (beta[i] + betaMax) / 2.;
+                }
             } else {
                 betaMax = beta[i];
-                if (betaMin == arma::datum::inf || betaMin == -arma::datum::inf)
+                if (betaMin == arma::datum::inf || betaMin == -arma::datum::inf) {
                     beta[i] /= 2;
-                else
+                } else {
                     beta[i] = (beta[i] + betaMin) / 2.;
+                }
             }
 
-            
+
             h = hBeta(Di, beta[i], Pi);
             hDiff = h - logU;
         }

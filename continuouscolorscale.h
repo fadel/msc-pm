@@ -6,9 +6,16 @@
 class ContinuousColorScale : public ColorScale
 {
 public:
-    ContinuousColorScale();
+    ContinuousColorScale(std::initializer_list<QColor> colors);
+
+    enum BuiltinContinuousColorScale {
+        HEATED_OBJECTS,
+        RED_GRAY_BLUE
+    };
 
     QColor color(qreal t) const;
+
+    static ContinuousColorScale builtin(enum BuiltinContinuousColorScale);
 };
 
 #endif // CONTINUOUSCOLORSCALE_H

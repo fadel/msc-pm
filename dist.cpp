@@ -10,11 +10,12 @@ arma::mat mp::dist(const arma::mat &X, mp::DistFunc dfunc)
     arma::uword n = X.n_rows;
     arma::mat D(n, n, arma::fill::zeros);
 
-    for (arma::uword i = 0; i < n; i++)
+    for (arma::uword i = 0; i < n; i++) {
         for (arma::uword j = 0; j < i; j++) {
             D(i, j) = dfunc(X.row(i), X.row(j));
             D(j, i) = D(i, j);
         }
+    }
 
     return D;
 }

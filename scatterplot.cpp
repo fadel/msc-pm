@@ -49,8 +49,9 @@ void Scatterplot::setColorScale(ColorScale *colorScale)
 
 void Scatterplot::setXY(const arma::mat &xy)
 {
-    if (xy.n_cols != 2)
+    if (xy.n_cols != 2) {
         return;
+    }
 
     m_xy = xy;
     m_xmin = xy.col(0).min();
@@ -65,8 +66,9 @@ void Scatterplot::setXY(const arma::mat &xy)
 
 void Scatterplot::setColorData(const arma::vec &colorData)
 {
-    if (colorData.n_elem != m_xy.n_rows)
+    if (colorData.n_elem != m_xy.n_rows) {
         return;
+    }
 
     m_colorData = colorData;
     emit colorDataChanged(m_colorData);
@@ -169,8 +171,9 @@ QSGNode *Scatterplot::createGlyphNodeTree()
 
 QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
-    if (m_xy.n_rows < 1)
+    if (m_xy.n_rows < 1) {
         return 0;
+    }
 
     QMatrix4x4 matrix;
     qreal tx, ty, moveTranslationF;
@@ -179,14 +182,16 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     if (!oldNode) {
         root = new QSGNode;
         root->appendChildNode(createGlyphNodeTree());
-    } else
+    } else {
         root = oldNode;
+    }
 
     if (m_currentInteractionState == INTERACTION_MOVING) {
         tx = m_dragCurrentPos.x() - m_dragOriginPos.x();
         ty = m_dragCurrentPos.y() - m_dragOriginPos.y();
-    } else
+    } else {
         tx = ty = 0;
+    }
 
     QSGNode *node = root->firstChild()->firstChild();
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
@@ -214,10 +219,12 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         node = node->nextSibling();
     }
 
-    if (m_shouldUpdateGeometry)
+    if (m_shouldUpdateGeometry) {
         m_shouldUpdateGeometry = false;
-    if (m_shouldUpdateMaterials)
+    }
+    if (m_shouldUpdateMaterials) {
         m_shouldUpdateMaterials = false;
+    }
 
     // Draw selection
     if (m_currentInteractionState == INTERACTION_SELECTING) {
@@ -233,9 +240,10 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         selectionNode->setRect(QRectF(m_dragOriginPos, m_dragCurrentPos));
         selectionNode->markDirty(QSGNode::DirtyGeometry);
     } else {
-        if (root->firstChild()->nextSibling()) {
-            root->firstChild()->nextSibling()->markDirty(QSGNode::DirtyGeometry);
-            root->removeChildNode(root->firstChild()->nextSibling());
+        node = root->firstChild()->nextSibling();
+        if (node) {
+            node->markDirty(QSGNode::DirtyGeometry);
+            root->removeChildNode(node);
         }
     }
 
@@ -247,8 +255,11 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
     switch (m_currentInteractionState) {
     case INTERACTION_NONE:
     case INTERACTION_SELECTED:
-        m_currentInteractionState = (event->modifiers() == Qt::AltModifier) ? INTERACTION_MOVING
-                                                               : INTERACTION_SELECTING;
+        if (event->modifiers() == Qt::AltModifier) {
+            m_currentInteractionState = INTERACTION_MOVING;
+        } else {
+            INTERACTION_SELECTING;
+        }
         m_dragOriginPos = event->localPos();
         m_dragCurrentPos = m_dragOriginPos;
         break;
@@ -281,13 +292,14 @@ void Scatterplot::mouseMoveEvent(QMouseEvent *event)
 
 void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
 {
-    bool mergeSelection;
-
     switch (m_currentInteractionState) {
     case INTERACTION_SELECTING:
-        mergeSelection = (event->modifiers() == Qt::ControlModifier);
-        m_currentInteractionState = selectGlyphs(mergeSelection) ? INTERACTION_SELECTED
-                                                      : INTERACTION_NONE;
+        bool mergeSelection = (event->modifiers() == Qt::ControlModifier);
+        if (selectGlyphs(mergeSelection)) {
+            m_currentInteractionState = INTERACTION_SELECTED;
+        else {
+            m_currentInteractionState = INTERACTION_NONE;
+        }
         update();
         break;
 

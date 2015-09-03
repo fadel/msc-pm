@@ -25,10 +25,11 @@ int main(int argc, char **argv)
     QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
 
     arma::mat dataset;
-    if (argc > 1)
+    if (argc > 1) {
         dataset.load(argv[1], arma::raw_ascii);
-    else
+    } else {
         dataset.load(std::cin, arma::raw_ascii);
+    }
 
     arma::mat X = dataset.cols(0, dataset.n_cols - 2);
     arma::vec labels = dataset.col(dataset.n_cols - 1);
@@ -60,7 +61,7 @@ int main(int argc, char **argv)
     QObject::connect(&distortionObs, SIGNAL(mapChanged(const arma::vec &)),
             plot, SLOT(setColorData(const arma::vec &)));
 
-    ContinuousColorScale colorScale;
+    ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
     colorScale.setExtents(-1, 1);
     plot->setColorScale(&colorScale);
     interactionHandler.setSubsample(Ys);
