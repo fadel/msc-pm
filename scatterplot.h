@@ -1,6 +1,7 @@
 #ifndef SCATTERPLOT_H
 #define SCATTERPLOT_H
 
+#include <memory>
 #include <armadillo>
 #include <QtQuick>
 
@@ -54,6 +55,7 @@ private:
 
     QSet<int> m_selectedGlyphs;
 
+    std::unique_ptr<QSGGeometry> m_glyphGeometryPtr, m_glyphOutlineGeometryPtr;
     bool m_shouldUpdateGeometry, m_shouldUpdateMaterials;
 
     arma::vec m_colorData;
