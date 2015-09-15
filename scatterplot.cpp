@@ -19,18 +19,6 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     , m_shouldUpdateGeometry(false)
     , m_shouldUpdateMaterials(false)
 {
-    m_colorScale = new ColorScale{
-        QColor("#1f77b4"),
-        QColor("#ff7f0e"),
-        QColor("#2ca02c"),
-        QColor("#d62728"),
-        QColor("#9467bd"),
-        QColor("#8c564b"),
-        QColor("#e377c2"),
-        QColor("#17becf"),
-        QColor("#7f7f7f"),
-    };
-
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
 }
@@ -308,6 +296,7 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
     case INTERACTION_MOVING:
         m_currentInteractionState = INTERACTION_SELECTED;
         updateGeometry();
+        emit xyChanged(m_xy);
         break;
     case INTERACTION_NONE:
     case INTERACTION_SELECTED:
@@ -331,8 +320,7 @@ bool Scatterplot::selectGlyphs(bool mergeSelection)
 
         if (selectionRect.contains(x, y)) {
             m_selectedGlyphs.insert(i);
-            if (!anySelected)
-                anySelected = true;
+            anySelected = true;
         }
     }
 
@@ -356,6 +344,4 @@ void Scatterplot::applyManipulation()
         row[1] = ((row[1] - m_ymin) / y_extent + ty) * y_extent + m_ymin;
         m_xy.row(*it) = row;
     }
-
-    emit xyChanged(m_xy);
 }
