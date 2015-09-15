@@ -10,15 +10,23 @@ void knn(const arma::mat &dmat, arma::uword i, arma::uword k, arma::uvec &nn, ar
         return;
     }
 
-    double dmax = arma::datum::inf;
-    nn.fill(i);
-    dist.fill(dmax);
+    for (arma::uword j = 0, l = 0; l < k; j++, l++) {
+        if (j == i) {
+            j++;
+        }
+
+        nn[l] = j;
+        dist[l] = dmat(i, j);
+    }
+
+    double dmax = *std::max_element(dist.begin(), dist.end());
     for (arma::uword j = 0; j < n; j++) {
         if (j == i) {
             continue;
         }
 
         if (dmat(i, j) < dmax) {
+            dmax = dmat(i, j);
             arma::uword l;
             for (l = 0; dmat(i, j) > dist[l] && l < k; l++);
             for (arma::uword m = l + 1; m < k; m++) {
@@ -39,6 +47,7 @@ arma::vec mp::neighborhoodPreservation(const arma::mat &distA,
     arma::uword n = distA.n_rows;
     arma::vec np(n);
 
+    #pragma omp parallel for shared(np, n)
     for (arma::uword i = 0; i < n; i++) {
         arma::uvec nnA(k);
         arma::uvec nnB(k);
