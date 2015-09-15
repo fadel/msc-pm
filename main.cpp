@@ -40,10 +40,23 @@ int main(int argc, char **argv)
     arma::mat Ys(subsampleSize, 2, arma::fill::randn);
     Ys = mp::forceScheme(mp::dist(X.rows(sampleIndices)), Ys);
 
+    ColorScale colorScale{
+        QColor("#1f77b4"),
+        QColor("#ff7f0e"),
+        QColor("#2ca02c"),
+        QColor("#d62728"),
+        QColor("#9467bd"),
+        QColor("#8c564b"),
+        QColor("#e377c2"),
+        QColor("#17becf"),
+        QColor("#7f7f7f"),
+    };
+    colorScale.setExtents(labels.min(), labels.max());
     Scatterplot *subsamplePlot = engine.rootObjects()[0]->findChild<Scatterplot *>("subsamplePlot");
     subsamplePlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
     subsamplePlot->setXY(Ys);
     subsamplePlot->setColorData(labels(sampleIndices));
+    subsamplePlot->setColorScale(&colorScale);
     Scatterplot *plot = engine.rootObjects()[0]->findChild<Scatterplot *>("plot");
 
     // connect both plots through interaction handler
@@ -53,21 +66,21 @@ int main(int argc, char **argv)
     QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
             plot, SLOT(setXY(const arma::mat &)));
 
-    DistortionObserver distortionObs(X, sampleIndices);
-    std::unique_ptr<DistortionMeasure> distortionMeasure(new NPDistortion());
-    distortionObs.setMeasure(distortionMeasure.get());
-    QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
-            &distortionObs, SLOT(setMap(const arma::mat &)));
-    QObject::connect(&distortionObs, SIGNAL(mapChanged(const arma::vec &)),
-            plot, SLOT(setColorData(const arma::vec &)));
+    //DistortionObserver distortionObs(X, sampleIndices);
+    //std::unique_ptr<DistortionMeasure> distortionMeasure(new NPDistortion());
+    //distortionObs.setMeasure(distortionMeasure.get());
+    //QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
+    //        &distortionObs, SLOT(setMap(const arma::mat &)));
+    //QObject::connect(&distortionObs, SIGNAL(mapChanged(const arma::vec &)),
+    //        plot, SLOT(setColorData(const arma::vec &)));
 
-    ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
-    colorScale.setExtents(-1, 1);
+    //ContinuousColorScale ccolorScale = ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS);
+    //ccolorScale.setExtents(-1, 1);
     plot->setColorScale(&colorScale);
     interactionHandler.setSubsample(Ys);
 
     // TODO: remove when proper measure coloring is done
-    // plot->setColorData(labels);
+    plot->setColorData(labels);
 
     return app.exec();
 }
