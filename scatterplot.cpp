@@ -41,15 +41,19 @@ void Scatterplot::setXY(const arma::mat &xy)
         return;
     }
 
+    if (m_xy.n_elem != xy.n_elem) {
+        m_selectedGlyphs.clear();
+    }
+
     m_xy = xy;
     m_xmin = xy.col(0).min();
     m_xmax = xy.col(0).max();
     m_ymin = xy.col(1).min();
     m_ymax = xy.col(1).max();
-    m_selectedGlyphs.clear();
-    emit xyChanged(m_xy);
 
     updateGeometry();
+
+    emit xyChanged(m_xy);
 }
 
 void Scatterplot::setColorData(const arma::vec &colorData)
@@ -120,12 +124,12 @@ QSGNode *Scatterplot::createGlyphNodeTree()
     m_glyphGeometryPtr.reset(new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount));
     QSGGeometry *glyphGeometry = m_glyphGeometryPtr.get();
     glyphGeometry->setDrawingMode(GL_POLYGON);
-    updateCircleGeometry(glyphGeometry, GLYPH_SIZE, 0, 0);
+    updateCircleGeometry(glyphGeometry, GLYPH_SIZE - 1, 0, 0);
 
     m_glyphOutlineGeometryPtr.reset(new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount));
     QSGGeometry *glyphOutlineGeometry = m_glyphOutlineGeometryPtr.get();
     glyphOutlineGeometry->setDrawingMode(GL_LINE_LOOP);
-    updateCircleGeometry(glyphOutlineGeometry, GLYPH_SIZE + 1, 0, 0);
+    updateCircleGeometry(glyphOutlineGeometry, GLYPH_SIZE, 0, 0);
 
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         QSGGeometryNode *glyphOutlineNode = new QSGGeometryNode;
@@ -214,7 +218,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         m_shouldUpdateMaterials = false;
     }
 
-    // Draw selection
+    // Draw selection rect
     if (m_currentInteractionState == INTERACTION_SELECTING) {
         QSGSimpleRectNode *selectionNode = 0;
         if (!root->firstChild()->nextSibling()) {
@@ -230,8 +234,9 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     } else {
         node = root->firstChild()->nextSibling();
         if (node) {
-            node->markDirty(QSGNode::DirtyGeometry);
+            // node->markDirty(QSGNode::DirtyGeometry);
             root->removeChildNode(node);
+            delete node;
         }
     }
 
@@ -261,6 +266,9 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
 void Scatterplot::mouseMoveEvent(QMouseEvent *event)
 {
     switch (m_currentInteractionState) {
+    case INTERACTION_NONE:
+        // event->localPos()
+        break;
     case INTERACTION_SELECTING:
         m_dragCurrentPos = event->localPos();
         update();
@@ -271,7 +279,6 @@ void Scatterplot::mouseMoveEvent(QMouseEvent *event)
         updateGeometry();
         m_dragOriginPos = m_dragCurrentPos;
         break;
-    case INTERACTION_NONE:
     case INTERACTION_SELECTED:
         event->ignore();
         return;
@@ -281,16 +288,18 @@ void Scatterplot::mouseMoveEvent(QMouseEvent *event)
 void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
 {
     bool mergeSelection;
+    arma::uvec selection;
 
     switch (m_currentInteractionState) {
     case INTERACTION_SELECTING:
         mergeSelection = (event->modifiers() == Qt::ControlModifier);
-        if (selectGlyphs(mergeSelection)) {
+        selection = findSelection(mergeSelection);
+        if (selection.n_elem > 0) {
+            setSelection(selection);
             m_currentInteractionState = INTERACTION_SELECTED;
         } else {
             m_currentInteractionState = INTERACTION_NONE;
         }
-        update();
         break;
 
     case INTERACTION_MOVING:
@@ -304,27 +313,47 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
     }
 }
 
-bool Scatterplot::selectGlyphs(bool mergeSelection)
+arma::uvec Scatterplot::findSelection(bool mergeSelection)
 {
-    if (!mergeSelection)
-        m_selectedGlyphs.clear();
+    QSet<int> selectedGlyphs(m_selectedGlyphs);
+    if (!mergeSelection) {
+        selectedGlyphs.clear();
+    }
 
-    qreal x, y;
+    QPointF dragOrigin(m_dragOriginPos.x() / width() * (m_xmax - m_xmin) + m_xmin,
+                       m_dragOriginPos.y() / height() * (m_ymax - m_ymin) + m_ymin);
+    QPointF dragCurrent(m_dragCurrentPos.x() / width() * (m_xmax - m_xmin) + m_xmin,
+                        m_dragCurrentPos.y() / height() * (m_ymax - m_ymin) + m_ymin);
+    QRectF selectionRect(dragOrigin, dragCurrent);
 
-    QRectF selectionRect(m_dragOriginPos, m_dragCurrentPos);
-    bool anySelected = false;
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         arma::rowvec row = m_xy.row(i);
-        x = fromDataXToScreenX(row[0]);
-        y = fromDataYToScreenY(row[1]);
 
-        if (selectionRect.contains(x, y)) {
-            m_selectedGlyphs.insert(i);
-            anySelected = true;
+        if (selectionRect.contains(row[0], row[1])) {
+            selectedGlyphs.insert(i);
         }
     }
 
-    return anySelected;
+    arma::uvec selection(selectedGlyphs.size());
+    int i = 0;
+    for (auto it = selectedGlyphs.cbegin(); it != selectedGlyphs.cend(); it++, i++) {
+        selection[i] = *it;
+    }
+
+    return selection;
+}
+
+void Scatterplot::setSelection(const arma::uvec &selection)
+{
+    m_selectedGlyphs.clear();
+
+    for (auto it = selection.cbegin(); it != selection.cend(); it++) {
+        m_selectedGlyphs.insert(*it);
+    }
+
+    update();
+
+    emit selectionChanged(selection);
 }
 
 void Scatterplot::applyManipulation()

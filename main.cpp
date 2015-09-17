@@ -9,6 +9,8 @@
 #include "continuouscolorscale.h"
 #include "scatterplot.h"
 #include "interactionhandler.h"
+#include "selectionhandler.h"
+#include "effectivenessobserver.h"
 #include "distortionobserver.h"
 #include "npdistortion.h"
 
@@ -40,6 +42,7 @@ int main(int argc, char **argv)
     arma::mat Ys(subsampleSize, 2, arma::fill::randn);
     Ys = mp::forceScheme(mp::dist(X.rows(sampleIndices)), Ys);
 
+    /*
     ColorScale colorScale{
         QColor("#1f77b4"),
         QColor("#ff7f0e"),
@@ -52,10 +55,14 @@ int main(int argc, char **argv)
         QColor("#7f7f7f"),
     };
     colorScale.setExtents(labels.min(), labels.max());
+    */
+
+    ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
+    colorScale.setExtents(-1, 1);
     Scatterplot *subsamplePlot = engine.rootObjects()[0]->findChild<Scatterplot *>("subsamplePlot");
     subsamplePlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
     subsamplePlot->setXY(Ys);
-    subsamplePlot->setColorData(labels(sampleIndices));
+    subsamplePlot->setColorData(arma::zeros<arma::vec>(subsampleSize));
     subsamplePlot->setColorScale(&colorScale);
     Scatterplot *plot = engine.rootObjects()[0]->findChild<Scatterplot *>("plot");
 
@@ -66,21 +73,32 @@ int main(int argc, char **argv)
     QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
             plot, SLOT(setXY(const arma::mat &)));
 
-    //DistortionObserver distortionObs(X, sampleIndices);
-    //std::unique_ptr<DistortionMeasure> distortionMeasure(new NPDistortion());
-    //distortionObs.setMeasure(distortionMeasure.get());
-    //QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
-    //        &distortionObs, SLOT(setMap(const arma::mat &)));
-    //QObject::connect(&distortionObs, SIGNAL(mapChanged(const arma::vec &)),
-    //        plot, SLOT(setColorData(const arma::vec &)));
+    SelectionHandler selectionHandler(sampleIndices);
+    QObject::connect(subsamplePlot, SIGNAL(selectionChanged(const arma::uvec &)),
+            &selectionHandler, SLOT(setSelection(const arma::uvec &)));
+    QObject::connect(&selectionHandler, SIGNAL(selectionChanged(const arma::uvec &)),
+            plot, SLOT(setSelection(const arma::uvec &)));
 
-    //ContinuousColorScale ccolorScale = ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS);
-    //ccolorScale.setExtents(-1, 1);
-    plot->setColorScale(&colorScale);
+    DistortionObserver distortionObs(X, sampleIndices);
+    std::unique_ptr<DistortionMeasure> distortionMeasure(new NPDistortion());
+    distortionObs.setMeasure(distortionMeasure.get());
+    QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
+            &distortionObs, SLOT(setMap(const arma::mat &)));
+    QObject::connect(&distortionObs, SIGNAL(mapChanged(const arma::vec &)),
+            plot, SLOT(setColorData(const arma::vec &)));
+
+    EffectiveInteractionEnforcer enforcer(sampleIndices);
+    QObject::connect(subsamplePlot, SIGNAL(selectionChanged(const arma::uvec &)),
+            &enforcer, SLOT(setSelection(const arma::uvec &)));
+    QObject::connect(plot, SIGNAL(colorDataChanged(const arma::vec &)),
+            &enforcer, SLOT(setMeasureDifference(const arma::vec &)));
+    QObject::connect(&enforcer, SIGNAL(effectivenessChanged(const arma::vec &)),
+            subsamplePlot, SLOT(setColorData(const arma::vec &)));
+
+    ContinuousColorScale ccolorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
+    ccolorScale.setExtents(-1, 1);
+    plot->setColorScale(&ccolorScale);
     interactionHandler.setSubsample(Ys);
-
-    // TODO: remove when proper measure coloring is done
-    plot->setColorData(labels);
 
     return app.exec();
 }

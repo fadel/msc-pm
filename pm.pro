@@ -6,6 +6,8 @@ HEADERS += colorscale.h \
     continuouscolorscale.h \
     scatterplot.h \
     interactionhandler.h \
+    selectionhandler.h \
+    effectivenessobserver.h \
     distortionobserver.h \
     distortionmeasure.h \
     npdistortion.h \
@@ -15,6 +17,8 @@ SOURCES += main.cpp \
     continuouscolorscale.cpp \
     scatterplot.cpp \
     interactionhandler.cpp \
+    selectionhandler.cpp \
+    effectivenessobserver.cpp \
     distortionobserver.cpp \
     npdistortion.cpp \
     lamp.cpp \

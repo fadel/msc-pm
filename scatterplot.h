@@ -18,10 +18,12 @@ public:
 signals:
     void xyChanged(const arma::mat &XY);
     void colorDataChanged(const arma::vec &colorData);
+    void selectionChanged(const arma::uvec &selection);
 
 public slots:
     void setXY(const arma::mat &xy);
     void setColorData(const arma::vec &colorData);
+    void setSelection(const arma::uvec &selection);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
@@ -31,7 +33,7 @@ protected:
 
 private:
     QSGNode *createGlyphNodeTree();
-    bool selectGlyphs(bool mergeSelection);
+    arma::uvec findSelection(bool mergeSelection);
 
     float fromDataXToScreenX(float x);
     float fromDataYToScreenY(float y);
