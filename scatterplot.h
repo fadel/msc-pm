@@ -57,11 +57,9 @@ private:
 
     QSet<int> m_selectedGlyphs;
 
-    std::unique_ptr<QSGGeometry> m_glyphGeometryPtr, m_glyphOutlineGeometryPtr;
     bool m_shouldUpdateGeometry, m_shouldUpdateMaterials;
 
     arma::vec m_colorData;
-
     ColorScale *m_colorScale;
 };
 
