@@ -13,17 +13,19 @@ class Scatterplot : public QQuickItem
 public:
     Scatterplot(QQuickItem *parent = 0);
 
+    arma::mat XY() const;
     void setColorScale(ColorScale *colorScale);
+    Q_INVOKABLE bool saveToFile(const QUrl &url);
 
 signals:
-    void xyChanged(const arma::mat &XY);
-    void colorDataChanged(const arma::vec &colorData);
-    void selectionChanged(const arma::uvec &selection);
+    void xyChanged(const arma::mat &XY) const;
+    void colorDataChanged(const arma::vec &colorData) const;
+    void selectionChanged(const QSet<int> &selection) const;
 
 public slots:
     void setXY(const arma::mat &xy);
     void setColorData(const arma::vec &colorData);
-    void setSelection(const arma::uvec &selection);
+    void setSelection(const QSet<int> &selection);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
@@ -33,10 +35,10 @@ protected:
 
 private:
     QSGNode *createGlyphNodeTree();
-    arma::uvec findSelection(bool mergeSelection);
+    bool updateSelection(bool mergeSelection);
 
-    float fromDataXToScreenX(float x);
-    float fromDataYToScreenY(float y);
+    float fromDataXToScreenX(float x) const;
+    float fromDataYToScreenY(float y) const;
 
     void applyManipulation();
 

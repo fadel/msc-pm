@@ -34,6 +34,20 @@ void Scatterplot::setColorScale(ColorScale *colorScale)
     }
 }
 
+arma::mat Scatterplot::XY() const
+{
+    return m_xy;
+}
+
+bool Scatterplot::saveToFile(const QUrl &url)
+{
+    if (!url.isLocalFile()) {
+        return false;
+    }
+
+    return m_xy.save(url.path().toStdString(), arma::raw_ascii);
+}
+
 void Scatterplot::setXY(const arma::mat &xy)
 {
     if (xy.n_cols != 2) {
@@ -79,7 +93,7 @@ void Scatterplot::updateMaterials()
     update();
 }
 
-int calculateCircleVertexCount(qreal radius)
+static int calculateCircleVertexCount(qreal radius)
 {
     // 10 * sqrt(r) \approx 2*pi / acos(1 - 1 / (4*r))
     return (int) (10.0 * sqrt(radius));
@@ -105,14 +119,14 @@ void updateCircleGeometry(QSGGeometry *geometry, float size, float cx, float cy)
     }
 }
 
-inline float Scatterplot::fromDataXToScreenX(float x)
+inline float Scatterplot::fromDataXToScreenX(float x) const
 {
     return PADDING + (x - m_xmin) / (m_xmax - m_xmin) * (width() - 2*PADDING);
 }
 
-inline float Scatterplot::fromDataYToScreenY(float y)
+inline float Scatterplot::fromDataYToScreenY(float y) const
 {
-    return PADDING + (y - m_ymin) / (m_ymax - m_ymin) * (height() - 2*PADDING);
+    return PADDING + (1 - (y - m_ymin) / (m_ymax - m_ymin)) * (height() - 2*PADDING);
 }
 
 QSGNode *Scatterplot::createGlyphNodeTree()
@@ -287,18 +301,13 @@ void Scatterplot::mouseMoveEvent(QMouseEvent *event)
 
 void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
 {
-    bool mergeSelection;
-    arma::uvec selection;
-
     switch (m_currentInteractionState) {
     case INTERACTION_SELECTING:
-        mergeSelection = (event->modifiers() == Qt::ControlModifier);
-        selection = findSelection(mergeSelection);
-        if (selection.n_elem > 0) {
-            setSelection(selection);
-            m_currentInteractionState = INTERACTION_SELECTED;
-        } else {
-            m_currentInteractionState = INTERACTION_NONE;
+        {
+            bool mergeSelection = (event->modifiers() == Qt::ControlModifier);
+            m_currentInteractionState =
+                updateSelection(mergeSelection) ? INTERACTION_SELECTED
+                                                : INTERACTION_NONE;
         }
         break;
 
@@ -313,44 +322,35 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
     }
 }
 
-arma::uvec Scatterplot::findSelection(bool mergeSelection)
+bool Scatterplot::updateSelection(bool mergeSelection)
 {
-    QSet<int> selectedGlyphs(m_selectedGlyphs);
-    if (!mergeSelection) {
-        selectedGlyphs.clear();
+    QSet<int> selection;
+    if (mergeSelection) {
+        selection.unite(m_selectedGlyphs);
     }
 
-    QPointF dragOrigin(m_dragOriginPos.x() / width() * (m_xmax - m_xmin) + m_xmin,
-                       m_dragOriginPos.y() / height() * (m_ymax - m_ymin) + m_ymin);
-    QPointF dragCurrent(m_dragCurrentPos.x() / width() * (m_xmax - m_xmin) + m_xmin,
-                        m_dragCurrentPos.y() / height() * (m_ymax - m_ymin) + m_ymin);
-    QRectF selectionRect(dragOrigin, dragCurrent);
+    qreal originX  = m_dragOriginPos.x() / width() * (m_xmax - m_xmin) + m_xmin;
+    qreal originY  = (1 - m_dragOriginPos.y() / height()) * (m_ymax - m_ymin) + m_ymin;
+    qreal currentX = m_dragCurrentPos.x() / width() * (m_xmax - m_xmin) + m_xmin;
+    qreal currentY = (1 - m_dragCurrentPos.y() / height()) * (m_ymax - m_ymin) + m_ymin;
+
+    QRectF selectionRect(QPointF(originX, originY), QPointF(currentX, currentY));
 
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         arma::rowvec row = m_xy.row(i);
 
         if (selectionRect.contains(row[0], row[1])) {
-            selectedGlyphs.insert(i);
+            selection.insert(i);
         }
     }
 
-    arma::uvec selection(selectedGlyphs.size());
-    int i = 0;
-    for (auto it = selectedGlyphs.cbegin(); it != selectedGlyphs.cend(); it++, i++) {
-        selection[i] = *it;
-    }
-
-    return selection;
+    setSelection(selection);
+    return !selection.isEmpty();
 }
 
-void Scatterplot::setSelection(const arma::uvec &selection)
+void Scatterplot::setSelection(const QSet<int> &selection)
 {
-    m_selectedGlyphs.clear();
-
-    for (auto it = selection.cbegin(); it != selection.cend(); it++) {
-        m_selectedGlyphs.insert(*it);
-    }
-
+    m_selectedGlyphs = selection;
     update();
 
     emit selectionChanged(selection);

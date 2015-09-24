@@ -2,6 +2,7 @@
 #define SELECTIONHANDLER_H
 
 #include <QObject>
+#include <QSet>
 #include <armadillo>
 
 class SelectionHandler : public QObject
@@ -11,10 +12,10 @@ public:
     SelectionHandler(const arma::uvec &sampleIndices);
 
 signals:
-    void selectionChanged(const arma::uvec &selection);
+    void selectionChanged(const QSet<int> &selection);
 
 public slots:
-    void setSelection(const arma::uvec &selection);
+    void setSelection(const QSet<int> &selection);
 
 private:
     arma::uvec m_sampleIndices;

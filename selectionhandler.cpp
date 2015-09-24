@@ -5,14 +5,14 @@ SelectionHandler::SelectionHandler(const arma::uvec &sampleIndices)
 {
 }
 
-void SelectionHandler::setSelection(const arma::uvec &selection)
+void SelectionHandler::setSelection(const QSet<int> &selection)
 {
-    arma::uvec newSelection(selection);
+    QSet<int> newSelection;
 
     // The selecion happens over the sample indices. We use the original dataset
     // indices in sampleIndices to translate indices.
-    for (auto it = newSelection.begin(); it != newSelection.end(); it++) {
-        *it = m_sampleIndices[*it];
+    for (auto it = selection.begin(); it != selection.end(); it++) {
+        newSelection.insert(m_sampleIndices[*it]);
     }
 
     emit selectionChanged(newSelection);

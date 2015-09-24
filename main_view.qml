@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.3
 import QtQuick.Dialogs 1.2
+import QtQuick.Extras 1.4
 import PM 1.0
 
 ApplicationWindow {
@@ -14,7 +15,6 @@ ApplicationWindow {
             title: "File"
             MenuItem { action: openAction }
             MenuItem { action: savePlotAction }
-            MenuItem { action: saveDataAction }
             MenuItem { action: quitAction }
         }
 
@@ -78,10 +78,24 @@ ApplicationWindow {
     }
 
     FileDialog {
-        id: fileDialog
-        title: "Choose a file..."
+        id: fileOpenDialog
+        title: "Choose a data set to load..."
+        selectMultiple: false
+        selectExisting: true
+
         onAccepted: {
-            // datasetLoader.load(fileDialog.fileUrls)
+            console.log("Loading data set: " + this.fileUrl)
+        }
+    }
+
+    FileDialog {
+        id: fileSaveDialog
+        title: "Save subsample mapping..."
+        selectMultiple: false
+        selectExisting: false
+
+        onAccepted: {
+            subsamplePlot.saveToFile(this.fileUrl)
         }
     }
 
@@ -96,21 +110,17 @@ ApplicationWindow {
         id: openAction
         text: "&Open..."
         shortcut: "Ctrl+O"
-        onTriggered: fileDialog.open()
+        onTriggered: fileOpenDialog.open()
     }
 
     Action {
         id: savePlotAction
-        text: "Save &plot"
+        text: "&Save subsample"
         shortcut: "Ctrl+S"
-        onTriggered: console.log("Save plot")
-    }
-
-    Action {
-        id: saveDataAction
-        text: "Save &data"
-        shortcut: "Ctrl+D"
-        onTriggered: console.log("Save data")
+        onTriggered: {
+            console.log("Saving subsample mapping...")
+            fileSaveDialog.open()
+        }
     }
 
     ExclusiveGroup {
