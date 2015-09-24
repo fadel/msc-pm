@@ -55,13 +55,11 @@ ApplicationWindow {
                 Layout.fillHeight: true
                 border.width: 1
                 border.color: "#cccccc"
-                z: 0
 
                 Scatterplot {
                     id: subsamplePlot
                     objectName: "subsamplePlot"
                     anchors.fill: parent
-                    z: 1
                 }
             }
 
@@ -70,13 +68,11 @@ ApplicationWindow {
                 Layout.fillHeight: true
                 border.width: 1
                 border.color: "#cccccc"
-                z: 0
 
                 Scatterplot {
                     id: plot
                     objectName: "plot"
                     anchors.fill: parent
-                    z: 1
                 }
             }
         }
