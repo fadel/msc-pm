@@ -8,7 +8,7 @@ import PM 1.0
 ApplicationWindow {
     title: "Projection Manipulation"
     visible: true
-    width: 1200
+    width: 900
     height: 600
 
     menuBar: MenuBar {
@@ -81,7 +81,11 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.minimumHeight: 150
 
-            // ...
+            HistoryGraph {
+                id: history
+                objectName: "history"
+                anchors.fill: parent
+            }
         }
     }
 

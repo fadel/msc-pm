@@ -5,6 +5,7 @@ QMAKE_LIBS += -larmadillo -fopenmp
 HEADERS += colorscale.h \
     continuouscolorscale.h \
     scatterplot.h \
+    historygraph.h \
     interactionhandler.h \
     selectionhandler.h \
     effectivenessobserver.h \
@@ -16,6 +17,7 @@ SOURCES += main.cpp \
     colorscale.cpp \
     continuouscolorscale.cpp \
     scatterplot.cpp \
+    historygraph.cpp \
     interactionhandler.cpp \
     selectionhandler.cpp \
     effectivenessobserver.cpp \
