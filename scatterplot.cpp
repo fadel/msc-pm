@@ -361,8 +361,8 @@ void Scatterplot::applyManipulation()
     float tx = m_dragCurrentPos.x() - m_dragOriginPos.x();
     float ty = m_dragCurrentPos.y() - m_dragOriginPos.y();
 
-    tx /= (width()  - PADDING);
-    ty /= (height() - PADDING);
+    tx /=  (width()  - PADDING);
+    ty /= -(height() - PADDING);
 
     float x_extent = m_xmax - m_xmin;
     float y_extent = m_ymax - m_ymin;
