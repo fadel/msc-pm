@@ -8,6 +8,7 @@
 #include "mp.h"
 #include "continuouscolorscale.h"
 #include "scatterplot.h"
+#include "historygraph.h"
 #include "interactionhandler.h"
 #include "selectionhandler.h"
 #include "effectivenessobserver.h"
@@ -19,6 +20,7 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
 
     qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
+    qmlRegisterType<HistoryGraph>("PM", 1, 0, "HistoryGraph");
 
     // Set up multisampling
     QSurfaceFormat fmt;
@@ -42,7 +44,6 @@ int main(int argc, char **argv)
     arma::mat Ys(subsampleSize, 2, arma::fill::randn);
     Ys = mp::forceScheme(mp::dist(X.rows(sampleIndices)), Ys);
 
-    /*
     ColorScale colorScale{
         QColor("#1f77b4"),
         QColor("#ff7f0e"),
@@ -55,14 +56,13 @@ int main(int argc, char **argv)
         QColor("#7f7f7f"),
     };
     colorScale.setExtents(labels.min(), labels.max());
-    */
 
-    ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
-    colorScale.setExtents(-1, 1);
+    //ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
+    //colorScale.setExtents(-1, 1);
     Scatterplot *subsamplePlot = engine.rootObjects()[0]->findChild<Scatterplot *>("subsamplePlot");
+    HistoryGraph *history = engine.rootObjects()[0]->findChild<HistoryGraph *>("history");
     subsamplePlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
-    subsamplePlot->setXY(Ys);
-    subsamplePlot->setColorData(arma::zeros<arma::vec>(subsampleSize));
+    // subsamplePlot->setColorData(arma::zeros<arma::vec>(subsampleSize));
     subsamplePlot->setColorScale(&colorScale);
     Scatterplot *plot = engine.rootObjects()[0]->findChild<Scatterplot *>("plot");
 
@@ -72,13 +72,16 @@ int main(int argc, char **argv)
             &interactionHandler, SLOT(setSubsample(const arma::mat &)));
     QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
             plot, SLOT(setXY(const arma::mat &)));
+    QObject::connect(subsamplePlot, SIGNAL(xyChanged(const arma::mat &)),
+            history, SLOT(addHistoryItem(const arma::mat &)));
 
     SelectionHandler selectionHandler(sampleIndices);
-    QObject::connect(subsamplePlot, SIGNAL(selectionChanged(const arma::uvec &)),
-            &selectionHandler, SLOT(setSelection(const arma::uvec &)));
-    QObject::connect(&selectionHandler, SIGNAL(selectionChanged(const arma::uvec &)),
-            plot, SLOT(setSelection(const arma::uvec &)));
+    QObject::connect(subsamplePlot, SIGNAL(selectionChanged(const QSet<int> &)),
+            &selectionHandler, SLOT(setSelection(const QSet<int> &)));
+    QObject::connect(&selectionHandler, SIGNAL(selectionChanged(const QSet<int> &)),
+            plot, SLOT(setSelection(const QSet<int> &)));
 
+    /*
     DistortionObserver distortionObs(X, sampleIndices);
     std::unique_ptr<DistortionMeasure> distortionMeasure(new NPDistortion());
     distortionObs.setMeasure(distortionMeasure.get());
@@ -94,11 +97,19 @@ int main(int argc, char **argv)
             &enforcer, SLOT(setMeasureDifference(const arma::vec &)));
     QObject::connect(&enforcer, SIGNAL(effectivenessChanged(const arma::vec &)),
             subsamplePlot, SLOT(setColorData(const arma::vec &)));
+    */
 
+    /*
     ContinuousColorScale ccolorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
     ccolorScale.setExtents(-1, 1);
     plot->setColorScale(&ccolorScale);
-    interactionHandler.setSubsample(Ys);
+    */
+    plot->setColorScale(&colorScale);
+    plot->setColorData(labels);
+
+    //interactionHandler.setSubsample(Ys);
+    subsamplePlot->setXY(Ys);
+    subsamplePlot->setColorData(labels(sampleIndices));
 
     return app.exec();
 }

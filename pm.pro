@@ -4,6 +4,8 @@ QMAKE_CXXFLAGS += -std=c++11 -fopenmp
 QMAKE_LIBS += -larmadillo -fopenmp
 HEADERS += colorscale.h \
     continuouscolorscale.h \
+    geometry.h \
+    scale.h \
     scatterplot.h \
     historygraph.h \
     interactionhandler.h \
@@ -16,6 +18,7 @@ HEADERS += colorscale.h \
 SOURCES += main.cpp \
     colorscale.cpp \
     continuouscolorscale.cpp \
+    geometry.cpp \
     scatterplot.cpp \
     historygraph.cpp \
     interactionhandler.cpp \

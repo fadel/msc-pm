@@ -6,6 +6,7 @@
 #include <QtQuick>
 
 #include "colorscale.h"
+#include "scale.h"
 
 class Scatterplot : public QQuickItem
 {
@@ -37,21 +38,19 @@ private:
     QSGNode *createGlyphNodeTree();
     bool updateSelection(bool mergeSelection);
 
-    float fromDataXToScreenX(float x) const;
-    float fromDataYToScreenY(float y) const;
-
     void applyManipulation();
 
     void updateGeometry();
     void updateMaterials();
 
     arma::mat m_xy;
-    float m_xmin, m_xmax, m_ymin, m_ymax;
+    LinearScale m_sx, m_sy;
 
     enum InteractionState {
         INTERACTION_NONE,
         INTERACTION_SELECTING,
         INTERACTION_SELECTED,
+        INTERACTION_BEGIN_MOVING,
         INTERACTION_MOVING
     } m_currentInteractionState;
 

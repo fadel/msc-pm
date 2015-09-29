@@ -77,9 +77,11 @@ ApplicationWindow {
             }
         }
 
-        ScrollView {
+        Rectangle {
             Layout.fillWidth: true
             Layout.minimumHeight: 150
+            border.width: 1
+            border.color: "#cccccc"
 
             HistoryGraph {
                 id: history

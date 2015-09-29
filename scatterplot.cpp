@@ -1,5 +1,6 @@
 #include "scatterplot.h"
 
+#include "geometry.h"
 #include <cmath>
 
 static const qreal GLYPH_OPACITY = 0.4;
@@ -8,12 +9,13 @@ static const qreal GLYPH_OPACITY_SELECTED = 1.0;
 static const QColor OUTLINE_COLOR(0, 0, 0);
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
-static const int GLYPH_SIZE = 8;
-static const float PADDING = 10;
-static const float PI = 3.1415f;
+static const int GLYPH_SIZE = 8.f;
+static const float PADDING = 10.f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
+    , m_sx(0, 1, 0, 1)
+    , m_sy(0, 1, 0, 1)
     , m_currentInteractionState(INTERACTION_NONE)
     , m_shouldUpdateGeometry(false)
     , m_shouldUpdateMaterials(false)
@@ -59,10 +61,8 @@ void Scatterplot::setXY(const arma::mat &xy)
     }
 
     m_xy = xy;
-    m_xmin = xy.col(0).min();
-    m_xmax = xy.col(0).max();
-    m_ymin = xy.col(1).min();
-    m_ymax = xy.col(1).max();
+    m_sx.setDomain(m_xy.col(0).min(), m_xy.col(0).max());
+    m_sy.setDomain(m_xy.col(1).min(), m_xy.col(1).max());
 
     updateGeometry();
 
@@ -93,51 +93,19 @@ void Scatterplot::updateMaterials()
     update();
 }
 
-static int calculateCircleVertexCount(qreal radius)
-{
-    // 10 * sqrt(r) \approx 2*pi / acos(1 - 1 / (4*r))
-    return (int) (10.0 * sqrt(radius));
-}
-
-void updateCircleGeometry(QSGGeometry *geometry, float size, float cx, float cy)
-{
-    int vertexCount = geometry->vertexCount();
-
-    float theta = 2 * PI / float(vertexCount);
-    float c = cosf(theta);
-    float s = sinf(theta);
-    float x = size / 2;
-    float y = 0;
-
-    QSGGeometry::Point2D *vertexData = geometry->vertexDataAsPoint2D();
-    for (int i = 0; i < vertexCount; i++) {
-        vertexData[i].set(x + cx, y + cy);
-
-        float t = x;
-        x = c*x - s*y;
-        y = s*t + c*y;
-    }
-}
-
-inline float Scatterplot::fromDataXToScreenX(float x) const
-{
-    return PADDING + (x - m_xmin) / (m_xmax - m_xmin) * (width() - 2*PADDING);
-}
-
-inline float Scatterplot::fromDataYToScreenY(float y) const
-{
-    return PADDING + (1 - (y - m_ymin) / (m_ymax - m_ymin)) * (height() - 2*PADDING);
-}
-
 QSGNode *Scatterplot::createGlyphNodeTree()
 {
+    if (m_xy.n_rows < 1) {
+        return 0;
+    }
+
     QSGNode *node = new QSGNode;
     int vertexCount = calculateCircleVertexCount(GLYPH_SIZE / 2);
 
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         QSGGeometry *glyphOutlineGeometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
         glyphOutlineGeometry->setDrawingMode(GL_LINE_LOOP);
-        updateCircleGeometry(glyphOutlineGeometry, GLYPH_SIZE, 0, 0);
+        updateCircleGeometry(glyphOutlineGeometry, GLYPH_SIZE / 2, 0, 0);
         QSGGeometryNode *glyphOutlineNode = new QSGGeometryNode;
         glyphOutlineNode->setGeometry(glyphOutlineGeometry);
         glyphOutlineNode->setFlag(QSGNode::OwnsGeometry);
@@ -149,7 +117,7 @@ QSGNode *Scatterplot::createGlyphNodeTree()
 
         QSGGeometry *glyphGeometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
         glyphGeometry->setDrawingMode(GL_POLYGON);
-        updateCircleGeometry(glyphGeometry, GLYPH_SIZE - 1, 0, 0);
+        updateCircleGeometry(glyphGeometry, GLYPH_SIZE / 2 - 0.5, 0, 0);
         QSGGeometryNode *glyphNode = new QSGGeometryNode;
         glyphNode->setGeometry(glyphGeometry);
         glyphNode->setFlag(QSGNode::OwnsGeometry);
@@ -171,19 +139,22 @@ QSGNode *Scatterplot::createGlyphNodeTree()
 
 QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
-    if (m_xy.n_rows < 1) {
-        return 0;
-    }
-
-    qreal x, y, tx, ty, moveTranslationF;
-
     QSGNode *root = 0;
     if (!oldNode) {
         root = new QSGNode;
-        root->appendChildNode(createGlyphNodeTree());
+        QSGNode *glyphTreeRoot = createGlyphNodeTree();
+        if (glyphTreeRoot) {
+            root->appendChildNode(glyphTreeRoot);
+        }
     } else {
         root = oldNode;
     }
+
+    if (m_xy.n_rows < 1) {
+        return root;
+    }
+
+    qreal x, y, tx, ty, moveTranslationF;
 
     if (m_currentInteractionState == INTERACTION_MOVING) {
         tx = m_dragCurrentPos.x() - m_dragOriginPos.x();
@@ -191,6 +162,9 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     } else {
         tx = ty = 0;
     }
+
+    m_sx.setRange(PADDING, width() - 2*PADDING);
+    m_sy.setRange(height() - 2*PADDING, PADDING);
 
     QSGNode *node = root->firstChild()->firstChild();
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
@@ -204,15 +178,15 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         QSGGeometryNode *glyphNode = static_cast<QSGGeometryNode *>(node->firstChild()->nextSibling());
         if (m_shouldUpdateGeometry) {
             moveTranslationF = isSelected ? 1.0 : 0.0;
-            x = fromDataXToScreenX(row[0]) + tx * moveTranslationF;
-            y = fromDataYToScreenY(row[1]) + ty * moveTranslationF;
+            x = m_sx(row[0]) + tx * moveTranslationF;
+            y = m_sy(row[1]) + ty * moveTranslationF;
 
             QSGGeometry *geometry = glyphOutlineNode->geometry();
-            updateCircleGeometry(geometry, GLYPH_SIZE, x, y);
+            updateCircleGeometry(geometry, GLYPH_SIZE / 2, x, y);
             glyphOutlineNode->markDirty(QSGNode::DirtyGeometry);
 
             geometry = glyphNode->geometry();
-            updateCircleGeometry(geometry, GLYPH_SIZE - 1, x, y);
+            updateCircleGeometry(geometry, GLYPH_SIZE / 2 - 0.5, x, y);
             glyphNode->markDirty(QSGNode::DirtyGeometry);
         }
         if (m_shouldUpdateMaterials) {
@@ -263,7 +237,7 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
     case INTERACTION_NONE:
     case INTERACTION_SELECTED:
         if (event->modifiers() == Qt::AltModifier) {
-            m_currentInteractionState = INTERACTION_MOVING;
+            m_currentInteractionState = INTERACTION_BEGIN_MOVING;
         } else {
             m_currentInteractionState = INTERACTION_SELECTING;
         }
@@ -271,6 +245,7 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
         m_dragCurrentPos = m_dragOriginPos;
         break;
     case INTERACTION_SELECTING:
+    case INTERACTION_BEGIN_MOVING:
     case INTERACTION_MOVING:
         event->ignore();
         return;
@@ -287,11 +262,11 @@ void Scatterplot::mouseMoveEvent(QMouseEvent *event)
         m_dragCurrentPos = event->localPos();
         update();
         break;
+    case INTERACTION_BEGIN_MOVING:
+        m_currentInteractionState = INTERACTION_MOVING;
     case INTERACTION_MOVING:
         m_dragCurrentPos = event->localPos();
-        applyManipulation();
         updateGeometry();
-        m_dragOriginPos = m_dragCurrentPos;
         break;
     case INTERACTION_SELECTED:
         event->ignore();
@@ -310,11 +285,14 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
                                                 : INTERACTION_NONE;
         }
         break;
-
+    case INTERACTION_BEGIN_MOVING:
+        m_currentInteractionState = INTERACTION_SELECTED;
+        break;
     case INTERACTION_MOVING:
         m_currentInteractionState = INTERACTION_SELECTED;
+        applyManipulation();
         updateGeometry();
-        emit xyChanged(m_xy);
+        m_dragOriginPos = m_dragCurrentPos;
         break;
     case INTERACTION_NONE:
     case INTERACTION_SELECTED:
@@ -329,15 +307,21 @@ bool Scatterplot::updateSelection(bool mergeSelection)
         selection.unite(m_selectedGlyphs);
     }
 
-    qreal originX  = m_dragOriginPos.x() / width() * (m_xmax - m_xmin) + m_xmin;
-    qreal originY  = (1 - m_dragOriginPos.y() / height()) * (m_ymax - m_ymin) + m_ymin;
-    qreal currentX = m_dragCurrentPos.x() / width() * (m_xmax - m_xmin) + m_xmin;
-    qreal currentY = (1 - m_dragCurrentPos.y() / height()) * (m_ymax - m_ymin) + m_ymin;
+    m_sx.reverse();
+    m_sy.reverse();
+
+    float originX  = m_sx(m_dragOriginPos.x());
+    float originY  = m_sy(m_dragOriginPos.y());
+    float currentX = m_sx(m_dragCurrentPos.x());
+    float currentY = m_sy(m_dragCurrentPos.y());
+
+    m_sy.reverse();
+    m_sx.reverse();
 
     QRectF selectionRect(QPointF(originX, originY), QPointF(currentX, currentY));
 
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
-        arma::rowvec row = m_xy.row(i);
+        const arma::rowvec &row = m_xy.row(i);
 
         if (selectionRect.contains(row[0], row[1])) {
             selection.insert(i);
@@ -358,19 +342,22 @@ void Scatterplot::setSelection(const QSet<int> &selection)
 
 void Scatterplot::applyManipulation()
 {
+    m_sx.reverse();
+    m_sy.reverse();
+    LinearScale rx = m_sx;
+    LinearScale ry = m_sy;
+    m_sy.reverse();
+    m_sx.reverse();
+
     float tx = m_dragCurrentPos.x() - m_dragOriginPos.x();
     float ty = m_dragCurrentPos.y() - m_dragOriginPos.y();
 
-    tx /=  (width()  - PADDING);
-    ty /= -(height() - PADDING);
-
-    float x_extent = m_xmax - m_xmin;
-    float y_extent = m_ymax - m_ymin;
-
     for (auto it = m_selectedGlyphs.cbegin(); it != m_selectedGlyphs.cend(); it++) {
         arma::rowvec row = m_xy.row(*it);
-        row[0] = ((row[0] - m_xmin) / x_extent + tx) * x_extent + m_xmin;
-        row[1] = ((row[1] - m_ymin) / y_extent + ty) * y_extent + m_ymin;
+        row[0] = rx(m_sx(row[0]) + tx);
+        row[1] = ry(m_sy(row[1]) + ty);
         m_xy.row(*it) = row;
     }
+
+    emit xyChanged(m_xy);
 }
