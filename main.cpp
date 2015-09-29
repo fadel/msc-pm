@@ -70,6 +70,8 @@ int main(int argc, char **argv)
     InteractionHandler interactionHandler(X, sampleIndices);
     QObject::connect(subsamplePlot, SIGNAL(xyChanged(const arma::mat &)),
             &interactionHandler, SLOT(setSubsample(const arma::mat &)));
+    QObject::connect(subsamplePlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
+            &interactionHandler, SLOT(setSubsample(const arma::mat &)));
     QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
             plot, SLOT(setXY(const arma::mat &)));
     QObject::connect(subsamplePlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
