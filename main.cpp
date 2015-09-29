@@ -109,6 +109,7 @@ int main(int argc, char **argv)
     plot->setColorScale(&colorScale);
     plot->setColorData(labels);
 
+    history->addHistoryItem(Ys);
     subsamplePlot->setXY(Ys);
     subsamplePlot->setColorData(labels(sampleIndices));
 
