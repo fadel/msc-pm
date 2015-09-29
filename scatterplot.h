@@ -20,6 +20,7 @@ public:
 
 signals:
     void xyChanged(const arma::mat &XY) const;
+    void xyInteractivelyChanged(const arma::mat &XY) const;
     void colorDataChanged(const arma::vec &colorData) const;
     void selectionChanged(const QSet<int> &selection) const;
 

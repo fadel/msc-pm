@@ -10,8 +10,10 @@
 
 static const float ASPECT = 4.f / 3.f;
 static const float MARGIN = 0.1f;
-static const float GLYPH_SIZE = 4.0f;
 static const float PADDING = 0.05f;
+
+static const float GLYPH_SIZE = 4.0f;
+static const float GLYPH_OPACITY = 0.6f;
 
 class HistoryGraph::HistoryItemNode
 {
@@ -21,9 +23,14 @@ public:
 
     void append(HistoryItemNode *node);
     const QList<HistoryItemNode *> &children() const { return m_next; }
+
     const arma::mat &item() const;
     int depth() const   { return m_depth; }
     int breadth() const { return m_breadth; }
+    const QRectF &rect() const { return m_rect; }
+
+    void setRect(const QRectF &rect) { m_rect = rect; }
+
     void updateDepth();
     void updateBreadth();
 
@@ -34,6 +41,7 @@ private:
     HistoryItemNode *m_prev;
     QList<HistoryItemNode *> m_next;
     int m_depth, m_breadth;
+    QRectF m_rect;
 };
 
 HistoryGraph::HistoryItemNode::HistoryItemNode(const arma::mat &item)
@@ -122,6 +130,7 @@ HistoryGraph::HistoryGraph(QQuickItem *parent)
 {
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
+    setAcceptedMouseButtons(Qt::LeftButton);
 }
 
 HistoryGraph::~HistoryGraph()
@@ -169,7 +178,7 @@ void HistoryGraph::addScatterplot(QSGNode *node, const HistoryGraph::HistoryItem
 
         // Place the glyph geometry node under an opacity node
         QSGOpacityNode *glyphOpacityNode = new QSGOpacityNode;
-        //glyphOpacityNode->appendChildNode(glyphOutlineNode);
+        glyphOpacityNode->setOpacity(GLYPH_OPACITY);
         glyphOpacityNode->appendChildNode(glyphNode);
         node->appendChildNode(glyphOpacityNode);
     }
@@ -197,6 +206,7 @@ QSGNode *HistoryGraph::createNodeTree()
         QSGOpacityNode *opacityNode = new QSGOpacityNode;
         opacityNode->setOpacity(histNode == m_currentNode ? 1.0f : 0.4f);
 
+        histNode->setRect(QRectF(x, margin, w, h));
         QSGGeometryNode *histItemGeomNode = new QSGGeometryNode;
         QSGGeometry *histItemGeom = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 4);
         updateRectGeometry(histItemGeom, x, margin, w, h);
@@ -265,4 +275,51 @@ QSGNode *HistoryGraph::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     }
 
     return root;
+}
+
+HistoryGraph::HistoryItemNode *HistoryGraph::nodeAt(const QPointF &pos) const
+{
+    return nodeAt(pos, m_firstNode);
+}
+
+HistoryGraph::HistoryItemNode *HistoryGraph::nodeAt(const QPointF &pos, HistoryGraph::HistoryItemNode *node) const
+{
+    if (!node) {
+        return 0;
+    }
+
+    const QRectF &rect = node->rect();
+
+    if (pos.x() < rect.x()) {
+        return 0;
+    }
+
+    if (rect.contains(pos)) {
+        return node;
+    }
+
+    QList<HistoryGraph::HistoryItemNode *> children = node->children();
+    for (auto it = children.begin(); it != children.end(); it++) {
+        HistoryGraph::HistoryItemNode *tmp = nodeAt(pos, *it);
+        if (tmp) {
+            return tmp;
+        }
+    }
+
+    return 0;
+}
+
+void HistoryGraph::mousePressEvent(QMouseEvent *event)
+{
+    HistoryGraph::HistoryItemNode *node = nodeAt(event->localPos());
+    if (!node || node == m_currentNode) {
+        event->ignore();
+        return;
+    }
+
+    m_currentNode = node;
+    m_needsUpdate = true;
+    update();
+
+    emit currentItemChanged(m_currentNode->item());
 }

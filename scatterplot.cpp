@@ -359,5 +359,5 @@ void Scatterplot::applyManipulation()
         m_xy.row(*it) = row;
     }
 
-    emit xyChanged(m_xy);
+    emit xyInteractivelyChanged(m_xy);
 }

@@ -72,8 +72,10 @@ int main(int argc, char **argv)
             &interactionHandler, SLOT(setSubsample(const arma::mat &)));
     QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
             plot, SLOT(setXY(const arma::mat &)));
-    QObject::connect(subsamplePlot, SIGNAL(xyChanged(const arma::mat &)),
+    QObject::connect(subsamplePlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
             history, SLOT(addHistoryItem(const arma::mat &)));
+    QObject::connect(history, SIGNAL(currentItemChanged(const arma::mat &)),
+            subsamplePlot, SLOT(setXY(const arma::mat &)));
 
     SelectionHandler selectionHandler(sampleIndices);
     QObject::connect(subsamplePlot, SIGNAL(selectionChanged(const QSet<int> &)),
@@ -107,7 +109,6 @@ int main(int argc, char **argv)
     plot->setColorScale(&colorScale);
     plot->setColorData(labels);
 
-    //interactionHandler.setSubsample(Ys);
     subsamplePlot->setXY(Ys);
     subsamplePlot->setColorData(labels(sampleIndices));
 
