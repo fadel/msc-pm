@@ -77,6 +77,7 @@ arma::vec mp::silhouette(const arma::mat &distA,
     return arma::vec(distA.n_rows, arma::fill::zeros);
 }
 
+/*
 double mp::stress(const arma::mat &Dp, const arma::mat &Dq)
 {
     assert(Dp.n_rows == Dp.n_cols);
@@ -130,9 +131,7 @@ arma::mat mp::d2p(const arma::mat &D, const arma::vec &sigmas)
 
 void mp::d2p(const arma::mat &D, const arma::vec &sigmas, arma::mat &P)
 {
-    /*
-     * WARNING: assumes D and sigmas are already squared
-     */
+    // WARNING: assumes D and sigmas are already squared
     assert(D.n_rows == D.n_cols);
     assert(P.n_rows == P.n_cols);
     assert(D.n_rows == P.n_rows);
@@ -147,3 +146,4 @@ void mp::d2p(const arma::mat &D, const arma::vec &sigmas, arma::mat &P)
             P(i, j) = exp(-D(i, j) / sigmas(i)) / den;
     }
 }
+*/
