@@ -4,6 +4,8 @@
 #include <memory>
 #include <armadillo>
 #include <QtQuick>
+#include <QSet>
+#include <QEasingCurve>
 
 #include "colorscale.h"
 #include "scale.h"
@@ -67,6 +69,8 @@ private:
 
     arma::vec m_colorData;
     ColorScale *m_colorScale;
+
+    QEasingCurve m_animationEasing;
     float m_t;
 };
 

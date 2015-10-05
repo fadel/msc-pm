@@ -19,6 +19,7 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     , m_currentInteractionState(INTERACTION_NONE)
     , m_shouldUpdateGeometry(false)
     , m_shouldUpdateMaterials(false)
+    , m_animationEasing(QEasingCurve::InOutQuart)
 {
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
@@ -64,8 +65,13 @@ void Scatterplot::setXY(const arma::mat &xy)
     }
 
     m_xy = xy;
-    m_sx.setDomain(m_oldXY.col(0).min(), m_oldXY.col(0).max());
-    m_sy.setDomain(m_oldXY.col(1).min(), m_oldXY.col(1).max());
+
+    float min = std::min(m_xy.col(0).min(), m_oldXY.col(0).max());
+    float max = std::max(m_xy.col(0).max(), m_oldXY.col(0).max());
+    m_sx.setDomain(min, max);
+    min = std::min(m_xy.col(1).min(), m_oldXY.col(1).max());
+    max = std::max(m_xy.col(1).max(), m_oldXY.col(1).max());
+    m_sy.setDomain(min, max);
 
     updateGeometry();
 
@@ -172,6 +178,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     m_sy.setRange(height() - 2*PADDING, PADDING);
 
     QSGNode *node = root->firstChild()->firstChild();
+    float t = m_animationEasing.valueForProgress(m_t);
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         const arma::rowvec &oldRow = m_oldXY.row(i);
         const arma::rowvec &row = m_xy.row(i);
@@ -184,8 +191,8 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         QSGGeometryNode *glyphNode = static_cast<QSGGeometryNode *>(node->firstChild()->nextSibling());
         if (m_shouldUpdateGeometry) {
             moveTranslationF = isSelected ? 1.0 : 0.0;
-            x = m_sx(m_t*row[0] + (1 - m_t)*oldRow[0]) + tx * moveTranslationF;
-            y = m_sy(m_t*row[1] + (1 - m_t)*oldRow[1]) + ty * moveTranslationF;
+            x = m_sx(t*row[0] + (1 - t)*oldRow[0]) + tx * moveTranslationF;
+            y = m_sy(t*row[1] + (1 - t)*oldRow[1]) + ty * moveTranslationF;
 
             QSGGeometry *geometry = glyphOutlineNode->geometry();
             updateCircleGeometry(geometry, GLYPH_SIZE / 2, x, y);
