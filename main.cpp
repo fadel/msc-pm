@@ -39,10 +39,10 @@ int main(int argc, char **argv)
     arma::vec labels = dataset.col(dataset.n_cols - 1);
 
     arma::uword n = dataset.n_rows;
-    arma::uword subsampleSize = (arma::uword) sqrt(n) * 3;
+    arma::uword subsampleSize = (arma::uword) n / 10.f;
     arma::uvec sampleIndices = arma::randi<arma::uvec>(subsampleSize, arma::distr_param(0, n-1));
     arma::mat Ys(subsampleSize, 2, arma::fill::randn);
-    Ys = mp::forceScheme(mp::dist(X.rows(sampleIndices)), Ys);
+    mp::forceScheme(mp::dist(X.rows(sampleIndices)), Ys);
 
     ColorScale colorScale{
         QColor("#1f77b4"),
@@ -60,7 +60,6 @@ int main(int argc, char **argv)
     //ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
     //colorScale.setExtents(-1, 1);
     Scatterplot *subsamplePlot = engine.rootObjects()[0]->findChild<Scatterplot *>("subsamplePlot");
-    HistoryGraph *history = engine.rootObjects()[0]->findChild<HistoryGraph *>("history");
     subsamplePlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
     // subsamplePlot->setColorData(arma::zeros<arma::vec>(subsampleSize));
     subsamplePlot->setColorScale(&colorScale);
@@ -74,18 +73,21 @@ int main(int argc, char **argv)
             &interactionHandler, SLOT(setSubsample(const arma::mat &)));
     QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
             plot, SLOT(setXY(const arma::mat &)));
-    QObject::connect(subsamplePlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
-            history, SLOT(addHistoryItem(const arma::mat &)));
-    QObject::connect(history, SIGNAL(currentItemChanged(const arma::mat &)),
-            subsamplePlot, SLOT(setXY(const arma::mat &)));
 
+    // linking between selections in subsample plot and full dataset plot
     SelectionHandler selectionHandler(sampleIndices);
     QObject::connect(subsamplePlot, SIGNAL(selectionChanged(const QSet<int> &)),
             &selectionHandler, SLOT(setSelection(const QSet<int> &)));
     QObject::connect(&selectionHandler, SIGNAL(selectionChanged(const QSet<int> &)),
             plot, SLOT(setSelection(const QSet<int> &)));
 
-    /*
+    HistoryGraph *history = engine.rootObjects()[0]->findChild<HistoryGraph *>("history");
+    // connections between history graph and subsample plot
+    QObject::connect(subsamplePlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
+            history, SLOT(addHistoryItem(const arma::mat &)));
+    QObject::connect(history, SIGNAL(currentItemChanged(const arma::mat &)),
+            subsamplePlot, SLOT(setXY(const arma::mat &)));
+
     DistortionObserver distortionObs(X, sampleIndices);
     std::unique_ptr<DistortionMeasure> distortionMeasure(new NPDistortion());
     distortionObs.setMeasure(distortionMeasure.get());
@@ -95,13 +97,12 @@ int main(int argc, char **argv)
             plot, SLOT(setColorData(const arma::vec &)));
 
     EffectiveInteractionEnforcer enforcer(sampleIndices);
-    QObject::connect(subsamplePlot, SIGNAL(selectionChanged(const arma::uvec &)),
-            &enforcer, SLOT(setSelection(const arma::uvec &)));
+    QObject::connect(subsamplePlot, SIGNAL(selectionChanged(const QSet<int> &)),
+            &enforcer, SLOT(setSelection(const QSet<int> &)));
     QObject::connect(plot, SIGNAL(colorDataChanged(const arma::vec &)),
             &enforcer, SLOT(setMeasureDifference(const arma::vec &)));
     QObject::connect(&enforcer, SIGNAL(effectivenessChanged(const arma::vec &)),
             subsamplePlot, SLOT(setColorData(const arma::vec &)));
-    */
 
     /*
     ContinuousColorScale ccolorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
@@ -109,11 +110,11 @@ int main(int argc, char **argv)
     plot->setColorScale(&ccolorScale);
     */
     plot->setColorScale(&colorScale);
-    plot->setColorData(labels);
 
     history->addHistoryItem(Ys);
     subsamplePlot->setXY(Ys);
     subsamplePlot->setColorData(labels(sampleIndices));
+    plot->setColorData(labels);
 
     return app.exec();
 }

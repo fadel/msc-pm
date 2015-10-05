@@ -6,7 +6,7 @@ EffectiveInteractionEnforcer::EffectiveInteractionEnforcer(const arma::uvec &sam
 {
 }
 
-void EffectiveInteractionEnforcer::setSelection(const arma::uvec &selection)
+void EffectiveInteractionEnforcer::setSelection(const QSet<int> &selection)
 {
     m_selection = selection;
 }
@@ -15,13 +15,15 @@ void EffectiveInteractionEnforcer::setMeasureDifference(const arma::vec &measure
 {
     m_measure = measure;
 
-    if (m_selection.n_elem == 0) {
+    if (m_selection.isEmpty()) {
         return;
     }
 
-    arma::uvec selectionIndices(m_selection);
-    for (auto it = selectionIndices.begin(); it != selectionIndices.end(); it++) {
-        *it = m_sampleIndices[*it];
+    arma::uvec selectionIndices(m_selection.size());
+    int i = 0;
+    for (auto it = m_selection.cbegin(); it != m_selection.cend(); it++) {
+        selectionIndices[i] = m_sampleIndices[*it];
+        i++;
     }
 
     double diff = arma::mean(m_measure(selectionIndices));

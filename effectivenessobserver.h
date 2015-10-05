@@ -2,6 +2,7 @@
 #define EFFECTIVEINTERACTIONENFORCER_H
 
 #include <QObject>
+#include <QSet>
 #include <armadillo>
 
 class EffectiveInteractionEnforcer : public QObject
@@ -14,13 +15,14 @@ signals:
     void effectivenessChanged(const arma::vec &effectiveness);
 
 public slots:
-    void setSelection(const arma::uvec &selection);
+    void setSelection(const QSet<int> &selection);
     void setMeasureDifference(const arma::vec &measure);
 
 private:
+    arma::uvec m_sampleIndices;
     arma::mat m_effectiveness;
-    arma::uvec m_sampleIndices, m_selection;
     arma::vec m_measure;
+    QSet<int> m_selection;
 };
 
 #endif // EFFECTIVEINTERACTIONENFORCER_H
