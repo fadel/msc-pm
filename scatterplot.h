@@ -44,7 +44,11 @@ private:
     void updateGeometry();
     void updateMaterials();
 
-    arma::mat m_xy;
+    void resetAnimation();
+    void startAnimation();
+    void animationTick();
+
+    arma::mat m_oldXY, m_xy;
     LinearScale m_sx, m_sy;
 
     enum InteractionState {
@@ -63,6 +67,7 @@ private:
 
     arma::vec m_colorData;
     ColorScale *m_colorScale;
+    float m_t;
 };
 
 #endif // SCATTERPLOT_H

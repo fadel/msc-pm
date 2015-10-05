@@ -57,16 +57,21 @@ void Scatterplot::setXY(const arma::mat &xy)
     }
 
     if (m_xy.n_elem != xy.n_elem) {
+        m_oldXY = xy;
         m_selectedGlyphs.clear();
+    } else {
+        m_oldXY = m_xy;
     }
 
     m_xy = xy;
-    m_sx.setDomain(m_xy.col(0).min(), m_xy.col(0).max());
-    m_sy.setDomain(m_xy.col(1).min(), m_xy.col(1).max());
+    m_sx.setDomain(m_oldXY.col(0).min(), m_oldXY.col(0).max());
+    m_sy.setDomain(m_oldXY.col(1).min(), m_oldXY.col(1).max());
 
     updateGeometry();
 
     emit xyChanged(m_xy);
+
+    startAnimation();
 }
 
 void Scatterplot::setColorData(const arma::vec &colorData)
@@ -168,7 +173,8 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
     QSGNode *node = root->firstChild()->firstChild();
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
-        arma::rowvec row = m_xy.row(i);
+        const arma::rowvec &oldRow = m_oldXY.row(i);
+        const arma::rowvec &row = m_xy.row(i);
         bool isSelected = m_selectedGlyphs.contains(i);
 
         QSGOpacityNode *glyphOpacityNode = static_cast<QSGOpacityNode *>(node);
@@ -178,8 +184,8 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         QSGGeometryNode *glyphNode = static_cast<QSGGeometryNode *>(node->firstChild()->nextSibling());
         if (m_shouldUpdateGeometry) {
             moveTranslationF = isSelected ? 1.0 : 0.0;
-            x = m_sx(row[0]) + tx * moveTranslationF;
-            y = m_sy(row[1]) + ty * moveTranslationF;
+            x = m_sx(m_t*row[0] + (1 - m_t)*oldRow[0]) + tx * moveTranslationF;
+            y = m_sy(m_t*row[1] + (1 - m_t)*oldRow[1]) + ty * moveTranslationF;
 
             QSGGeometry *geometry = glyphOutlineNode->geometry();
             updateCircleGeometry(geometry, GLYPH_SIZE / 2, x, y);
@@ -222,13 +228,32 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     } else {
         node = root->firstChild()->nextSibling();
         if (node) {
-            // node->markDirty(QSGNode::DirtyGeometry);
             root->removeChildNode(node);
             delete node;
         }
     }
 
+    animationTick();
     return root;
+}
+
+void Scatterplot::resetAnimation()
+{
+    m_t = 0;
+}
+
+void Scatterplot::startAnimation()
+{
+    resetAnimation();
+    update();
+}
+
+void Scatterplot::animationTick()
+{
+    if (m_t < 1.f) {
+        m_t += 0.1f;
+        updateGeometry();
+    }
 }
 
 void Scatterplot::mousePressEvent(QMouseEvent *event)
