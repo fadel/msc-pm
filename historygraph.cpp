@@ -21,34 +21,30 @@ public:
     HistoryItemNode(const arma::mat &item);
     ~HistoryItemNode();
 
-    void append(HistoryItemNode *node);
-    const QList<HistoryItemNode *> &children() const { return m_next; }
+    void setNext(HistoryItemNode *node);
+    HistoryItemNode *next() const { return m_next; }
 
     const arma::mat &item() const;
-    int depth() const   { return m_depth; }
-    int breadth() const { return m_breadth; }
-    const QRectF &rect() const { return m_rect; }
 
+    const QRectF &rect() const { return m_rect; }
     void setRect(const QRectF &rect) { m_rect = rect; }
 
-    void updateDepth();
-    void updateBreadth();
-
-    static int treeBreadth(HistoryItemNode *node, int level);
+    int length() const { return m_length; }
 
 private:
+    void updateLength();
+
     arma::mat m_item;
-    HistoryItemNode *m_prev;
-    QList<HistoryItemNode *> m_next;
-    int m_depth, m_breadth;
+    HistoryItemNode *m_prev, *m_next;
+    int m_length;
     QRectF m_rect;
 };
 
 HistoryGraph::HistoryItemNode::HistoryItemNode(const arma::mat &item)
     : m_item(item)
     , m_prev(0)
-    , m_depth(1)
-    , m_breadth(1)
+    , m_next(0)
+    , m_length(1)
 {
 }
 
@@ -56,64 +52,32 @@ HistoryGraph::HistoryItemNode::~HistoryItemNode()
 {
     m_prev = 0;
 
-    while (!m_next.isEmpty()) {
-        delete m_next.takeLast();
+    if (m_next) {
+        delete m_next;
+        m_next = 0;
     }
 }
 
-void HistoryGraph::HistoryItemNode::updateDepth()
+void HistoryGraph::HistoryItemNode::updateLength()
 {
-    HistoryGraph::HistoryItemNode *node = *std::max_element(
-        m_next.cbegin(), m_next.cend(),
-        [](const HistoryGraph::HistoryItemNode *n1, const HistoryGraph::HistoryItemNode *n2) {
-            return n1->depth() < n2->depth();
-        });
-
-    m_depth = 1 + node->depth();
+    m_length = 1 + (m_next ? m_next->length() : 0);
 
     if (m_prev) {
-        m_prev->updateDepth();
+        m_prev->updateLength();
     }
 }
 
-int HistoryGraph::HistoryItemNode::treeBreadth(HistoryGraph::HistoryItemNode *node, int level) {
-    if (!node || level < 1) {
-        return 0;
-    }
-
-    if (level == 1) {
-        return 1;
-    }
-
-    return std::accumulate(node->m_next.cbegin(), node->m_next.cend(), 0, [](int b, HistoryGraph::HistoryItemNode *n) {
-        n->m_breadth = treeBreadth(n, n->depth());
-        return b + n->m_breadth;
-    });
-}
-
-void HistoryGraph::HistoryItemNode::updateBreadth()
-{
-    HistoryItemNode *node = this;
-    while (node->m_prev) {
-        node = node->m_prev;
-    }
-
-    node->m_breadth = treeBreadth(node, node->m_depth);
-}
-
-void HistoryGraph::HistoryItemNode::append(HistoryItemNode *node)
+void HistoryGraph::HistoryItemNode::setNext(HistoryItemNode *node)
 {
     if (!node) {
         return;
     }
 
-    m_next.append(node);
-    if (node->depth() + 1 > m_depth) {
-        updateDepth();
+    if (m_next) {
+        delete m_next;
     }
 
-    updateBreadth();
-
+    m_next = node;
     node->m_prev = this;
 }
 
@@ -145,7 +109,7 @@ void HistoryGraph::addHistoryItem(const arma::mat &item)
 {
     HistoryItemNode *newNode = new HistoryItemNode(item);
     if (m_currentNode) {
-        m_currentNode->append(newNode);
+        m_currentNode->setNext(newNode);
     } else {
         m_firstNode = newNode;
     }
@@ -196,7 +160,6 @@ QSGNode *HistoryGraph::createNodeTree()
     //int depth   = m_firstNode->depth();
 
     QSGTransformNode *sceneGraphRoot = new QSGTransformNode;
-    HistoryItemNode *histNode = m_firstNode;
     float margin = height()*MARGIN;
     float padding = height()*PADDING;
     float h = height() - 2.f*margin;
@@ -204,7 +167,7 @@ QSGNode *HistoryGraph::createNodeTree()
     float x = margin;
 
     QMatrix4x4 mat;
-    do {
+    for (HistoryItemNode *histNode = m_firstNode; histNode; histNode = histNode->next()) {
         QSGOpacityNode *opacityNode = new QSGOpacityNode;
         opacityNode->setOpacity(histNode == m_currentNode ? 1.0f : 0.4f);
 
@@ -226,21 +189,19 @@ QSGNode *HistoryGraph::createNodeTree()
         sceneGraphRoot->appendChildNode(opacityNode);
 
         x += w + 2.f*margin;
-
-        QList<HistoryItemNode *> children = histNode->children();
-        if (children.isEmpty()) {
-            break;
-        }
-
-        // FIXME: add children
-        histNode = children[0];
-    } while (true);
+    }
 
     m_currentWidth = x - 2.0f*margin;
 
     if (m_currentWidth > width()) {
+        const QRectF &rect = m_viewportTransform.mapRect(m_currentNode->rect());
+        if (rect.x() < 0) {
+            m_viewportTransform.translate(rect.x(), 0);
+        } else if (rect.x() + rect.width() > width()) {
+            m_viewportTransform.translate(width() - (rect.x() + rect.width()), 0);
+        }
+    } else {
         m_viewportTransform.setToIdentity();
-        m_viewportTransform.translate(-(m_currentWidth - width() + margin), 0);
     }
 
     return sceneGraphRoot;
@@ -297,22 +258,17 @@ HistoryGraph::HistoryItemNode *HistoryGraph::nodeAt(const QPointF &pos, HistoryG
         return 0;
     }
 
-    const QRectF &rect = node->rect();
-
+    const QRectF &rect = m_viewportTransform.mapRect(node->rect());
     if (pos.x() < rect.x()) {
         return 0;
     }
-
     if (rect.contains(pos)) {
         return node;
     }
 
-    QList<HistoryGraph::HistoryItemNode *> children = node->children();
-    for (auto it = children.begin(); it != children.end(); it++) {
-        HistoryGraph::HistoryItemNode *tmp = nodeAt(pos, *it);
-        if (tmp) {
-            return tmp;
-        }
+    HistoryGraph::HistoryItemNode *tmp = nodeAt(pos, node->next());
+    if (tmp) {
+        return tmp;
     }
 
     return 0;
