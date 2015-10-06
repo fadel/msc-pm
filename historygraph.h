@@ -2,6 +2,7 @@
 #define HISTORYGRAPH_H
 
 #include <QtQuick>
+#include <QMatrix4x4>
 #include <armadillo>
 
 class HistoryGraph : public QQuickItem
@@ -19,6 +20,7 @@ public slots:
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
+    void hoverMoveEvent(QHoverEvent *event);
     void mousePressEvent(QMouseEvent *event);
 
 private:
@@ -32,6 +34,8 @@ private:
     void addScatterplot(QSGNode *node, const HistoryItemNode *historyItemNode, float x, float y, float w, float h);
 
     HistoryItemNode *m_firstNode, *m_currentNode;
+    QMatrix4x4 m_viewportTransform;
+    float m_currentWidth;
     bool m_needsUpdate;
 };
 

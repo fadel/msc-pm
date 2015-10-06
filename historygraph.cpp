@@ -126,11 +126,13 @@ HistoryGraph::HistoryGraph(QQuickItem *parent)
     : QQuickItem(parent)
     , m_firstNode(0)
     , m_currentNode(0)
+    , m_currentWidth(0.0f)
     , m_needsUpdate(false)
 {
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
     setAcceptedMouseButtons(Qt::LeftButton);
+    setAcceptHoverEvents(true);
 }
 
 HistoryGraph::~HistoryGraph()
@@ -193,7 +195,7 @@ QSGNode *HistoryGraph::createNodeTree()
     //int breadth = m_firstNode->breadth();
     //int depth   = m_firstNode->depth();
 
-    QSGNode *sceneGraphRoot = new QSGNode;
+    QSGTransformNode *sceneGraphRoot = new QSGTransformNode;
     HistoryItemNode *histNode = m_firstNode;
     float margin = height()*MARGIN;
     float padding = height()*PADDING;
@@ -234,7 +236,12 @@ QSGNode *HistoryGraph::createNodeTree()
         histNode = children[0];
     } while (true);
 
-    // setWidth(xPos + radius + margin);
+    m_currentWidth = x - 2.0f*margin;
+
+    if (m_currentWidth > width()) {
+        m_viewportTransform.setToIdentity();
+        m_viewportTransform.translate(-(m_currentWidth - width() + margin), 0);
+    }
 
     return sceneGraphRoot;
 }
@@ -274,6 +281,8 @@ QSGNode *HistoryGraph::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         updateNodeTree(root);
     }
 
+    static_cast<QSGTransformNode *>(root->firstChild())->setMatrix(m_viewportTransform);
+
     return root;
 }
 
@@ -307,6 +316,23 @@ HistoryGraph::HistoryItemNode *HistoryGraph::nodeAt(const QPointF &pos, HistoryG
     }
 
     return 0;
+}
+
+void HistoryGraph::hoverMoveEvent(QHoverEvent *event)
+{
+    if (m_currentWidth < width()) {
+        return;
+    }
+
+    const QPointF &pos = event->posF();
+    float margin = MARGIN * height();
+    float prop = (pos.x() - margin) / (width() - 2*margin);
+    float displ = m_currentWidth - width() + margin;
+
+    m_viewportTransform.setToIdentity();
+    m_viewportTransform.translate(-displ * prop, 0);
+
+    update();
 }
 
 void HistoryGraph::mousePressEvent(QMouseEvent *event)
