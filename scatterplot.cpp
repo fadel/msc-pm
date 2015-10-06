@@ -66,10 +66,10 @@ void Scatterplot::setXY(const arma::mat &xy)
 
     m_xy = xy;
 
-    float min = std::min(m_xy.col(0).min(), m_oldXY.col(0).max());
+    float min = std::min(m_xy.col(0).min(), m_oldXY.col(0).min());
     float max = std::max(m_xy.col(0).max(), m_oldXY.col(0).max());
     m_sx.setDomain(min, max);
-    min = std::min(m_xy.col(1).min(), m_oldXY.col(1).max());
+    min = std::min(m_xy.col(1).min(), m_oldXY.col(1).min());
     max = std::max(m_xy.col(1).max(), m_oldXY.col(1).max());
     m_sy.setDomain(min, max);
 
@@ -251,13 +251,18 @@ void Scatterplot::resetAnimation()
 
 void Scatterplot::startAnimation()
 {
+    if (m_t < 1.0f) {
+        m_t = 1.0f;
+        return;
+    }
+
     resetAnimation();
     update();
 }
 
 void Scatterplot::animationTick()
 {
-    if (m_t < 1.f) {
+    if (m_t < 1.0f) {
         m_t += 0.1f;
         updateGeometry();
     }
