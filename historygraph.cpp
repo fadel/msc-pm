@@ -198,7 +198,7 @@ QSGNode *HistoryGraph::createNodeTree()
         if (rect.x() < 0) {
             m_viewportTransform.translate(rect.x(), 0);
         } else if (rect.x() + rect.width() > width()) {
-            m_viewportTransform.translate(width() - (rect.x() + rect.width()), 0);
+            m_viewportTransform.translate(width() - (rect.x() + rect.width()) - margin, 0);
         }
     } else {
         m_viewportTransform.setToIdentity();
