@@ -54,7 +54,6 @@ HistoryGraph::HistoryItemNode::~HistoryItemNode()
 
     if (m_next) {
         delete m_next;
-        m_next = 0;
     }
 }
 
@@ -102,7 +101,6 @@ HistoryGraph::HistoryGraph(QQuickItem *parent)
 HistoryGraph::~HistoryGraph()
 {
     delete m_firstNode;
-    m_firstNode = 0;
 }
 
 void HistoryGraph::addHistoryItem(const arma::mat &item)
