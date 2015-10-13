@@ -273,7 +273,7 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
     switch (m_currentInteractionState) {
     case INTERACTION_NONE:
     case INTERACTION_SELECTED:
-        if (event->modifiers() == Qt::AltModifier) {
+        if (event->modifiers() == Qt::ShiftModifier) {
             m_currentInteractionState = INTERACTION_BEGIN_MOVING;
         } else {
             m_currentInteractionState = INTERACTION_SELECTING;
