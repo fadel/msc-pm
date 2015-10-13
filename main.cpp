@@ -44,12 +44,12 @@ int main(int argc, char **argv)
     parser.addPositionalArgument("dataset", "Dataset filename (.tbl)");
 
     QCommandLineOption indicesFileOutputOption(QStringList() << "i" << "indices",
-        "Filename to store the subsample indices.",
-        "indices_path");
+        "Filename to store the subsample indices. Omitting this option disables saving indices.",
+        "filename");
     parser.addOption(indicesFileOutputOption);
     QCommandLineOption subsampleFileOutputOption(QStringList() << "s" << "subsample",
-        "Filename to store subsample mapping.",
-        "subsample_path");
+        "Filename to store subsample mapping. Omitting this option disables saving subsamples.",
+        "filename");
     parser.addOption(subsampleFileOutputOption);
 
     parser.process(app);
@@ -135,13 +135,13 @@ int main(int argc, char **argv)
             subsamplePlot, SLOT(setXY(const arma::mat &)));
 
     // Map distortion as the glyph color
-    DistortionObserver distortionObs(X, sampleIndices);
-    std::unique_ptr<DistortionMeasure> distortionMeasure(new NPDistortion());
-    distortionObs.setMeasure(distortionMeasure.get());
-    QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
-            &distortionObs, SLOT(setMap(const arma::mat &)));
-    QObject::connect(&distortionObs, SIGNAL(mapChanged(const arma::vec &)),
-            plot, SLOT(setColorData(const arma::vec &)));
+    //DistortionObserver distortionObs(X, sampleIndices);
+    //std::unique_ptr<DistortionMeasure> distortionMeasure(new NPDistortion());
+    //distortionObs.setMeasure(distortionMeasure.get());
+    //QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
+    //        &distortionObs, SLOT(setMap(const arma::mat &)));
+    //QObject::connect(&distortionObs, SIGNAL(mapChanged(const arma::vec &)),
+    //        plot, SLOT(setColorData(const arma::vec &)));
 
     //EffectiveInteractionEnforcer enforcer(sampleIndices);
     //QObject::connect(subsamplePlot, SIGNAL(selectionChanged(const QSet<int> &)),
@@ -151,16 +151,11 @@ int main(int argc, char **argv)
     //QObject::connect(&enforcer, SIGNAL(effectivenessChanged(const arma::vec &)),
     //        subsamplePlot, SLOT(setColorData(const arma::vec &)));
 
-    /*
-    ContinuousColorScale ccolorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
-    ccolorScale.setExtents(-1, 1);
-    plot->setColorScale(&ccolorScale);
-    */
-    plot->setColorScale(&colorScale);
 
     history->addHistoryItem(Ys);
     subsamplePlot->setXY(Ys);
     subsamplePlot->setColorData(labels(sampleIndices));
+    plot->setColorScale(&colorScale);
     plot->setColorData(labels);
 
     return app.exec();
