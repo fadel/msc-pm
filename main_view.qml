@@ -14,7 +14,6 @@ ApplicationWindow {
     menuBar: MenuBar {
         Menu {
             title: "File"
-            MenuItem { action: openAction }
             MenuItem { action: savePlotAction }
             MenuItem { action: quitAction }
         }
@@ -91,28 +90,6 @@ ApplicationWindow {
         }
     }
 
-    FileDialog {
-        id: fileOpenDialog
-        title: "Choose a data set to load..."
-        selectMultiple: false
-        selectExisting: true
-
-        onAccepted: {
-            console.log("Loading data set: " + this.fileUrl)
-        }
-    }
-
-    FileDialog {
-        id: fileSaveDialog
-        title: "Save subsample mapping..."
-        selectMultiple: false
-        selectExisting: false
-
-        onAccepted: {
-            subsamplePlot.saveToFile(this.fileUrl)
-        }
-    }
-
     Action {
         id: quitAction
         text: "&Quit"
@@ -121,19 +98,12 @@ ApplicationWindow {
     }
 
     Action {
-        id: openAction
-        text: "&Open..."
-        shortcut: "Ctrl+O"
-        onTriggered: fileOpenDialog.open()
-    }
-
-    Action {
         id: savePlotAction
-        text: "&Save subsample"
+        text: "&Save data"
         shortcut: "Ctrl+S"
         onTriggered: {
             console.log("Saving subsample mapping...")
-            fileSaveDialog.open()
+            Main.saveData()
         }
     }
 
