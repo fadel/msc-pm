@@ -33,10 +33,6 @@ int main(int argc, char **argv)
     app.setApplicationName("pm");
     app.setApplicationVersion("1.0");
 
-    qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
-    qmlRegisterType<HistoryGraph>("PM", 1, 0, "HistoryGraph");
-    qmlRegisterSingletonType<Main>("PM", 1, 0, "Main", mainProvider);
-
     QCommandLineParser parser;
     parser.setApplicationDescription("Interactive multidimensional projections.");
     parser.addHelpOption();
@@ -58,12 +54,6 @@ int main(int argc, char **argv)
         parser.showHelp(1);
     }
 
-    // Set up multisampling
-    QSurfaceFormat fmt;
-    fmt.setSamples(16);
-    QSurfaceFormat::setDefaultFormat(fmt);
-    QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
-
     Main *m = Main::instance();
     if (parser.isSet(indicesFileOutputOption)) {
         m->setIndicesSavePath(parser.value(indicesFileOutputOption));
@@ -83,6 +73,16 @@ int main(int argc, char **argv)
 
     arma::mat Ys(subsampleSize, 2, arma::fill::randn);
     mp::forceScheme(mp::dist(X.rows(sampleIndices)), Ys);
+
+    qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
+    qmlRegisterType<HistoryGraph>("PM", 1, 0, "HistoryGraph");
+    qmlRegisterSingletonType<Main>("PM", 1, 0, "Main", mainProvider);
+
+    // Set up multisampling
+    QSurfaceFormat fmt;
+    fmt.setSamples(16);
+    QSurfaceFormat::setDefaultFormat(fmt);
+    QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
 
     ColorScale colorScale{
         QColor("#1f77b4"),
