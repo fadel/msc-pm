@@ -272,6 +272,17 @@ HistoryGraph::HistoryItemNode *HistoryGraph::nodeAt(const QPointF &pos, HistoryG
     return 0;
 }
 
+static inline float clamp(float x, float min, float max)
+{
+    if (x < min) {
+        return min;
+    } else if (x > max) {
+        return max;
+    }
+
+    return x;
+}
+
 void HistoryGraph::hoverMoveEvent(QHoverEvent *event)
 {
     if (m_currentWidth < width()) {
@@ -280,7 +291,8 @@ void HistoryGraph::hoverMoveEvent(QHoverEvent *event)
 
     const QPointF &pos = event->posF();
     float margin = MARGIN * height();
-    float prop = (pos.x() - margin) / (width() - 2*margin);
+    float prop = (pos.x() - 2*margin) / (width() - 4*margin);
+    prop = clamp(prop, 0.0f, 1.0f);
     float displ = m_currentWidth - width() + margin;
 
     m_viewportTransform.setToIdentity();
