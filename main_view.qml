@@ -21,7 +21,7 @@ ApplicationWindow {
         Menu {
             title: "View"
             MenuItem {
-                action: noneColorAction
+                action: labelColorAction
                 exclusiveGroup: coloringGroup
             }
             MenuItem {
@@ -111,12 +111,12 @@ ApplicationWindow {
         id: coloringGroup
 
         Action {
-            id: noneColorAction
-            text: "None"
-            shortcut: "Shift+O"
+            id: labelColorAction
+            text: "Labels"
+            shortcut: "Shift+L"
             checked: true
             checkable: true
-            onTriggered: console.log("None")
+            onTriggered: console.log("Labels")
         }
 
         Action {

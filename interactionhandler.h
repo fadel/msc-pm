@@ -16,6 +16,8 @@ public:
 
     InteractionHandler(const arma::mat &X, const arma::uvec &sampleIndices);
 
+    void setTechnique(InteractiveTechnique technique) { m_technique = technique; }
+
 signals:
     void subsampleChanged(const arma::mat &Y);
 

@@ -28,6 +28,8 @@ SOURCES += main.cpp \
     distortionobserver.cpp \
     npdistortion.cpp \
     lamp.cpp \
+    plmp.cpp \
+    knn.cpp \
     forceScheme.cpp \
     tsne.cpp \
     measures.cpp \

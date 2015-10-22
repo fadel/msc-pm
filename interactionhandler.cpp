@@ -15,7 +15,11 @@ void InteractionHandler::setSubsample(const arma::mat &Ys)
 {
     switch (m_technique) {
     case TECHNIQUE_PLMP:
+        mp::plmp(m_X, m_sampleIndices, Ys, m_Y);
+        break;
     case TECHNIQUE_LSP:
+        // mp::lsp(m_X, m_sampleIndices, Ys, m_Y);
+        break;
     case TECHNIQUE_LAMP:
         mp::lamp(m_X, m_sampleIndices, Ys, m_Y);
         break;
