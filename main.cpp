@@ -123,7 +123,7 @@ int main(int argc, char **argv)
     arma::vec labels = m->labels();
 
     arma::uword n = X.n_rows;
-    int subsampleSize = 3 * ((int) sqrt(n));
+    int subsampleSize = (int) (3 * sqrt(n));
     arma::uvec sampleIndices;
     arma::mat Ys;
 
