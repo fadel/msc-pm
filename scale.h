@@ -36,7 +36,7 @@ public:
         valuesUpdated();
     }
 
-    void reverse()
+    void inverse()
     {
         std::swap(m_rangeMin, m_domainMin);
         std::swap(m_rangeMax, m_domainMax);

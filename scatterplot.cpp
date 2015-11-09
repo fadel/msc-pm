@@ -344,16 +344,16 @@ bool Scatterplot::updateSelection(bool mergeSelection)
         selection.unite(m_selectedGlyphs);
     }
 
-    m_sx.reverse();
-    m_sy.reverse();
+    m_sx.inverse();
+    m_sy.inverse();
 
     float originX  = m_sx(m_dragOriginPos.x());
     float originY  = m_sy(m_dragOriginPos.y());
     float currentX = m_sx(m_dragCurrentPos.x());
     float currentY = m_sy(m_dragCurrentPos.y());
 
-    m_sy.reverse();
-    m_sx.reverse();
+    m_sy.inverse();
+    m_sx.inverse();
 
     QRectF selectionRect(QPointF(originX, originY), QPointF(currentX, currentY));
 
@@ -379,12 +379,12 @@ void Scatterplot::setSelection(const QSet<int> &selection)
 
 void Scatterplot::applyManipulation()
 {
-    m_sx.reverse();
-    m_sy.reverse();
+    m_sx.inverse();
+    m_sy.inverse();
     LinearScale rx = m_sx;
     LinearScale ry = m_sy;
-    m_sy.reverse();
-    m_sx.reverse();
+    m_sy.inverse();
+    m_sx.inverse();
 
     float tx = m_dragCurrentPos.x() - m_dragOriginPos.x();
     float ty = m_dragCurrentPos.y() - m_dragOriginPos.y();
