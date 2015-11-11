@@ -285,7 +285,7 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
     case INTERACTION_BEGIN_MOVING:
     case INTERACTION_MOVING:
         event->ignore();
-        return;
+        break;
     }
 }
 
