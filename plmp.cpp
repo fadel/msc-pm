@@ -1,4 +1,3 @@
-
 #include "mp.h"
 
 arma::mat mp::plmp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys)

@@ -24,6 +24,9 @@ void lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &
 arma::mat plmp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys);
 void plmp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys, arma::mat &Y);
 
+arma::mat pekalska(const arma::mat &D, const arma::uvec &sampleIndices, const arma::mat &Ys);
+void pekalska(const arma::mat &D, const arma::uvec &sampleIndices, const arma::mat &Ys, arma::mat &Y);
+
 //arma::mat lsp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys, int k = 15);
 //void lsp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys, arma::mat &Y, int k = 15);
 
