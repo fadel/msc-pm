@@ -135,7 +135,8 @@ int main(int argc, char **argv)
             sampleIndices.load(indicesFilename.toStdString(), arma::raw_ascii);
             subsampleSize = sampleIndices.n_elem;
         } else {
-            sampleIndices = relevanceSampling(X, subsampleSize);
+            // sampleIndices = relevanceSampling(X, subsampleSize);
+            sampleIndices = arma::randi<arma::uvec>(subsampleSize, arma::distr_param(0, n-1));
         }
     }
     if (parser.isSet(subsampleFileOutputOption)) {
