@@ -122,8 +122,8 @@ void HistoryGraph::addScatterplot(QSGNode *node, const HistoryGraph::HistoryItem
     const arma::mat &xy = historyItemNode->item();
     int vertexCount = calculateCircleVertexCount(GLYPH_SIZE / 2);
 
-    LinearScale sx(xy.col(0).min(), xy.col(0).max(), x, x + w);
-    LinearScale sy(xy.col(1).min(), xy.col(1).max(), y + h, y); // reverse on purpose
+    LinearScale<float> sx(xy.col(0).min(), xy.col(0).max(), x, x + w);
+    LinearScale<float> sy(xy.col(1).min(), xy.col(1).max(), y + h, y); // reverse on purpose
 
     for (arma::uword i = 0; i < xy.n_rows; i++) {
         const arma::rowvec &row = xy.row(i);

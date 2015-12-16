@@ -51,7 +51,7 @@ private:
     void animationTick();
 
     arma::mat m_oldXY, m_xy;
-    LinearScale m_sx, m_sy;
+    LinearScale<float> m_sx, m_sy;
 
     enum InteractionState {
         INTERACTION_NONE,

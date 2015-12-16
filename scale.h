@@ -3,10 +3,11 @@
 
 #include <algorithm>
 
+template<typename T>
 class Scale
 {
 public:
-    Scale(float domainMin, float domainMax, float rangeMin, float rangeMax)
+    Scale(const T &domainMin, const T &domainMax, const T &rangeMin, const T &rangeMax)
         : m_domainMin(domainMin)
         , m_domainMax(domainMax)
         , m_rangeMin(rangeMin)
@@ -17,19 +18,19 @@ public:
 
     virtual ~Scale() {}
 
-    void setRangeMin(float rangeMin)   { m_rangeMin  = rangeMin; valuesUpdated(); }
-    void setRangeMax(float rangeMax)   { m_rangeMax  = rangeMax; valuesUpdated(); }
-    void setDomainMin(float domainMin) { m_domainMin = domainMin; valuesUpdated(); }
-    void setDomainMax(float domainMax) { m_domainMax = domainMax; valuesUpdated(); }
+    void setRangeMin(T rangeMin)   { m_rangeMin  = rangeMin; valuesUpdated(); }
+    void setRangeMax(T rangeMax)   { m_rangeMax  = rangeMax; valuesUpdated(); }
+    void setDomainMin(T domainMin) { m_domainMin = domainMin; valuesUpdated(); }
+    void setDomainMax(T domainMax) { m_domainMax = domainMax; valuesUpdated(); }
 
-    void setRange(float rangeMin, float rangeMax)
+    void setRange(const T &rangeMin, const T &rangeMax)
     {
         m_rangeMin = rangeMin;
         m_rangeMax = rangeMax;
         valuesUpdated();
     }
 
-    void setDomain(float domainMin, float domainMax)
+    void setDomain(const T &domainMin, const T &domainMax)
     {
         m_domainMin = domainMin;
         m_domainMax = domainMax;
@@ -43,39 +44,41 @@ public:
         valuesUpdated();
     }
 
-    virtual float operator()(float value) const = 0;
+    virtual T operator()(const T &value) const = 0;
 
 protected:
     // Called when internal values change
     virtual void valuesUpdated() {}
 
-    float m_domainMin, m_domainMax;
-    float m_rangeMin, m_rangeMax;
+    T m_domainMin, m_domainMax;
+    T m_rangeMin, m_rangeMax;
 };
 
+template<typename T>
 class LinearScale
-    : public Scale
+    : public Scale<T>
 {
 public:
-    LinearScale(float domainMin, float domainMax, float rangeMin, float rangeMax)
-        : Scale(domainMin, domainMax, rangeMin, rangeMax)
+    LinearScale(const T &domainMin, const T &domainMax, const T &rangeMin, const T &rangeMax)
+        : Scale<T>(domainMin, domainMax, rangeMin, rangeMax)
     {
         valuesUpdated();
     }
 
-    virtual float operator()(float value) const
+    virtual T operator()(const T &value) const
     {
-        return (value - m_domainMin) * m_transformSlope + m_rangeMin;
+        return (value - Scale<T>::m_domainMin) * m_transformSlope + Scale<T>::m_rangeMin;
     }
 
 protected:
     virtual void valuesUpdated()
     {
-        m_transformSlope = (m_rangeMax - m_rangeMin) / (m_domainMax - m_domainMin);
+        m_transformSlope = (Scale<T>::m_rangeMax - Scale<T>::m_rangeMin)
+                         / (Scale<T>::m_domainMax - Scale<T>::m_domainMin);
     }
 
 private:
-    float m_transformSlope;
+    T m_transformSlope;
 };
 
 #endif // SCALE_H

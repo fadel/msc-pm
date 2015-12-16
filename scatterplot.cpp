@@ -381,8 +381,8 @@ void Scatterplot::applyManipulation()
 {
     m_sx.inverse();
     m_sy.inverse();
-    LinearScale rx = m_sx;
-    LinearScale ry = m_sy;
+    LinearScale<float> rx = m_sx;
+    LinearScale<float> ry = m_sy;
     m_sy.inverse();
     m_sx.inverse();
 
