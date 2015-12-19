@@ -4,6 +4,8 @@
 #include <QObject>
 #include <armadillo>
 
+#include "interactionhandler.h"
+
 class Main : public QObject
 {
     Q_OBJECT
@@ -38,6 +40,16 @@ public:
     Q_INVOKABLE void setSubsampleSavePath(const std::string &path) { m_subsampleSavePath = path; }
     Q_INVOKABLE void setSubsampleSavePath(const QString &path)     { setSubsampleSavePath(path.toStdString()); }
 
+    void setInteractionHandler(InteractionHandler *interactionHandler) {
+        m_interactionHandler = interactionHandler;
+    }
+
+    Q_INVOKABLE void setTechnique(int technique) {
+        if (m_interactionHandler) {
+            m_interactionHandler->setTechnique((InteractionHandler::Technique) technique);
+        }
+    }
+
     arma::mat X() const { return m_dataset.cols(0, m_dataset.n_cols - 2); }
     arma::vec labels() const { return m_dataset.col(m_dataset.n_cols - 1); }
 
@@ -53,13 +65,17 @@ public slots:
     }
 
 private:
-    Main(QObject *parent = 0) : QObject(parent) {}
+    Main(QObject *parent = 0)
+        : QObject(parent)
+        , m_interactionHandler(0)
+    {}
     ~Main() {}
     Q_DISABLE_COPY(Main)
 
     arma::mat m_dataset, m_subsample;
     arma::uvec m_subsampleIndices;
     std::string m_indicesSavePath, m_subsampleSavePath;
+    InteractionHandler *m_interactionHandler;
 };
 
 #endif // MAIN_H
