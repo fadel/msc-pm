@@ -55,8 +55,6 @@ layout (location = 0) out vec4 fragColor;
 
 void main() {
   float dt = texelFetch(siteDT, ivec2(gl_FragCoord.xy), 0).r;
-  fragColor = vec4(0.25, 0.5, 0, 0);
-  return;
   if (dt > rad_max)
     discard;
   else {
@@ -89,15 +87,15 @@ void main() {
 R"EOF(
 #version 440
 
-layout (location = 0) out vec4 fragColor;
-
 uniform sampler2D siteDT;
 uniform sampler2D accumTex;
 uniform sampler2D colormap;
 uniform float rad_max;
 
+layout (location = 0) out vec4 fragColor;
+
 vec3 getRGB(float value) {
-  return texture2D(colormap, vec2(mix(0.005, 0.995, value), 1)).rgb;
+  return texture(colormap, vec2(mix(0, 1, value), 0)).rgb;
 }
 
 void main() {
@@ -330,7 +328,7 @@ void VoronoiSplatRenderer::render()
     m_program1->bind();
     m_program1->setUniformValue("rad_max", 20.0f);
     m_program1->setUniformValue("rad_blur", RAD_BLUR);
-    m_program1->setUniformValue("fb_size", m_size.width());
+    m_program1->setUniformValue("fb_size", float(m_size.width()));
 
     gl.glActiveTexture(GL_TEXTURE0);
     gl.glBindTexture(GL_TEXTURE_2D, m_textures[0]);
