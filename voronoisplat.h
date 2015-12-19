@@ -36,6 +36,7 @@ public:
 
 private:
     void setupShaders();
+    void setupVAOs();
     void setupTextures();
     void copyPoints(const arma::mat &points);
     void computeDT();

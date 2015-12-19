@@ -17,24 +17,7 @@ VoronoiSplatRenderer::VoronoiSplatRenderer(const QSize &size)
     , m_size(size)
 {
     setupShaders();
-
-    // sitesVAO: VBOs 0 & 1 are for sites & their values (init'd later)
-    m_sitesVAO.create();
-    gl.glGenBuffers(3, m_VBOs);
-
-    // 2ndPassVAO: VBO 2 is a quad mapping the final texture to the framebuffer
-    m_2ndPassVAO.create();
-    m_2ndPassVAO.bind();
-    GLfloat verts[] = {-1.0f, -1.0f, -1.0f, 1.0f,
-                        1.0f, -1.0f,  1.0f, 1.0f};
-    gl.glBindBuffer(GL_ARRAY_BUFFER, m_VBOs[2]);
-    gl.glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-
-    int vertAttrib = m_program2->attributeLocation("vert");
-    gl.glVertexAttribPointer(vertAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    gl.glEnableVertexAttribArray(vertAttrib);
-    m_2ndPassVAO.release();
-
+    setupVAOs();
     setupTextures();
 }
 
@@ -46,7 +29,7 @@ R"EOF(#version 440
 
 uniform float rad_blur;
 uniform float rad_max;
-uniform float fbSize;
+uniform float fb_size;
 
 in vec2 vert;
 in float scalar;
@@ -55,16 +38,16 @@ out float value;
 
 void main() {
   gl_PointSize = (rad_max + rad_blur) * 2.0;
-  gl_Position = vec4(2.0 * (vert / fbSize) - 1.0, 0, 1);
+  gl_Position = vec4(2.0 * vert / fb_size - 1.0, 0, 1.0);
   value = scalar;
 }
 )EOF");
     m_program1->addShaderFromSourceCode(QOpenGLShader::Fragment,
 R"EOF(#version 440
 
-uniform sampler2D siteDT;
 uniform float rad_blur;
 uniform float rad_max;
+uniform sampler2D siteDT;
 
 in float value;
 
@@ -72,6 +55,8 @@ layout (location = 0) out vec4 fragColor;
 
 void main() {
   float dt = texelFetch(siteDT, ivec2(gl_FragCoord.xy), 0).r;
+  fragColor = vec4(0.25, 0.5, 0, 0);
+  return;
   if (dt > rad_max)
     discard;
   else {
@@ -100,7 +85,6 @@ void main() {
   gl_Position = vec4(vert, 0, 1);
 }
 )EOF");
-
     m_program2->addShaderFromSourceCode(QOpenGLShader::Fragment,
 R"EOF(
 #version 440
@@ -113,7 +97,7 @@ uniform sampler2D colormap;
 uniform float rad_max;
 
 vec3 getRGB(float value) {
-  return texture2D(colormap, vec2(0, 1)).rgb;
+  return texture2D(colormap, vec2(mix(0.005, 0.995, value), 1)).rgb;
 }
 
 void main() {
@@ -126,14 +110,44 @@ void main() {
     float value = 0.0f;
     if (accum.g > 1.0)
       value = (accum.r - 1.0) / (accum.g - 1.0);
-    else
-      value = accum.r / accum.g;
     fragColor.rgb = getRGB(value);
     fragColor.a = 1.0 - dt / rad_max;
   }
 }
 )EOF");
     m_program2->link();
+}
+
+void VoronoiSplatRenderer::setupVAOs()
+{
+    gl.glGenBuffers(3, m_VBOs);
+
+    // sitesVAO: VBOs 0 & 1 are for sites & their values (init'd later)
+    m_sitesVAO.create();
+    m_sitesVAO.bind();
+    gl.glBindBuffer(GL_ARRAY_BUFFER, m_VBOs[0]);
+    int vertAttrib = m_program1->attributeLocation("vert");
+    gl.glVertexAttribPointer(vertAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    gl.glEnableVertexAttribArray(vertAttrib);
+
+    gl.glBindBuffer(GL_ARRAY_BUFFER, m_VBOs[1]);
+    int valueAttrib = m_program1->attributeLocation("scalar");
+    gl.glVertexAttribPointer(valueAttrib, 1, GL_FLOAT, GL_FALSE, 0, 0);
+    gl.glEnableVertexAttribArray(valueAttrib);
+    m_sitesVAO.release();
+
+    // 2ndPassVAO: VBO 2 is a quad mapping the final texture to the framebuffer
+    m_2ndPassVAO.create();
+    m_2ndPassVAO.bind();
+    gl.glBindBuffer(GL_ARRAY_BUFFER, m_VBOs[2]);
+    GLfloat verts[] = {-1.0f, -1.0f, -1.0f, 1.0f,
+                        1.0f, -1.0f,  1.0f, 1.0f};
+    gl.glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+
+    vertAttrib = m_program2->attributeLocation("vert");
+    gl.glVertexAttribPointer(vertAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    gl.glEnableVertexAttribArray(vertAttrib);
+    m_2ndPassVAO.release();
 }
 
 void VoronoiSplatRenderer::setupTextures()
@@ -184,15 +198,9 @@ void VoronoiSplatRenderer::setSites(const arma::mat &points)
     copyPoints(points);
 
     // Update VBO with the new data
-    m_sitesVAO.bind();
     gl.glBindBuffer(GL_ARRAY_BUFFER, m_VBOs[0]);
     gl.glBufferData(GL_ARRAY_BUFFER, m_sites.size() * sizeof(float),
             m_sites.data(), GL_STATIC_DRAW);
-
-    int vertAttrib = m_program1->attributeLocation("vert");
-    gl.glVertexAttribPointer(vertAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    gl.glEnableVertexAttribArray(vertAttrib);
-    m_sitesVAO.release();
 
     // Compute DT values for the new positions
     computeDT();
@@ -206,7 +214,7 @@ void VoronoiSplatRenderer::copyPoints(const arma::mat &points)
     double maxY = points.col(1).max();
 
     // Coords are tighly packed into 'm_sites' as [ (x1, y1), (x2, y2), ... ]
-    m_sites.resize(points.n_rows * 2);
+    m_sites.resize(2*points.n_rows);
     LinearScale<float> sx(minX, maxX, 1, m_size.width() - 1);
     const double *col = points.colptr(0);
     for (unsigned i = 0; i < points.n_rows; i++) {
@@ -224,9 +232,9 @@ void VoronoiSplatRenderer::computeDT()
 {
     int w = m_size.width(), h = m_size.height();
 
-    std::vector<float> buf(w * h, 0.0f);
+    std::vector<float> buf(w*h, 0.0f);
     for (unsigned i = 0; i < m_sites.size(); i += 2) {
-        buf[int(m_sites[i + 1]) * h + int(m_sites[i])] = (float) i / 2 + 1;
+        buf[int(m_sites[i + 1])*h + int(m_sites[i])] = (float) i/2 + 1;
     }
 
     // Compute FT of the sites
@@ -234,15 +242,15 @@ void VoronoiSplatRenderer::computeDT()
     // Compute DT of the sites (from the resident FT)
     skelft2DDT(buf.data(), 0, 0, w, h);
 
-    std::vector<GLfloat> dtTexData(w * h * 2, 0.0f);
+    std::vector<GLfloat> dtTexData(2*w*h, 0.0f);
     for (unsigned i = 0; i < buf.size(); i++) {
         dtTexData[2*i] = buf[i];
     }
 
     // Upload result to lookup texture
     gl.glBindTexture(GL_TEXTURE_2D, m_textures[0]);
-    gl.glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_size.width(), m_size.height(),
-            GL_RG, GL_FLOAT, dtTexData.data());
+    gl.glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RG, GL_FLOAT,
+            dtTexData.data());
 }
 
 void VoronoiSplatRenderer::setValues(const arma::vec &values)
@@ -253,18 +261,13 @@ void VoronoiSplatRenderer::setValues(const arma::vec &values)
     }
 
     m_values.resize(values.n_elem);
-    std::copy(values.begin(), values.end(), m_values.begin());
+    LinearScale<float> scale(values.min(), values.max(), 0, 1.0f);
+    std::transform(values.begin(), values.end(), m_values.begin(), scale);
 
     // Update VBO with the new data
-    m_sitesVAO.bind();
     gl.glBindBuffer(GL_ARRAY_BUFFER, m_VBOs[1]);
     gl.glBufferData(GL_ARRAY_BUFFER, m_values.size() * sizeof(float),
             m_values.data(), GL_DYNAMIC_DRAW);
-
-    int valueAttrib = m_program1->attributeLocation("scalar");
-    gl.glVertexAttribPointer(valueAttrib, 1, GL_FLOAT, GL_TRUE, 0, 0);
-    gl.glEnableVertexAttribArray(valueAttrib);
-    m_sitesVAO.release();
 }
 
 void VoronoiSplatRenderer::setColorMap(const ColorScale *scale)
@@ -276,12 +279,12 @@ void VoronoiSplatRenderer::setColorMap(const ColorScale *scale)
     float t = scale->min();
     float step = (scale->max() - scale->min()) / COLORMAP_SAMPLES;
     qreal r, g, b;
-    std::vector<float> cmap(COLORMAP_SAMPLES * 3); // R,G,B
-    for (int i = 0; i < COLORMAP_SAMPLES * 3; i += 3) {
+    std::vector<float> cmap(3*COLORMAP_SAMPLES); // R,G,B
+    for (int i = 0; i < 3*COLORMAP_SAMPLES; i += 3) {
         scale->color(t).getRgbF(&r, &g, &b);
-        cmap[i + 0] = b;
+        cmap[i + 0] = r;
         cmap[i + 1] = g;
-        cmap[i + 2] = r;
+        cmap[i + 2] = b;
 
         t += step;
     }
@@ -327,7 +330,7 @@ void VoronoiSplatRenderer::render()
     m_program1->bind();
     m_program1->setUniformValue("rad_max", 20.0f);
     m_program1->setUniformValue("rad_blur", RAD_BLUR);
-    m_program1->setUniformValue("fbSize", float(m_size.width()));
+    m_program1->setUniformValue("fb_size", m_size.width());
 
     gl.glActiveTexture(GL_TEXTURE0);
     gl.glBindTexture(GL_TEXTURE_2D, m_textures[0]);
