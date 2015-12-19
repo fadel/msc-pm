@@ -13,11 +13,15 @@ public:
     ColorScale(const QList<QColor> &colors);
     virtual ~ColorScale();
 
-    virtual QColor color(qreal t) const;
-    void setExtents(qreal min, qreal max);
+    QColor operator ()(float t) const { return color(t); }
+    virtual QColor color(float t) const;
+
+    void setExtents(float min, float max);
+    float min() const { return m_min; }
+    float max() const { return m_max; }
 
 protected:
-    qreal m_min, m_max;
+    float m_min, m_max;
     QList<QColor> m_colors;
 };
 

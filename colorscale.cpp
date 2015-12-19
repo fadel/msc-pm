@@ -22,7 +22,7 @@ ColorScale::~ColorScale()
 {
 }
 
-void ColorScale::setExtents(qreal min, qreal max)
+void ColorScale::setExtents(float min, float max)
 {
     if (min >= max) {
         return;
@@ -32,10 +32,11 @@ void ColorScale::setExtents(qreal min, qreal max)
     m_max = max;
 }
 
-static QColor lerp(const QColor &c1, const QColor &c2, qreal t)
+static QColor lerp(const QColor &c1, const QColor &c2, float _t)
 {
     qreal r1, g1, b1, a1;
     qreal r2, g2, b2, a2;
+    qreal t = _t;
 
     c1.getRgbF(&r1, &g1, &b1, &a1);
     c2.getRgbF(&r2, &g2, &b2, &a2);
@@ -47,7 +48,7 @@ static QColor lerp(const QColor &c1, const QColor &c2, qreal t)
     return color;
 }
 
-QColor ColorScale::color(qreal t) const
+QColor ColorScale::color(float t) const
 {
     if (t < m_min || t > m_max) {
         return QColor();
@@ -62,8 +63,8 @@ QColor ColorScale::color(qreal t) const
     }
 
     // find which colors in the scale are adjacent to ours
-    qreal step = 1.0 / m_colors.size();
-    int i = (int) (t / step);
+    float step = 1.0 / m_colors.size();
+    int i = int(t / step);
     int j = i + 1;
 
     if (i >= m_colors.size() - 1) {
