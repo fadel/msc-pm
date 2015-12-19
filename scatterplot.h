@@ -38,6 +38,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
 
 private:
+    QSGNode *createSplatNode();
     QSGNode *createGlyphNodeTree();
     bool updateSelection(bool mergeSelection);
 
@@ -45,6 +46,9 @@ private:
 
     void updateGeometry();
     void updateMaterials();
+
+    void updateSplat(QSGNode *node);
+    void updateGlyphs(QSGNode *node);
 
     void resetAnimation();
     void startAnimation();

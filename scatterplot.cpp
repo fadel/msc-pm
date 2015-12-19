@@ -1,5 +1,6 @@
 #include "scatterplot.h"
 
+#include "voronoisplat.h"
 #include "geometry.h"
 #include <cmath>
 
@@ -104,6 +105,26 @@ void Scatterplot::updateMaterials()
     update();
 }
 
+QSGNode *Scatterplot::createSplatNode()
+{
+    if (m_xy.n_rows < 1) {
+        return 0;
+    }
+
+    QSGSimpleTextureNode *node = new QSGSimpleTextureNode;
+    VoronoiSplatTexture *tex = new VoronoiSplatTexture(QSize(width(), height()));
+    tex->setSites(m_xy);
+    tex->setValues(m_colorData);
+    tex->setColormap(m_colorScale);
+    tex->updateTexture();
+    window()->resetOpenGLState();
+    node->setTexture(tex);
+    node->setOwnsTexture(true);
+    node->setRect(x(), y(), width(), height());
+    node->setSourceRect(0, 0, width(), height());
+    return node;
+}
+
 QSGNode *Scatterplot::createGlyphNodeTree()
 {
     if (m_xy.n_rows < 1) {
@@ -153,6 +174,10 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     QSGNode *root = 0;
     if (!oldNode) {
         root = new QSGNode;
+        QSGNode *splatNode = createSplatNode();
+        if (splatNode) {
+            root->appendChildNode(splatNode);
+        }
         QSGNode *glyphTreeRoot = createGlyphNodeTree();
         if (glyphTreeRoot) {
             root->appendChildNode(glyphTreeRoot);
@@ -164,6 +189,67 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     if (m_xy.n_rows < 1) {
         return root;
     }
+
+    QSGNode *splatNode = root->firstChild();
+    updateSplat(splatNode);
+
+    QSGNode *glyphsRootNode = root->firstChild()->nextSibling()->firstChild();
+    updateGlyphs(glyphsRootNode);
+
+    if (m_shouldUpdateGeometry) {
+        m_shouldUpdateGeometry = false;
+    }
+    if (m_shouldUpdateMaterials) {
+        m_shouldUpdateMaterials = false;
+    }
+
+    // Selection rect
+    if (m_currentInteractionState == INTERACTION_SELECTING) {
+        QSGSimpleRectNode *selectionNode = 0;
+        if (!root->firstChild()->nextSibling()->nextSibling()) {
+            selectionNode = new QSGSimpleRectNode;
+            selectionNode->setColor(SELECTION_COLOR);
+            root->appendChildNode(selectionNode);
+        } else {
+            selectionNode = static_cast<QSGSimpleRectNode *>(root->firstChild()->nextSibling()->nextSibling());
+        }
+
+        selectionNode->setRect(QRectF(m_dragOriginPos, m_dragCurrentPos));
+        selectionNode->markDirty(QSGNode::DirtyGeometry);
+    } else {
+        QSGNode *node = root->firstChild()->nextSibling()->nextSibling();
+        if (node) {
+            root->removeChildNode(node);
+            delete node;
+        }
+    }
+
+    animationTick();
+    return root;
+}
+
+void Scatterplot::updateSplat(QSGNode *node)
+{
+    QSGSimpleTextureNode *texNode = static_cast<QSGSimpleTextureNode *>(node);
+    VoronoiSplatTexture *tex =
+        static_cast<VoronoiSplatTexture *>(texNode->texture());
+
+    if (m_shouldUpdateGeometry) {
+        tex->setSites(m_xy);
+    }
+
+    if (m_shouldUpdateMaterials) {
+        tex->setValues(m_colorData);
+        tex->setColormap(m_colorScale);
+    }
+
+    if (tex->updateTexture()) {
+        window()->resetOpenGLState();
+    }
+}
+
+void Scatterplot::updateGlyphs(QSGNode *node)
+{
 
     qreal x, y, tx, ty, moveTranslationF;
 
@@ -177,7 +263,6 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     m_sx.setRange(PADDING, width() - PADDING);
     m_sy.setRange(height() - PADDING, PADDING);
 
-    QSGNode *node = root->firstChild()->firstChild();
     float t = m_animationEasing.valueForProgress(m_t);
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         const arma::rowvec &oldRow = m_oldXY.row(i);
@@ -211,37 +296,6 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
         node = node->nextSibling();
     }
-
-    if (m_shouldUpdateGeometry) {
-        m_shouldUpdateGeometry = false;
-    }
-    if (m_shouldUpdateMaterials) {
-        m_shouldUpdateMaterials = false;
-    }
-
-    // Selection rect
-    if (m_currentInteractionState == INTERACTION_SELECTING) {
-        QSGSimpleRectNode *selectionNode = 0;
-        if (!root->firstChild()->nextSibling()) {
-            selectionNode = new QSGSimpleRectNode;
-            selectionNode->setColor(SELECTION_COLOR);
-            root->appendChildNode(selectionNode);
-        } else {
-            selectionNode = static_cast<QSGSimpleRectNode *>(root->firstChild()->nextSibling());
-        }
-
-        selectionNode->setRect(QRectF(m_dragOriginPos, m_dragCurrentPos));
-        selectionNode->markDirty(QSGNode::DirtyGeometry);
-    } else {
-        node = root->firstChild()->nextSibling();
-        if (node) {
-            root->removeChildNode(node);
-            delete node;
-        }
-    }
-
-    animationTick();
-    return root;
 }
 
 void Scatterplot::resetAnimation()

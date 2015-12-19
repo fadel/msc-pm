@@ -9,7 +9,7 @@ ApplicationWindow {
     id: mainWindow
     title: "Projection Manipulation"
     visible: true
-    minimumWidth: 900
+    minimumWidth: 300
     minimumHeight: 600
     maximumWidth: minimumWidth
     maximumHeight: minimumHeight
@@ -91,18 +91,12 @@ ApplicationWindow {
                 border.width: 1
                 border.color: "#cccccc"
 
-                VoronoiSplat {
-                    id: splat
-                    objectName: "splat"
-                    width: 256
-                    height: 256
-                }
-
                 Scatterplot {
                     id: plot
                     objectName: "plot"
-                    anchors.fill: parent
-                    visible: false
+                    width: 512
+                    height: 512
+                    anchors.margins: 10
                 }
             }
         }

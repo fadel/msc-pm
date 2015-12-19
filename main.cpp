@@ -157,7 +157,6 @@ int main(int argc, char **argv)
     m->setSubsample(Ys);
 
     qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
-    qmlRegisterType<VoronoiSplat>("PM", 1, 0, "VoronoiSplat");
     qmlRegisterType<HistoryGraph>("PM", 1, 0, "HistoryGraph");
     qmlRegisterType<InteractionHandler>("PM", 1, 0, "InteractionHandler");
     qmlRegisterSingletonType<Main>("PM", 1, 0, "Main", mainProvider);
@@ -190,8 +189,7 @@ int main(int argc, char **argv)
     // subsamplePlot->setColorData(arma::zeros<arma::vec>(subsampleSize));
     subsamplePlot->setColorScale(&colorScale);
     Scatterplot *plot = engine.rootObjects()[0]->findChild<Scatterplot *>("plot");
-    VoronoiSplat *splat = engine.rootObjects()[0]->findChild<VoronoiSplat *>("splat");
-    skelft2DInitialization(splat->width());
+    skelft2DInitialization(plot->width());
 
     // Keep track of the current subsample (in order to save them later, if requested)
     QObject::connect(subsamplePlot, SIGNAL(xyChanged(const arma::mat &)),
@@ -211,10 +209,10 @@ int main(int argc, char **argv)
     m->setTechnique(InteractionHandler::TECHNIQUE_LAMP);
 
     // Update splat whenever the main plot is also updated
-    QObject::connect(plot, SIGNAL(xyChanged(const arma::mat &)),
-            splat, SLOT(setPoints(const arma::mat &)));
-    QObject::connect(plot, SIGNAL(colorDataChanged(const arma::vec &)),
-            splat, SLOT(setValues(const arma::vec &)));
+    //QObject::connect(plot, SIGNAL(xyChanged(const arma::mat &)),
+    //        splat, SLOT(setPoints(const arma::mat &)));
+    //QObject::connect(plot, SIGNAL(colorDataChanged(const arma::vec &)),
+    //        splat, SLOT(setValues(const arma::vec &)));
 
     // Linking between selections in subsample plot and full dataset plot
     SelectionHandler selectionHandler(sampleIndices);
@@ -252,7 +250,7 @@ int main(int argc, char **argv)
     subsamplePlot->setXY(Ys);
     subsamplePlot->setColorData(labels(sampleIndices));
     plot->setColorScale(&colorScale);
-    splat->setColorScale(&colorScale);
+    //splat->setColorScale(&colorScale);
     plot->setColorData(labels);
 
     auto ret = app.exec();
