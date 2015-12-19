@@ -11,6 +11,14 @@ InteractionHandler::InteractionHandler(const arma::mat &X,
 {
 }
 
+void InteractionHandler::setTechnique(InteractionHandler::Technique technique)
+{
+    if (m_technique == technique)
+        return;
+
+    m_technique = technique;
+}
+
 void InteractionHandler::setSubsample(const arma::mat &Ys)
 {
     switch (m_technique) {
@@ -18,10 +26,15 @@ void InteractionHandler::setSubsample(const arma::mat &Ys)
         mp::plmp(m_X, m_sampleIndices, Ys, m_Y);
         break;
     case TECHNIQUE_LSP:
+        // TODO
         // mp::lsp(m_X, m_sampleIndices, Ys, m_Y);
         break;
     case TECHNIQUE_LAMP:
         mp::lamp(m_X, m_sampleIndices, Ys, m_Y);
+        break;
+    case TECHNIQUE_PEKALSKA:
+        // TODO
+        // mp::pekalska(m_X, m_sampleIndices, Ys, m_Y);
         break;
     }
 
