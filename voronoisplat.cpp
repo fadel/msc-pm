@@ -165,8 +165,12 @@ void VoronoiSplatRenderer::setupTextures()
 
 VoronoiSplatRenderer::~VoronoiSplatRenderer()
 {
-    gl.glDeleteBuffers(2, m_VBOs);
+    gl.glDeleteBuffers(3, m_VBOs);
+    gl.glDeleteTextures(2, m_textures);
+    gl.glDeleteTextures(1, &m_colorMapTex);
+
     delete m_program1;
+    delete m_program2;
 }
 
 void VoronoiSplatRenderer::setSites(const arma::mat &points)
@@ -258,7 +262,7 @@ void VoronoiSplatRenderer::setValues(const arma::vec &values)
             m_values.data(), GL_DYNAMIC_DRAW);
 
     int valueAttrib = m_program1->attributeLocation("scalar");
-    gl.glVertexAttribPointer(valueAttrib, 1, GL_FLOAT, GL_FALSE, 0, 0);
+    gl.glVertexAttribPointer(valueAttrib, 1, GL_FLOAT, GL_TRUE, 0, 0);
     gl.glEnableVertexAttribArray(valueAttrib);
     m_sitesVAO.release();
 }
