@@ -174,8 +174,8 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         tx = ty = 0;
     }
 
-    m_sx.setRange(PADDING, width() - 2*PADDING);
-    m_sy.setRange(height() - 2*PADDING, PADDING);
+    m_sx.setRange(PADDING, width() - PADDING);
+    m_sy.setRange(height() - PADDING, PADDING);
 
     QSGNode *node = root->firstChild()->firstChild();
     float t = m_animationEasing.valueForProgress(m_t);
