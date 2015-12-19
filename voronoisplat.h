@@ -16,19 +16,22 @@ class VoronoiSplatRenderer
     : public QQuickFramebufferObject::Renderer
 {
 public:
-    // 'size' must be square (and power of 2); item is the QQuickFBO that
-    // creates this
+    // 'size' must be square (and power of 2)
     VoronoiSplatRenderer(const QSize &size);
     ~VoronoiSplatRenderer();
 
     void synchronize(QQuickFramebufferObject *item);
+
     // 'points' should be a 2D points matrix (each point in a row)
     void setSites(const arma::mat &points);
+
+    // Set the value to be colormapped in each site
     void setValues(const arma::vec &values);
+
     // Set colormap data based on the given color scale;
     void setColorMap(const ColorScale *scale);
 
-    QOpenGLFramebufferObject *createFramebufferObject(const QSize & size);    
+    QOpenGLFramebufferObject *createFramebufferObject(const QSize &size);
     void render();
 
 private:
