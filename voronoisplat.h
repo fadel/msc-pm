@@ -3,6 +3,7 @@
 
 #include <QSGDynamicTexture>
 #include <QOpenGLFunctions>
+#include <QOpenGLFramebufferObject>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <armadillo>
@@ -48,7 +49,7 @@ private:
 
     QOpenGLFunctions gl;
     QOpenGLShaderProgram *m_program1, *m_program2;
-    GLuint m_FBO;
+    QOpenGLFramebufferObject m_FBO;
     GLuint m_VBOs[3];
     GLuint m_textures[2], m_colormapTex, m_tex;
     QOpenGLVertexArrayObject m_sitesVAO, m_2ndPassVAO;

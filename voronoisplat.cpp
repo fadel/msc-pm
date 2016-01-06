@@ -2,9 +2,6 @@
 
 #include <algorithm>
 
-#include <QQuickWindow>
-#include <QOpenGLFramebufferObject>
-
 #include "scale.h"
 #include "skelft.h"
 
@@ -24,13 +21,13 @@ static int nextPow2(int n)
 
 VoronoiSplatTexture::VoronoiSplatTexture(const QSize &size)
     : gl(QOpenGLContext::currentContext())
+    , m_FBO(size)
     , m_cmap(3*COLORMAP_SAMPLES)
 {
     int baseSize = nextPow2(std::min(size.width(), size.height()));
     m_size.setWidth(baseSize);
     m_size.setHeight(baseSize);
 
-    gl.glGenFramebuffers(1, &m_FBO);
     setupShaders();
     setupVAOs();
     setupTextures();
@@ -205,8 +202,6 @@ VoronoiSplatTexture::~VoronoiSplatTexture()
     gl.glDeleteTextures(1, &m_colormapTex);
     gl.glDeleteTextures(1, &m_tex);
 
-    gl.glDeleteFramebuffers(1, &m_FBO);
-
     delete m_program1;
     delete m_program2;
 }
@@ -234,7 +229,7 @@ bool VoronoiSplatTexture::updateTexture()
         updateColormap();
     }
 
-    gl.glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
+    m_FBO.bind();
 
     // The first pass
     m_program1->bind();
