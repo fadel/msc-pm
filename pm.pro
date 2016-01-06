@@ -19,7 +19,7 @@ HEADERS += main.h \
     distortionmeasure.h \
     npdistortion.h \
     skelft.h \
-    skelftkernel.h
+    skelftkernel.h \
     mp.h
 SOURCES += main.cpp \
     colorscale.cpp \
