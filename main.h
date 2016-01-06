@@ -10,8 +10,8 @@ class Main : public QObject
 {
     Q_OBJECT
 public:
-    static Main *instance()
-    {
+    static Main *instance() {
+        // FIXME: Possibly dangerous
         static Main *m = 0;
         if (m == 0) {
             m = new Main();
@@ -20,8 +20,7 @@ public:
         return m;
     }
 
-    Q_INVOKABLE bool saveData() const
-    {
+    Q_INVOKABLE bool saveData() const {
         bool ret = true;
         if (m_subsample.n_elem > 0 && m_indicesSavePath.size() > 0) {
             ret = ret && m_subsample.save(m_subsampleSavePath, arma::raw_ascii);
