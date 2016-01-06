@@ -10,7 +10,7 @@ static const qreal GLYPH_OPACITY_SELECTED = 1.0;
 static const QColor OUTLINE_COLOR(0, 0, 0);
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
-static const int GLYPH_SIZE = 8.f;
+static const int GLYPH_SIZE = 4.f;
 static const float PADDING = 10.f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
@@ -113,20 +113,27 @@ QSGNode *Scatterplot::createSplatNode()
 
     QSGSimpleTextureNode *node = new QSGSimpleTextureNode;
     VoronoiSplatTexture *tex = new VoronoiSplatTexture(QSize(width(), height()));
-    tex->setSites(m_xy);
-    tex->setValues(m_colorData);
-    tex->setColormap(m_colorScale);
-    tex->updateTexture();
-    window()->resetOpenGLState();
+
     node->setTexture(tex);
     node->setOwnsTexture(true);
     node->setRect(x(), y(), width(), height());
     node->setSourceRect(0, 0, width(), height());
+
+    tex->setSites(m_xy);
+    tex->setValues(m_colorData);
+    tex->setColormap(m_colorScale);
+    tex->updateTexture();
+
+    window()->resetOpenGLState();
+
     return node;
 }
 
 QSGNode *Scatterplot::createGlyphNodeTree()
 {
+    // NOTE:
+    // The glyph graph is structured as:
+    // root [opacityNode [outlineNode fillNode] ...]
     if (m_xy.n_rows < 1) {
         return 0;
     }
@@ -171,6 +178,9 @@ QSGNode *Scatterplot::createGlyphNodeTree()
 
 QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
+    // NOTE:
+    // The hierarchy in the scene graph is as follows:
+    // root [[splatNode] [glyphsRoot [glyph [...]]] [selectionNode]]
     QSGNode *root = 0;
     if (!oldNode) {
         root = new QSGNode;
@@ -182,6 +192,10 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         if (glyphTreeRoot) {
             root->appendChildNode(glyphTreeRoot);
         }
+
+        QSGSimpleRectNode *selectionRectNode = new QSGSimpleRectNode;
+        selectionRectNode->setColor(SELECTION_COLOR);
+        root->appendChildNode(selectionRectNode);
     } else {
         root = oldNode;
     }
@@ -193,8 +207,8 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     QSGNode *splatNode = root->firstChild();
     updateSplat(splatNode);
 
-    QSGNode *glyphsRootNode = root->firstChild()->nextSibling()->firstChild();
-    updateGlyphs(glyphsRootNode);
+    QSGNode *glyphsRootNode = root->firstChild()->nextSibling();
+    updateGlyphs(glyphsRootNode->firstChild());
 
     if (m_shouldUpdateGeometry) {
         m_shouldUpdateGeometry = false;
@@ -203,25 +217,14 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         m_shouldUpdateMaterials = false;
     }
 
-    // Selection rect
+    // Selection
+    QSGSimpleRectNode *selectionRectNode =
+        static_cast<QSGSimpleRectNode *>(root->firstChild()->nextSibling()->nextSibling());
     if (m_currentInteractionState == INTERACTION_SELECTING) {
-        QSGSimpleRectNode *selectionNode = 0;
-        if (!root->firstChild()->nextSibling()->nextSibling()) {
-            selectionNode = new QSGSimpleRectNode;
-            selectionNode->setColor(SELECTION_COLOR);
-            root->appendChildNode(selectionNode);
-        } else {
-            selectionNode = static_cast<QSGSimpleRectNode *>(root->firstChild()->nextSibling()->nextSibling());
-        }
-
-        selectionNode->setRect(QRectF(m_dragOriginPos, m_dragCurrentPos));
-        selectionNode->markDirty(QSGNode::DirtyGeometry);
+        selectionRectNode->setRect(QRectF(m_dragOriginPos, m_dragCurrentPos));
+        selectionRectNode->markDirty(QSGNode::DirtyGeometry);
     } else {
-        QSGNode *node = root->firstChild()->nextSibling()->nextSibling();
-        if (node) {
-            root->removeChildNode(node);
-            delete node;
-        }
+        selectionRectNode->setRect(QRectF(-1, -1, 0, 0));
     }
 
     animationTick();
