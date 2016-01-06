@@ -9,7 +9,7 @@ ApplicationWindow {
     id: mainWindow
     title: "Projection Manipulation"
     visible: true
-    minimumWidth: 300
+    minimumWidth: 900
     minimumHeight: 600
     maximumWidth: minimumWidth
     maximumHeight: minimumHeight
