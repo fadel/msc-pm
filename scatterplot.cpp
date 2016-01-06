@@ -243,7 +243,8 @@ void Scatterplot::updateSplat(QSGNode *node)
         tex->setColormap(m_colorScale);
     }
 
-    if (tex->updateTexture()) {
+    bool updated = tex->updateTexture();
+    if (updated) {
         window()->resetOpenGLState();
     }
 }
