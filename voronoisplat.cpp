@@ -119,10 +119,7 @@ void main() {
     discard;
   else {
     vec4 accum = texelFetch(accumTex, ivec2(gl_FragCoord.xy), 0);
-    // 1.0 is extra-accumulated because of white background
-    float value = 0.0;
-    if (accum.g > 1.0)
-      value = (accum.r - 1) / (accum.g - 1);
+    float value = (accum.g == 0.0) ? 0.0 : accum.r / accum.g;
     fragColor.rgb = getRGB(value);
     fragColor.a = 1.0 - dt / rad_max;
   }
@@ -250,14 +247,14 @@ bool VoronoiSplatTexture::updateTexture()
     gl.glEnable(GL_POINT_SPRITE);
     gl.glEnable(GL_PROGRAM_POINT_SIZE);
     gl.glEnable(GL_BLEND);
-    gl.glBlendFunc(GL_ONE, GL_ONE);
+    gl.glBlendFunc(GL_ONE, GL_ZERO);
 
     // First, we draw to an intermediate texture, which is used as input for the
     // second pass
     gl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
             GL_TEXTURE_2D, m_textures[1], 0);
 
-    gl.glClearColor(1, 1, 1, 1);
+    gl.glClearColor(0, 0, 0, 1);
     gl.glClear(GL_COLOR_BUFFER_BIT);
 
     m_sitesVAO.bind();
@@ -286,7 +283,7 @@ bool VoronoiSplatTexture::updateTexture()
     gl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
             GL_TEXTURE_2D, m_tex, 0);
 
-    glClearColor(1, 1, 1, 1);
+    glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     m_2ndPassVAO.bind();
