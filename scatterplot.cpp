@@ -105,7 +105,7 @@ void Scatterplot::updateMaterials()
     update();
 }
 
-QSGNode *Scatterplot::createSplatNode()
+QSGNode *Scatterplot::newSplatNode()
 {
     if (m_xy.n_rows < 1) {
         return 0;
@@ -129,7 +129,7 @@ QSGNode *Scatterplot::createSplatNode()
     return node;
 }
 
-QSGNode *Scatterplot::createGlyphNodeTree()
+QSGNode *Scatterplot::newGlyphTree()
 {
     // NOTE:
     // The glyph graph is structured as:
@@ -176,29 +176,31 @@ QSGNode *Scatterplot::createGlyphNodeTree()
     return node;
 }
 
-QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
+QSGNode *Scatterplot::newSceneGraph()
 {
     // NOTE:
     // The hierarchy in the scene graph is as follows:
     // root [[splatNode] [glyphsRoot [glyph [...]]] [selectionNode]]
-    QSGNode *root = 0;
-    if (!oldNode) {
-        root = new QSGNode;
-        QSGNode *splatNode = createSplatNode();
-        if (splatNode) {
-            root->appendChildNode(splatNode);
-        }
-        QSGNode *glyphTreeRoot = createGlyphNodeTree();
-        if (glyphTreeRoot) {
-            root->appendChildNode(glyphTreeRoot);
-        }
-
-        QSGSimpleRectNode *selectionRectNode = new QSGSimpleRectNode;
-        selectionRectNode->setColor(SELECTION_COLOR);
-        root->appendChildNode(selectionRectNode);
-    } else {
-        root = oldNode;
+    QSGNode *root = new QSGNode;
+    QSGNode *splatNode = newSplatNode();
+    if (splatNode) {
+        root->appendChildNode(splatNode);
     }
+    QSGNode *glyphTreeRoot = newGlyphTree();
+    if (glyphTreeRoot) {
+        root->appendChildNode(glyphTreeRoot);
+    }
+
+    QSGSimpleRectNode *selectionRectNode = new QSGSimpleRectNode;
+    selectionRectNode->setColor(SELECTION_COLOR);
+    root->appendChildNode(selectionRectNode);
+
+    return root;
+}
+
+QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
+{
+    QSGNode *root = oldNode ? oldNode : newSceneGraph();
 
     if (m_xy.n_rows < 1) {
         return root;
@@ -210,6 +212,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     QSGNode *glyphsRootNode = root->firstChild()->nextSibling();
     updateGlyphs(glyphsRootNode->firstChild());
 
+    // Change update hints to false; the splat and glyphs were just updated
     if (m_shouldUpdateGeometry) {
         m_shouldUpdateGeometry = false;
     }
@@ -224,6 +227,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         selectionRectNode->setRect(QRectF(m_dragOriginPos, m_dragCurrentPos));
         selectionRectNode->markDirty(QSGNode::DirtyGeometry);
     } else {
+        // Hide selection rect
         selectionRectNode->setRect(QRectF(-1, -1, 0, 0));
     }
 
