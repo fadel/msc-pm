@@ -12,6 +12,7 @@ HEADERS += main.h \
     scatterplot.h \
     voronoisplat.h \
     historygraph.h \
+    barchart.h \
     interactionhandler.h \
     selectionhandler.h \
     effectivenessobserver.h \
@@ -28,6 +29,7 @@ SOURCES += main.cpp \
     scatterplot.cpp \
     voronoisplat.cpp \
     historygraph.cpp \
+    barchart.cpp \
     interactionhandler.cpp \
     selectionhandler.cpp \
     effectivenessobserver.cpp \

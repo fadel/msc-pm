@@ -14,6 +14,7 @@
 #include "scatterplot.h"
 #include "voronoisplat.h"
 #include "historygraph.h"
+#include "barchart.h"
 #include "interactionhandler.h"
 #include "selectionhandler.h"
 #include "effectivenessobserver.h"
@@ -158,6 +159,7 @@ int main(int argc, char **argv)
 
     qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
     qmlRegisterType<HistoryGraph>("PM", 1, 0, "HistoryGraph");
+    qmlRegisterType<BarChart>("PM", 1, 0, "BarChart");
     qmlRegisterType<InteractionHandler>("PM", 1, 0, "InteractionHandler");
     qmlRegisterSingletonType<Main>("PM", 1, 0, "Main", mainProvider);
 
@@ -222,11 +224,14 @@ int main(int argc, char **argv)
             plot, SLOT(setSelection(const QSet<int> &)));
 
     // Connections between history graph and subsample plot
-    HistoryGraph *history = engine.rootObjects()[0]->findChild<HistoryGraph *>("history");
-    QObject::connect(subsamplePlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
-            history, SLOT(addHistoryItem(const arma::mat &)));
-    QObject::connect(history, SIGNAL(currentItemChanged(const arma::mat &)),
-            subsamplePlot, SLOT(setXY(const arma::mat &)));
+    //HistoryGraph *history = engine.rootObjects()[0]->findChild<HistoryGraph *>("history");
+    //QObject::connect(subsamplePlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
+    //        history, SLOT(addHistoryItem(const arma::mat &)));
+    //QObject::connect(history, SIGNAL(currentItemChanged(const arma::mat &)),
+    //        subsamplePlot, SLOT(setXY(const arma::mat &)));
+
+    BarChart *barChart = engine.rootObjects()[0]->findChild<BarChart *>("barChart");
+    barChart->setValues(arma::randn<arma::vec>(100));
 
     // Map distortion as the glyph color
     //DistortionObserver distortionObs(X, sampleIndices);
@@ -245,8 +250,7 @@ int main(int argc, char **argv)
     //QObject::connect(&enforcer, SIGNAL(effectivenessChanged(const arma::vec &)),
     //        subsamplePlot, SLOT(setColorData(const arma::vec &)));
 
-
-    history->addHistoryItem(Ys);
+    //history->addHistoryItem(Ys);
     subsamplePlot->setXY(Ys);
     subsamplePlot->setColorData(labels(sampleIndices));
     plot->setColorScale(&colorScale);

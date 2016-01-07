@@ -107,11 +107,17 @@ ApplicationWindow {
             border.width: 1
             border.color: "#cccccc"
 
-            HistoryGraph {
-                id: history
-                objectName: "history"
+            BarChart {
+                id: barChart
+                objectName: "barChart"
                 anchors.fill: parent
             }
+
+            //HistoryGraph {
+            //    id: history
+            //    objectName: "history"
+            //    anchors.fill: parent
+            //}
         }
     }
 
