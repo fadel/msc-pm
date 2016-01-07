@@ -95,12 +95,13 @@ QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
     QSGNode *root = oldNode ? oldNode : new QSGNode;
     if (m_shouldUpdateBars) {
+        int numValues = (int) m_values.n_elem;
         // First, make sure we have the same number of values & bars
-        while (m_values.n_elem > root->childCount()) {
+        while (numValues > root->childCount()) {
             QSGNode *barNode = newBarNode();
             root->appendChildNode(barNode);
         }
-        while (m_values.n_elem < root->childCount()) {
+        while (numValues < root->childCount()) {
             // NOTE: as stated in docs, QSGNode's children are stored in a
             // linked list. Hence, this operation should be as fast as expected
             root->removeChildNode(root->firstChild());
@@ -116,8 +117,10 @@ QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
 void BarChart::hoverMoveEvent(QHoverEvent *event)
 {
+    // TODO
 }
 
 void BarChart::mousePressEvent(QMouseEvent *event)
 {
+    // TODO
 }
