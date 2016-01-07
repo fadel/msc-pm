@@ -120,9 +120,9 @@ void main() {
   else {
     vec4 accum = texelFetch(accumTex, ivec2(gl_FragCoord.xy), 0);
     // 1.0 is extra-accumulated because of white background
-    float value = 0.0f;
+    float value = 0.0;
     if (accum.g > 1.0)
-      value = (accum.r - 1.0) / (accum.g - 1.0);
+      value = (accum.r - 1) / (accum.g - 1);
     fragColor.rgb = getRGB(value);
     fragColor.a = 1.0 - dt / rad_max;
   }
@@ -182,6 +182,7 @@ void VoronoiSplatTexture::setupTextures()
     gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     // Used for colormap lookup in the frag shader
+    // (using a 2D texture for compatibility; used to be a 1D texture)
     gl.glGenTextures(1, &m_colormapTex);
     gl.glBindTexture(GL_TEXTURE_2D, m_colormapTex);
     gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, COLORMAP_SAMPLES, 1, 0, GL_RGB,
@@ -236,7 +237,7 @@ bool VoronoiSplatTexture::updateTexture()
 
     gl.glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
 
-    // The first pass
+    // First pass
     m_program1->bind();
     m_program1->setUniformValue("rad_max", 20.0f);
     m_program1->setUniformValue("rad_blur", RAD_BLUR);
@@ -251,8 +252,8 @@ bool VoronoiSplatTexture::updateTexture()
     gl.glEnable(GL_BLEND);
     gl.glBlendFunc(GL_ONE, GL_ONE);
 
-    // In the first pass we draw to an intermediate texture, which is used as
-    // input for the next pass
+    // First, we draw to an intermediate texture, which is used as input for the
+    // second pass
     gl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
             GL_TEXTURE_2D, m_textures[1], 0);
 
@@ -281,7 +282,7 @@ bool VoronoiSplatTexture::updateTexture()
 
     gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Now we render to the output texture
+    // We now render to the output texture
     gl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
             GL_TEXTURE_2D, m_tex, 0);
 
@@ -367,7 +368,7 @@ void VoronoiSplatTexture::setSites(const arma::mat &points)
     double minY = points.col(1).min();
     double maxY = points.col(1).max();
 
-    // Coords are tighly packed into 'm_sites' as [ (x1, y1), (x2, y2), ... ]
+    // Coords are packed into 'm_sites' as [ x1, y1, x2, y2, ... ]
     m_sites.resize(2*points.n_rows);
     LinearScale<float> sx(minX, maxX, PADDING, m_size.width() - PADDING);
     const double *col = points.colptr(0);

@@ -19,7 +19,9 @@ public:
 
     void bind();
 
-    // When true is returned, should probably call resetOpenGLState() on window
+    // Call this whenever the texture should be updated (after changing the
+    // sites, values or colormap). When true is returned, should probably call
+    // resetOpenGLState() on QtQuick window
     bool updateTexture();
 
     bool hasAlphaChannel() const { return true; }
