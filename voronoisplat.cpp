@@ -110,7 +110,7 @@ uniform float rad_max;
 layout (location = 0) out vec4 fragColor;
 
 vec3 getRGB(float value) {
-  return texture(colormap, vec2(mix(0, 1, value), 0)).rgb;
+  return texture(colormap, vec2(mix(0.005, 0.995, value), 0)).rgb;
 }
 
 void main() {
