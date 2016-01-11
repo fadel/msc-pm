@@ -283,8 +283,8 @@ bool VoronoiSplatTexture::updateTexture()
     gl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
             GL_TEXTURE_2D, m_tex, 0);
 
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT);
+    gl.glClearColor(0, 0, 0, 0);
+    gl.glClear(GL_COLOR_BUFFER_BIT);
 
     m_2ndPassVAO.bind();
     gl.glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
