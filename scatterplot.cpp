@@ -124,7 +124,6 @@ QSGNode *Scatterplot::newSplatNode()
     tex->setValues(m_colorData);
     tex->setColormap(m_colorScale);
     tex->updateTexture();
-
     window()->resetOpenGLState();
 
     return node;
@@ -213,7 +212,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     updateSplat(node);
     node = node->nextSibling();
 
-    updateGlyphs(node->firstChild());
+    updateGlyphs(node);
     node = node->nextSibling();
 
     // Change update hints to false; the splat and glyphs were just updated
@@ -268,9 +267,8 @@ void Scatterplot::updateSplat(QSGNode *node)
     }
 }
 
-void Scatterplot::updateGlyphs(QSGNode *node)
+void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
 {
-
     qreal x, y, tx, ty, moveTranslationF;
 
     if (m_currentInteractionState == INTERACTION_MOVING) {
@@ -283,6 +281,7 @@ void Scatterplot::updateGlyphs(QSGNode *node)
     m_sx.setRange(PADDING, width() - PADDING);
     m_sy.setRange(height() - PADDING, PADDING);
 
+    QSGNode *node = glyphsNode->firstChild();
     float t = m_animationEasing.valueForProgress(m_t);
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         const arma::rowvec &oldRow = m_oldXY.row(i);
