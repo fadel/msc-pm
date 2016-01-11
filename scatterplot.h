@@ -18,6 +18,8 @@ public:
 
     arma::mat XY() const;
     void setColorScale(ColorScale *colorScale);
+    void setXY(const arma::mat &xy, bool updateView);
+    void setColorData(const arma::vec &colorData, bool updateView);
     Q_INVOKABLE bool saveToFile(const QUrl &url);
 
 signals:

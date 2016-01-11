@@ -17,9 +17,6 @@
 #include "barchart.h"
 #include "interactionhandler.h"
 #include "selectionhandler.h"
-#include "effectivenessobserver.h"
-#include "distortionobserver.h"
-#include "npdistortion.h"
 #include "skelft.h"
 
 static QObject *mainProvider(QQmlEngine *engine, QJSEngine *scriptEngine)
@@ -211,12 +208,6 @@ int main(int argc, char **argv)
             plot, SLOT(setXY(const arma::mat &)));
     m->setTechnique(InteractionHandler::TECHNIQUE_LAMP);
 
-    // Update splat whenever the main plot is also updated
-    //QObject::connect(plot, SIGNAL(xyChanged(const arma::mat &)),
-    //        splat, SLOT(setPoints(const arma::mat &)));
-    //QObject::connect(plot, SIGNAL(colorDataChanged(const arma::vec &)),
-    //        splat, SLOT(setValues(const arma::vec &)));
-
     // Linking between selections in subsample plot and full dataset plot
     SelectionHandler selectionHandler(sampleIndices);
     QObject::connect(subsamplePlot, SIGNAL(selectionChanged(const QSet<int> &)),
@@ -234,29 +225,12 @@ int main(int argc, char **argv)
     BarChart *barChart = engine.rootObjects()[0]->findChild<BarChart *>("barChart");
     barChart->setValues(arma::randn<arma::vec>(100));
 
-    // Map distortion as the glyph color
-    //DistortionObserver distortionObs(X, sampleIndices);
-    //std::unique_ptr<DistortionMeasure> distortionMeasure(new NPDistortion());
-    //distortionObs.setMeasure(distortionMeasure.get());
-    //QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
-    //        &distortionObs, SLOT(setMap(const arma::mat &)));
-    //QObject::connect(&distortionObs, SIGNAL(mapChanged(const arma::vec &)),
-    //        plot, SLOT(setColorData(const arma::vec &)));
-
-    //EffectiveInteractionEnforcer enforcer(sampleIndices);
-    //QObject::connect(subsamplePlot, SIGNAL(selectionChanged(const QSet<int> &)),
-    //        &enforcer, SLOT(setSelection(const QSet<int> &)));
-    //QObject::connect(plot, SIGNAL(colorDataChanged(const arma::vec &)),
-    //        &enforcer, SLOT(setMeasureDifference(const arma::vec &)));
-    //QObject::connect(&enforcer, SIGNAL(effectivenessChanged(const arma::vec &)),
-    //        subsamplePlot, SLOT(setColorData(const arma::vec &)));
-
     //history->addHistoryItem(Ys);
-    subsamplePlot->setXY(Ys);
-    subsamplePlot->setColorData(labels(sampleIndices));
     plot->setColorScale(&colorScale);
-    //splat->setColorScale(&colorScale);
-    plot->setColorData(labels);
+    plot->setColorData(labels, false);
+    subsamplePlot->setXY(Ys, false);
+    subsamplePlot->setColorData(labels(sampleIndices), false);
+    subsamplePlot->update();
 
     auto ret = app.exec();
 

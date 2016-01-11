@@ -53,7 +53,7 @@ bool Scatterplot::saveToFile(const QUrl &url)
     return m_xy.save(url.path().toStdString(), arma::raw_ascii);
 }
 
-void Scatterplot::setXY(const arma::mat &xy)
+void Scatterplot::setXY(const arma::mat &xy, bool updateView)
 {
     if (xy.n_cols != 2) {
         return;
@@ -75,23 +75,36 @@ void Scatterplot::setXY(const arma::mat &xy)
     max = std::max(m_xy.col(1).max(), m_oldXY.col(1).max());
     m_sy.setDomain(min, max);
 
-    updateGeometry();
-
     emit xyChanged(m_xy);
 
-    startAnimation();
+    if (updateView) {
+        updateGeometry();
+        startAnimation();
+    }
 }
 
-void Scatterplot::setColorData(const arma::vec &colorData)
+void Scatterplot::setXY(const arma::mat &xy)
 {
-    if (colorData.n_elem != m_xy.n_rows) {
+    setXY(xy, true);
+}
+
+void Scatterplot::setColorData(const arma::vec &colorData, bool updateView)
+{
+    if (m_xy.n_rows > 0 && colorData.n_elem != m_xy.n_rows) {
         return;
     }
 
     m_colorData = colorData;
     emit colorDataChanged(m_colorData);
 
-    updateMaterials();
+    if (updateView) {
+        updateMaterials();
+    }
+}
+
+void Scatterplot::setColorData(const arma::vec &colorData)
+{
+    setColorData(colorData, true);
 }
 
 void Scatterplot::updateGeometry()
