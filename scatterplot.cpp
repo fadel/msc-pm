@@ -144,7 +144,6 @@ QSGNode *Scatterplot::newGlyphTree()
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         QSGGeometry *glyphOutlineGeometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
         glyphOutlineGeometry->setDrawingMode(GL_LINE_LOOP);
-        updateCircleGeometry(glyphOutlineGeometry, GLYPH_SIZE / 2, 0, 0);
         QSGGeometryNode *glyphOutlineNode = new QSGGeometryNode;
         glyphOutlineNode->setGeometry(glyphOutlineGeometry);
         glyphOutlineNode->setFlag(QSGNode::OwnsGeometry);
@@ -156,7 +155,6 @@ QSGNode *Scatterplot::newGlyphTree()
 
         QSGGeometry *glyphGeometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
         glyphGeometry->setDrawingMode(GL_POLYGON);
-        updateCircleGeometry(glyphGeometry, GLYPH_SIZE / 2 - 0.5, 0, 0);
         QSGGeometryNode *glyphNode = new QSGGeometryNode;
         glyphNode->setGeometry(glyphGeometry);
         glyphNode->setFlag(QSGNode::OwnsGeometry);
