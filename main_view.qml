@@ -3,16 +3,21 @@ import QtQuick.Controls 1.3
 import QtQuick.Dialogs 1.2
 import QtQuick.Extras 1.4
 import QtQuick.Layouts 1.2
+import QtQuick.Window 2.2
 import PM 1.0
 
 ApplicationWindow {
     id: mainWindow
-    title: "Projection Manipulation"
+    title: "Projection"
     visible: true
-    minimumWidth: 900
-    minimumHeight: 600
-    maximumWidth: minimumWidth
-    maximumHeight: minimumHeight
+    contentItem.minimumWidth: 532
+    contentItem.minimumHeight: 622
+    contentItem.maximumWidth: contentItem.maximumWidth
+    contentItem.maximumHeight: contentItem.minimumHeight
+    Component.onCompleted: {
+        setX(Screen.width / 2 - width / 2);
+        setY(Screen.height / 2 - height / 2);
+    }
 
     menuBar: MenuBar {
         Menu {
@@ -67,43 +72,36 @@ ApplicationWindow {
         anchors.fill: parent
         anchors.margins: this.spacing
 
-        RowLayout {
-            spacing: 10
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+        Rectangle {
+            //Layout.fillWidth: true
+            //Layout.fillHeight: true
+            width: 512
+            height: 512
+            border.width: 1
+            border.color: "#cccccc"
 
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                border.width: 1
-                border.color: "#cccccc"
-
-                Scatterplot {
-                    id: subsamplePlot
-                    objectName: "subsamplePlot"
-                    anchors.fill: parent
-                }
+            Scatterplot {
+                id: subsamplePlot
+                objectName: "subsamplePlot"
+                x: parent.x
+                y: parent.y
+                z: 1
+                anchors.fill: parent
             }
 
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                border.width: 1
-                border.color: "#cccccc"
-
-                Scatterplot {
-                    id: plot
-                    objectName: "plot"
-                    width: 512
-                    height: 512
-                    anchors.margins: 10
-                }
+            Scatterplot {
+                id: plot
+                objectName: "plot"
+                x: parent.x
+                y: parent.y
+                z: 0
+                anchors.fill: parent
             }
         }
 
         Rectangle {
             Layout.fillWidth: true
-            Layout.minimumHeight: 150
+            Layout.minimumHeight: 80
             border.width: 1
             border.color: "#cccccc"
 
@@ -219,4 +217,12 @@ ApplicationWindow {
             onTriggered: console.log("stub: Silhouette")
         }
     }
+
+    // TODO
+    //Window {
+    //    title: "Options"
+    //    minimumWidth: 500
+    //    minimumHeight: 300
+    //    visible: false
+    //}
 }
