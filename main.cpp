@@ -187,6 +187,7 @@ int main(int argc, char **argv)
     //ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
     //colorScale.setExtents(-1, 1);
     Scatterplot *subsamplePlot = engine.rootObjects()[0]->findChild<Scatterplot *>("subsamplePlot");
+    subsamplePlot->setDisplaySplat(false);
     subsamplePlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
     // subsamplePlot->setColorData(arma::zeros<arma::vec>(subsampleSize));
     subsamplePlot->setColorScale(&colorScale);

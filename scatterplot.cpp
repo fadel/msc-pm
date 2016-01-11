@@ -20,6 +20,7 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     , m_currentInteractionState(INTERACTION_NONE)
     , m_shouldUpdateGeometry(false)
     , m_shouldUpdateMaterials(false)
+    , m_displaySplat(true)
     , m_animationEasing(QEasingCurve::InOutQuart)
 {
     setClip(true);
@@ -206,11 +207,14 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         return root;
     }
 
-    QSGNode *splatNode = root->firstChild();
-    updateSplat(splatNode);
+    // This keeps track of where we are in the scene when updating
+    QSGNode *node = root->firstChild();
 
-    QSGNode *glyphsRootNode = root->firstChild()->nextSibling();
-    updateGlyphs(glyphsRootNode->firstChild());
+    updateSplat(node);
+    node = node->nextSibling();
+
+    updateGlyphs(node->firstChild());
+    node = node->nextSibling();
 
     // Change update hints to false; the splat and glyphs were just updated
     if (m_shouldUpdateGeometry) {
@@ -221,15 +225,15 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     }
 
     // Selection
-    QSGSimpleRectNode *selectionRectNode =
-        static_cast<QSGSimpleRectNode *>(root->firstChild()->nextSibling()->nextSibling());
+    QSGSimpleRectNode *selectionNode = static_cast<QSGSimpleRectNode *>(node);
     if (m_currentInteractionState == INTERACTION_SELECTING) {
-        selectionRectNode->setRect(QRectF(m_dragOriginPos, m_dragCurrentPos));
-        selectionRectNode->markDirty(QSGNode::DirtyGeometry);
+        selectionNode->setRect(QRectF(m_dragOriginPos, m_dragCurrentPos));
+        selectionNode->markDirty(QSGNode::DirtyGeometry);
     } else {
         // Hide selection rect
-        selectionRectNode->setRect(QRectF(-1, -1, 0, 0));
+        selectionNode->setRect(QRectF(-1, -1, 0, 0));
     }
+    node = node->nextSibling();
 
     animationTick();
     return root;
@@ -238,9 +242,17 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 void Scatterplot::updateSplat(QSGNode *node)
 {
     QSGSimpleTextureNode *texNode = static_cast<QSGSimpleTextureNode *>(node);
+
+    if (!m_displaySplat) {
+        // Hide the splat and return, ignoring update requests
+        texNode->setRect(0, 0, 0, 0);
+        return;
+    }
+
+    texNode->setRect(x(), y(), width(), height());
+
     VoronoiSplatTexture *tex =
         static_cast<VoronoiSplatTexture *>(texNode->texture());
-
     if (m_shouldUpdateGeometry) {
         tex->setSites(m_xy);
     }
@@ -437,6 +449,18 @@ void Scatterplot::setSelection(const QSet<int> &selection)
     update();
 
     emit selectionChanged(selection);
+}
+
+void Scatterplot::setDisplaySplat(bool displaySplat)
+{
+    if (m_displaySplat != displaySplat) {
+        m_displaySplat = displaySplat;
+        m_shouldUpdateGeometry = true;
+        m_shouldUpdateMaterials = true;
+        update();
+
+        emit displaySplatChanged(displaySplat);
+    }
 }
 
 void Scatterplot::applyManipulation()

@@ -25,11 +25,13 @@ signals:
     void xyInteractivelyChanged(const arma::mat &XY) const;
     void colorDataChanged(const arma::vec &colorData) const;
     void selectionChanged(const QSet<int> &selection) const;
+    void displaySplatChanged(bool displaySplat) const;
 
 public slots:
     void setXY(const arma::mat &xy);
     void setColorData(const arma::vec &colorData);
     void setSelection(const QSet<int> &selection);
+    void setDisplaySplat(bool displaySplat);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
@@ -72,6 +74,7 @@ private:
 
     bool m_shouldUpdateGeometry, m_shouldUpdateMaterials;
 
+    bool m_displaySplat;
     arma::vec m_colorData;
     ColorScale *m_colorScale;
 
