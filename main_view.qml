@@ -81,20 +81,18 @@ ApplicationWindow {
             border.color: "#cccccc"
 
             Scatterplot {
-                id: subsamplePlot
-                objectName: "subsamplePlot"
-                x: parent.x
-                y: parent.y
-                z: 1
-                anchors.fill: parent
-            }
-
-            Scatterplot {
                 id: plot
                 objectName: "plot"
                 x: parent.x
                 y: parent.y
-                z: 0
+                anchors.fill: parent
+            }
+
+            Scatterplot {
+                id: subsamplePlot
+                objectName: "subsamplePlot"
+                x: parent.x
+                y: parent.y
                 anchors.fill: parent
             }
         }
