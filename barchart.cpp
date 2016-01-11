@@ -30,7 +30,7 @@ void BarChart::setValues(const arma::vec &values)
     emit valuesChanged(values);
 }
 
-QSGNode *BarChart::newBarNode()
+QSGNode *BarChart::newBarNode() const
 {
     // A bar node is:
     // opacityNode [outlineGeomNode barGeomNode]

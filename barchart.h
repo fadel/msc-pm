@@ -12,7 +12,7 @@ public:
     ~BarChart();
 
 signals:
-    void valuesChanged(const arma::vec &values);
+    void valuesChanged(const arma::vec &values) const;
 
 public slots:
     void setValues(const arma::vec &values);
@@ -23,7 +23,7 @@ protected:
     void mousePressEvent(QMouseEvent *event);
 
 private:
-    QSGNode *newBarNode();
+    QSGNode *newBarNode() const;
     void updateBarNodeGeom(QSGNode *barNode, float x, float width, float height);
     void updateBars(QSGNode *root);
 
