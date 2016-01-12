@@ -216,19 +216,19 @@ void VoronoiSplatTexture::bind()
 
 bool VoronoiSplatTexture::updateTexture()
 {
-    if (!m_sitesUpdated && !m_valuesUpdated && !m_colormapUpdated) {
+    if (!m_sitesChanged && !m_valuesChanged && !m_colormapChanged) {
         // Texture is already updated
         return false;
     }
 
     // Update OpenGL buffers and textures as needed
-    if (m_sitesUpdated) {
+    if (m_sitesChanged) {
         updateSites();
     }
-    if (m_valuesUpdated) {
+    if (m_valuesChanged) {
         updateValues();
     }
-    if (m_colormapUpdated) {
+    if (m_colormapChanged) {
         updateColormap();
     }
 
@@ -305,7 +305,7 @@ void VoronoiSplatTexture::updateSites()
     // Compute DT values for the new positions
     computeDT();
 
-    m_sitesUpdated = false;
+    m_sitesChanged = false;
 }
 
 void VoronoiSplatTexture::updateValues()
@@ -315,7 +315,7 @@ void VoronoiSplatTexture::updateValues()
     gl.glBufferData(GL_ARRAY_BUFFER, m_values.size() * sizeof(float),
             m_values.data(), GL_DYNAMIC_DRAW);
 
-    m_valuesUpdated = false;
+    m_valuesChanged = false;
 }
 
 void VoronoiSplatTexture::updateColormap()
@@ -324,7 +324,7 @@ void VoronoiSplatTexture::updateColormap()
     gl.glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, COLORMAP_SAMPLES, 1, GL_RGB,
             GL_FLOAT, m_cmap.data());
 
-    m_colormapUpdated = false;
+    m_colormapChanged = false;
 }
 
 void VoronoiSplatTexture::computeDT()
@@ -379,7 +379,7 @@ void VoronoiSplatTexture::setSites(const arma::mat &points)
         m_sites[2*i + 1] = sy(col[i]);
     }
 
-    m_sitesUpdated = true;
+    m_sitesChanged = true;
 }
 
 void VoronoiSplatTexture::setValues(const arma::vec &values)
@@ -393,7 +393,7 @@ void VoronoiSplatTexture::setValues(const arma::vec &values)
     LinearScale<float> scale(values.min(), values.max(), 0, 1.0f);
     std::transform(values.begin(), values.end(), m_values.begin(), scale);
 
-    m_valuesUpdated = true;
+    m_valuesChanged = true;
 }
 
 void VoronoiSplatTexture::setColormap(const ColorScale *scale)
@@ -414,5 +414,5 @@ void VoronoiSplatTexture::setColormap(const ColorScale *scale)
         t += step;
     }
 
-    m_colormapUpdated = true;
+    m_colormapChanged = true;
 }

@@ -58,7 +58,7 @@ private:
     std::vector<float> m_sites, m_values, m_cmap;
     QSize m_size;
 
-    bool m_sitesUpdated, m_valuesUpdated, m_colormapUpdated;
+    bool m_sitesChanged, m_valuesChanged, m_colormapChanged;
 };
 
 #endif // VORONOISPLAT_H
