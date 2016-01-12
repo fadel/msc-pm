@@ -12,7 +12,7 @@ ApplicationWindow {
     visible: true
     contentItem.minimumWidth: 532
     contentItem.minimumHeight: 622
-    contentItem.maximumWidth: contentItem.maximumWidth
+    contentItem.maximumWidth: contentItem.minimumWidth
     contentItem.maximumHeight: contentItem.minimumHeight
     Component.onCompleted: {
         setX(Screen.width / 2 - width / 2);
