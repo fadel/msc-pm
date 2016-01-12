@@ -27,80 +27,18 @@ static QObject *mainProvider(QQmlEngine *engine, QJSEngine *scriptEngine)
     return Main::instance();
 }
 
-static inline double hBeta(const arma::rowvec &Di, double beta, arma::rowvec &Pi) {
-    Pi = arma::exp(-Di * beta);
-    double sumPi = arma::accu(Pi);
-    double h = log(sumPi) + beta * arma::accu(Di % Pi) / sumPi;
-    Pi /= sumPi;
-    return h;
-}
-
-static void calcP(const arma::mat &X, arma::mat &P, double perplexity = 30, double tol = 1e-5) {
-    arma::colvec sumX = arma::sum(X % X, 1);
-    arma::mat D = -2 * (X * X.t());
-    D.each_col() += sumX;
-    arma::inplace_trans(D);
-    D.each_col() += sumX;
-    D.diag() *= 0;
-    double logU = log(perplexity);
-    arma::rowvec beta(X.n_rows, arma::fill::ones);
-
-    arma::rowvec Pi(X.n_rows);
-    for (arma::uword i = 0; i < X.n_rows; i++) {
-        double betaMin = -arma::datum::inf;
-        double betaMax =  arma::datum::inf;
-        arma::rowvec Di = D.row(i);
-        double h = hBeta(Di, beta[i], Pi);
-
-        double hDiff = h - logU;
-        for (int tries = 0; fabs(hDiff) > tol && tries < 50; tries++) {
-            if (hDiff > 0) {
-                betaMin = beta[i];
-                if (betaMax == arma::datum::inf || betaMax == -arma::datum::inf) {
-                    beta[i] *= 2;
-                } else {
-                    beta[i] = (beta[i] + betaMax) / 2.;
-                }
-            } else {
-                betaMax = beta[i];
-                if (betaMin == arma::datum::inf || betaMin == -arma::datum::inf) {
-                    beta[i] /= 2;
-                } else {
-                    beta[i] = (beta[i] + betaMin) / 2.;
-                }
-            }
-
-            h = hBeta(Di, beta[i], Pi);
-            hDiff = h - logU;
-        }
-
-        P.row(i) = Pi;
-    }
-}
-
-arma::uvec relevanceSampling(const arma::mat &X, int subsampleSize)
-{
-    arma::mat P(X.n_rows, X.n_rows);
-    calcP(X, P);
-    P = (P + P.t());
-    P /= arma::accu(P);
-    P.transform([](double p) { return std::max(p, 1e-12); });
-
-    arma::uvec indices = arma::sort_index(arma::sum(P));
-    return indices(arma::span(0, subsampleSize - 1));
-}
-
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
     app.setApplicationName("pm");
     app.setApplicationVersion("1.0");
+    // app.setAttribute(Qt::AA_ShareOpenGLContexts);
 
     QCommandLineParser parser;
     parser.setApplicationDescription("Interactive multidimensional projections.");
     parser.addHelpOption();
     parser.addVersionOption();
-    parser.addPositionalArgument("dataset", "Dataset filename (.tbl)");
+    parser.addPositionalArgument("dataset", "Dataset filename (.tbl file)");
 
     QCommandLineOption indicesFileOutputOption(QStringList() << "i" << "indices",
         "Filename to store the subsample indices. Omitting this option disables saving indices.",
@@ -166,6 +104,7 @@ int main(int argc, char **argv)
     fmt.setRenderableType(QSurfaceFormat::OpenGL);
     fmt.setVersion(4, 5);
     QSurfaceFormat::setDefaultFormat(fmt);
+
     QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
 
     ColorScale colorScale{
@@ -228,8 +167,8 @@ int main(int argc, char **argv)
     //history->addHistoryItem(Ys);
     plot->setColorScale(&colorScale);
     plot->setColorData(labels, false);
-    subsamplePlot->setXY(Ys, false);
     subsamplePlot->setColorData(labels(sampleIndices), false);
+    subsamplePlot->setXY(Ys, false);
     subsamplePlot->update();
 
     auto ret = app.exec();
