@@ -161,12 +161,17 @@ int main(int argc, char **argv)
     //QObject::connect(history, SIGNAL(currentItemChanged(const arma::mat &)),
     //        subsamplePlot, SLOT(setXY(const arma::mat &)));
 
+    QObject::connect(plot, SIGNAL(scaleChanged(const LinearScale<float> &, const LinearScale<float> &)),
+            subsamplePlot, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
+
     BarChart *barChart = engine.rootObjects()[0]->findChild<BarChart *>("barChart");
     barChart->setValues(arma::randn<arma::vec>(100));
 
     //history->addHistoryItem(Ys);
     plot->setColorScale(&colorScale);
     plot->setColorData(labels, false);
+
+    subsamplePlot->setAutoScale(false);
     subsamplePlot->setColorData(labels(sampleIndices), false);
     subsamplePlot->setXY(Ys, false);
     subsamplePlot->update();

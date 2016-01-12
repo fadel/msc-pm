@@ -54,4 +54,8 @@ void mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::m
 
         Y(i, arma::span(0, 1)) = (point - Xtil) * M + Ytil;
     }
+
+    for (arma::uword i = 0; i < sampleSize; i++) {
+        Y.row(sampleIndices[i]) = Ys.row(i);
+    }
 }

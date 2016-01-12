@@ -15,6 +15,7 @@ static const float PADDING = 10.f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
+    , m_autoScale(true)
     , m_sx(0, 1, 0, 1)
     , m_sy(0, 1, 0, 1)
     , m_currentInteractionState(INTERACTION_NONE)
@@ -63,17 +64,11 @@ void Scatterplot::setXY(const arma::mat &xy, bool updateView)
     }
 
     m_xy = xy;
-
-    float min, max;
-    min = m_xy.col(0).min();
-    max = m_xy.col(0).max();
-    m_sx.setDomain(min, max);
-
-    min = m_xy.col(1).min();
-    max = m_xy.col(1).max();
-    m_sy.setDomain(min, max);
-
     emit xyChanged(m_xy);
+
+    if (m_autoScale) {
+        autoScale();
+    }
 
     if (updateView) {
         updateGeometry();
@@ -102,6 +97,38 @@ void Scatterplot::setColorData(const arma::vec &colorData, bool updateView)
 void Scatterplot::setColorData(const arma::vec &colorData)
 {
     setColorData(colorData, true);
+}
+
+void Scatterplot::setAutoScale(bool autoScale)
+{
+    m_autoScale = autoScale;
+    if (autoScale) {
+        this->autoScale();
+    }
+}
+
+void Scatterplot::setScale(const LinearScale<float> &sx, const LinearScale<float> &sy, bool updateView)
+{
+    m_sx = sx;
+    m_sy = sy;
+    emit scaleChanged(m_sx, m_sy);
+
+    if (updateView) {
+        updateGeometry();
+    }
+}
+
+void Scatterplot::setScale(const LinearScale<float> &sx, const LinearScale<float> &sy)
+{
+    setScale(sx, sy, true);
+}
+
+void Scatterplot::autoScale()
+{
+    m_sx.setDomain(m_xy.col(0).min(), m_xy.col(0).max());
+    m_sy.setDomain(m_xy.col(1).min(), m_xy.col(1).max());
+
+    emit scaleChanged(m_sx, m_sy);
 }
 
 void Scatterplot::updateGeometry()
@@ -209,6 +236,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
     QSGNode *root = oldNode ? oldNode : newSceneGraph();
 
+    qDebug() << "updatePaintNode: " << this;
     if (m_xy.n_rows < 1) {
         return root;
     }

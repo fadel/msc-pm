@@ -20,6 +20,8 @@ public:
     void setColorScale(ColorScale *colorScale);
     void setXY(const arma::mat &xy, bool updateView);
     void setColorData(const arma::vec &colorData, bool updateView);
+    void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy, bool updateView);
+    void setAutoScale(bool autoScale);
     Q_INVOKABLE bool saveToFile(const QUrl &url);
 
 signals:
@@ -28,12 +30,14 @@ signals:
     void colorDataChanged(const arma::vec &colorData) const;
     void selectionChanged(const QSet<int> &selection) const;
     void displaySplatChanged(bool displaySplat) const;
+    void scaleChanged(const LinearScale<float> &sx, const LinearScale<float> &sy) const;
 
 public slots:
     void setXY(const arma::mat &xy);
     void setColorData(const arma::vec &colorData);
     void setSelection(const QSet<int> &selection);
     void setDisplaySplat(bool displaySplat);
+    void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
@@ -56,6 +60,9 @@ private:
     void updateGlyphs(QSGNode *node);
 
     arma::mat m_xy;
+
+    void autoScale();
+    bool m_autoScale;
     LinearScale<float> m_sx, m_sy;
 
     enum InteractionState {
