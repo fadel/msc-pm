@@ -55,11 +55,7 @@ private:
     void updateSplat(QSGNode *node);
     void updateGlyphs(QSGNode *node);
 
-    void resetAnimation();
-    void startAnimation();
-    void animationTick();
-
-    arma::mat m_oldXY, m_xy;
+    arma::mat m_xy;
     LinearScale<float> m_sx, m_sy;
 
     enum InteractionState {
@@ -79,9 +75,6 @@ private:
     bool m_displaySplat;
     arma::vec m_colorData;
     ColorScale *m_colorScale;
-
-    QEasingCurve m_animationEasing;
-    float m_t;
 };
 
 #endif // SCATTERPLOT_H
