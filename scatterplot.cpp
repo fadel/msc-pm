@@ -10,7 +10,7 @@ static const qreal GLYPH_OPACITY_SELECTED = 1.0;
 static const QColor OUTLINE_COLOR(0, 0, 0);
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
-static const int GLYPH_SIZE = 4.f;
+static const int GLYPH_SIZE = 6.f;
 static const float PADDING = 10.f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
@@ -128,16 +128,15 @@ QSGNode *Scatterplot::newSplatNode()
     QSGSimpleTextureNode *node = new QSGSimpleTextureNode;
     VoronoiSplatTexture *tex = new VoronoiSplatTexture(QSize(width(), height()));
 
-    node->setTexture(tex);
-    node->setOwnsTexture(true);
-    node->setRect(x(), y(), width(), height());
-    node->setSourceRect(0, 0, width(), height());
-
     tex->setSites(m_xy);
     tex->setValues(m_colorData);
     tex->setColormap(m_colorScale);
     tex->updateTexture();
     window()->resetOpenGLState();
+
+    node->setTexture(tex);
+    node->setOwnsTexture(true);
+    node->setSourceRect(0, 0, width(), height());
 
     return node;
 }
