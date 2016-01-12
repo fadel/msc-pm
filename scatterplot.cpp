@@ -236,7 +236,6 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
     QSGNode *root = oldNode ? oldNode : newSceneGraph();
 
-    qDebug() << "updatePaintNode: " << this;
     if (m_xy.n_rows < 1) {
         return root;
     }
