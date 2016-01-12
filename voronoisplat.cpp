@@ -300,7 +300,7 @@ void VoronoiSplatTexture::updateSites()
     // Update VBO with the new data
     gl.glBindBuffer(GL_ARRAY_BUFFER, m_VBOs[0]);
     gl.glBufferData(GL_ARRAY_BUFFER, m_sites.size() * sizeof(float),
-            m_sites.data(), GL_STATIC_DRAW);
+            m_sites.data(), GL_DYNAMIC_DRAW);
 
     // Compute DT values for the new positions
     computeDT();
@@ -331,13 +331,13 @@ void VoronoiSplatTexture::computeDT()
 {
     int w = m_size.width(), h = m_size.height();
 
+    // Compute FT of the sites
     std::vector<float> buf(w*h, 0.0f);
     for (unsigned i = 0; i < m_sites.size(); i += 2) {
         buf[int(m_sites[i + 1])*h + int(m_sites[i])] = (float) i/2 + 1;
     }
-
-    // Compute FT of the sites
     skelft2DFT(0, buf.data(), 0, 0, w, h, w);
+
     // Compute DT of the sites (from the resident FT)
     skelft2DDT(buf.data(), 0, 0, w, h);
 
