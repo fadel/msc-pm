@@ -297,7 +297,6 @@ bool VoronoiSplatTexture::updateTexture()
 
 void VoronoiSplatTexture::updateSites()
 {
-    // Update VBO with the new data
     gl.glBindBuffer(GL_ARRAY_BUFFER, m_VBOs[0]);
     gl.glBufferData(GL_ARRAY_BUFFER, m_sites.size() * sizeof(float),
             m_sites.data(), GL_DYNAMIC_DRAW);
@@ -310,7 +309,6 @@ void VoronoiSplatTexture::updateSites()
 
 void VoronoiSplatTexture::updateValues()
 {
-    // Update VBO with the new data
     gl.glBindBuffer(GL_ARRAY_BUFFER, m_VBOs[1]);
     gl.glBufferData(GL_ARRAY_BUFFER, m_values.size() * sizeof(float),
             m_values.data(), GL_DYNAMIC_DRAW);
