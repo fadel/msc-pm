@@ -1,8 +1,12 @@
 #ifndef BARCHART_H
 #define BARCHART_H
 
+#include <vector>
+
 #include <QtQuick>
 #include <armadillo>
+
+#include "scale.h"
 
 class BarChart : public QQuickItem
 {
@@ -26,9 +30,11 @@ private:
     QSGNode *newBarNode() const;
     void updateBarNodeGeom(QSGNode *barNode, float x, float width, float height);
     void updateBars(QSGNode *root);
+    bool m_shouldUpdateBars;
 
     arma::vec m_values;
-    bool m_shouldUpdateBars;
+    std::vector<int> m_originalIndices;
+    LinearScale<float> m_scale;
 };
 
 #endif // BARCHART_H

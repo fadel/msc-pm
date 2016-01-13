@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include "geometry.h"
-#include "scale.h"
 
 static const QColor OUTLINE_COLOR(0, 0, 0);
 static const QColor BAR_COLOR(128, 128, 128);
@@ -12,6 +11,7 @@ static const float DEFAULT_OPACITY = 0.8f;
 BarChart::BarChart(QQuickItem *parent)
     : QQuickItem(parent)
     , m_shouldUpdateBars(false)
+    , m_scale(0, 1, 0, 1)
 {
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
@@ -26,6 +26,16 @@ BarChart::~BarChart()
 void BarChart::setValues(const arma::vec &values)
 {
     m_values = values;
+    m_scale.setDomain(m_values.min(), m_values.max());
+
+    m_originalIndices.resize(m_values.n_elem);
+    for (int i = 0; i < m_originalIndices.size(); i++) {
+        m_originalIndices[i] = i;
+    }
+
+    std::sort(m_originalIndices.begin(), m_originalIndices.end(),
+         [this](int i, int j) { return m_values[i] > m_values[j]; });
+
     m_shouldUpdateBars = true;
     emit valuesChanged(values);
 }
@@ -82,10 +92,10 @@ void BarChart::updateBars(QSGNode *root)
     QSGNode *node = root->firstChild();
     float x = 0;
     float barWidth = width() / m_values.n_elem;
-    LinearScale<float> heightScale(m_values.min(), m_values.max(), 0, height());
 
-    for (auto it = m_values.cbegin(); it != m_values.cend(); it++) {
-        updateBarNodeGeom(node, x, barWidth, heightScale((float) *it));
+    m_scale.setRange(0, height());
+    for (auto it = m_originalIndices.cbegin(); it != m_originalIndices.cend(); it++) {
+        updateBarNodeGeom(node, x, barWidth, m_scale(m_values[*it]));
         x += barWidth;
         node = node->nextSibling();
     }
