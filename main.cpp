@@ -61,7 +61,7 @@ int main(int argc, char **argv)
     arma::vec labels = m->labels();
 
     arma::uword n = X.n_rows;
-    int cpSize = (int) (3 * sqrt(n));
+    int cpSize;
     arma::uvec cpIndices;
     arma::mat Ys;
 
@@ -73,6 +73,7 @@ int main(int argc, char **argv)
             cpIndices.load(indicesFilename.toStdString(), arma::raw_ascii);
             cpSize = cpIndices.n_elem;
         } else {
+            cpSize = (int) (3 * sqrt(n));
             // cpIndices = relevanceSampling(X, cpSize);
             cpIndices = arma::randi<arma::uvec>(cpSize, arma::distr_param(0, n-1));
         }
@@ -136,7 +137,7 @@ int main(int argc, char **argv)
     QObject::connect(cpPlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
             m, SLOT(setCP(const arma::mat &)));
 
-    // Update projection as the cp is modified
+    // Update projection as the cp are modified
     InteractionHandler interactionHandler(X, cpIndices);
     m->setInteractionHandler(&interactionHandler);
     QObject::connect(cpPlot, SIGNAL(xyChanged(const arma::mat &)),
@@ -148,11 +149,11 @@ int main(int argc, char **argv)
     m->setTechnique(InteractionHandler::TECHNIQUE_LAMP);
 
     // Linking between selections in cp plot and full dataset plot
-    SelectionHandler selectionHandler(cpIndices);
-    QObject::connect(cpPlot, SIGNAL(selectionChanged(const QSet<int> &)),
-            &selectionHandler, SLOT(setSelection(const QSet<int> &)));
-    QObject::connect(&selectionHandler, SIGNAL(selectionChanged(const QSet<int> &)),
-            plot, SLOT(setSelection(const QSet<int> &)));
+    //SelectionHandler selectionHandler(cpIndices);
+    //QObject::connect(cpPlot, SIGNAL(selectionChanged(const QSet<int> &)),
+    //        &selectionHandler, SLOT(setSelection(const QSet<int> &)));
+    //QObject::connect(&selectionHandler, SIGNAL(selectionChanged(const QSet<int> &)),
+    //        plot, SLOT(setSelection(const QSet<int> &)));
 
     // Connections between history graph and cp plot
     //HistoryGraph *history = engine.rootObjects()[0]->findChild<HistoryGraph *>("history");
@@ -175,6 +176,11 @@ int main(int argc, char **argv)
     cpPlot->setColorData(labels(cpIndices), false);
     cpPlot->setXY(Ys, false);
     cpPlot->update();
+
+    arma::vec plotOpacities(X.n_rows);
+    plotOpacities.fill(0.4f);
+    plotOpacities(cpIndices).fill(0.0f);
+    plot->setOpacityData(plotOpacities);
 
     auto ret = app.exec();
 

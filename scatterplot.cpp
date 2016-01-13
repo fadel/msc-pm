@@ -10,8 +10,8 @@ static const qreal GLYPH_OPACITY_SELECTED = 1.0;
 static const QColor OUTLINE_COLOR(0, 0, 0);
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
-static const int GLYPH_SIZE = 6.f;
-static const float PADDING = 10.f;
+static const int GLYPH_SIZE = 4.0f;
+static const float PADDING = 10.0f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
@@ -70,6 +70,12 @@ void Scatterplot::setXY(const arma::mat &xy, bool updateView)
         autoScale();
     }
 
+    if (m_opacityData.n_elem != m_xy.n_rows) {
+        arma::vec opacityData(xy.n_rows);
+        opacityData.fill(GLYPH_OPACITY);
+        setOpacityData(opacityData, false);
+    }
+
     if (updateView) {
         updateGeometry();
     }
@@ -105,6 +111,25 @@ void Scatterplot::setAutoScale(bool autoScale)
     if (autoScale) {
         this->autoScale();
     }
+}
+
+void Scatterplot::setOpacityData(const arma::vec &opacityData, bool updateView)
+{
+    if (m_xy.n_rows > 0 && opacityData.n_elem != m_xy.n_rows) {
+        return;
+    }
+
+    m_opacityData = opacityData;
+    emit opacityDataChanged(m_opacityData);
+
+    if (updateView) {
+        update();
+    }
+}
+
+void Scatterplot::setOpacityData(const arma::vec &opacityData)
+{
+    setOpacityData(opacityData, true);
 }
 
 void Scatterplot::setScale(const LinearScale<float> &sx, const LinearScale<float> &sy, bool updateView)
@@ -320,7 +345,7 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
         bool isSelected = m_selectedGlyphs.contains(i);
 
         QSGOpacityNode *glyphOpacityNode = static_cast<QSGOpacityNode *>(node);
-        glyphOpacityNode->setOpacity(isSelected ? GLYPH_OPACITY_SELECTED : GLYPH_OPACITY);
+        glyphOpacityNode->setOpacity(m_opacityData[i]);
 
         QSGGeometryNode *glyphOutlineNode = static_cast<QSGGeometryNode *>(node->firstChild());
         QSGGeometryNode *glyphNode = static_cast<QSGGeometryNode *>(node->firstChild()->nextSibling());
@@ -452,6 +477,10 @@ bool Scatterplot::updateSelection(bool mergeSelection)
 void Scatterplot::setSelection(const QSet<int> &selection)
 {
     m_selectedGlyphs = selection;
+    for (auto it = m_selectedGlyphs.cbegin();
+            it != m_selectedGlyphs.cend(); it++) {
+        m_opacityData[*it] = GLYPH_OPACITY_SELECTED;
+    }
     update();
 
     emit selectionChanged(selection);

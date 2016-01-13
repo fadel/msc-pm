@@ -20,6 +20,7 @@ public:
     void setColorScale(ColorScale *colorScale);
     void setXY(const arma::mat &xy, bool updateView);
     void setColorData(const arma::vec &colorData, bool updateView);
+    void setOpacityData(const arma::vec &opacityData, bool updateView);
     void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy, bool updateView);
     void setAutoScale(bool autoScale);
     Q_INVOKABLE bool saveToFile(const QUrl &url);
@@ -28,6 +29,7 @@ signals:
     void xyChanged(const arma::mat &XY) const;
     void xyInteractivelyChanged(const arma::mat &XY) const;
     void colorDataChanged(const arma::vec &colorData) const;
+    void opacityDataChanged(const arma::vec &opacityData) const;
     void selectionChanged(const QSet<int> &selection) const;
     void displaySplatChanged(bool displaySplat) const;
     void scaleChanged(const LinearScale<float> &sx, const LinearScale<float> &sy) const;
@@ -35,6 +37,7 @@ signals:
 public slots:
     void setXY(const arma::mat &xy);
     void setColorData(const arma::vec &colorData);
+    void setOpacityData(const arma::vec &opacityData);
     void setSelection(const QSet<int> &selection);
     void setDisplaySplat(bool displaySplat);
     void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
@@ -80,8 +83,10 @@ private:
     bool m_shouldUpdateGeometry, m_shouldUpdateMaterials;
 
     bool m_displaySplat;
-    arma::vec m_colorData;
     ColorScale *m_colorScale;
+
+    arma::vec m_colorData;
+    arma::vec m_opacityData;
 };
 
 #endif // SCATTERPLOT_H
