@@ -16,21 +16,21 @@ public:
         TECHNIQUE_PEKALSKA
     };
 
-    InteractionHandler(const arma::mat &X, const arma::uvec &sampleIndices);
+    InteractionHandler(const arma::mat &X, const arma::uvec &cpIndices);
     void setTechnique(Technique technique);
 
 signals:
-    void subsampleChanged(const arma::mat &Y);
+    void cpChanged(const arma::mat &Y);
 
 public slots:
-    void setSubsample(const arma::mat &Ys);
+    void setCP(const arma::mat &Ys);
 
 protected:
     InteractionHandler() {}
 
 private:
     arma::mat m_X, m_Y;
-    arma::uvec m_sampleIndices;
+    arma::uvec m_cpIndices;
     Technique m_technique;
 };
 

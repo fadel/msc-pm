@@ -89,8 +89,8 @@ ApplicationWindow {
             }
 
             Scatterplot {
-                id: subsamplePlot
-                objectName: "subsamplePlot"
+                id: cpPlot
+                objectName: "cpPlot"
                 x: parent.x
                 y: parent.y
                 anchors.fill: parent
@@ -129,7 +129,7 @@ ApplicationWindow {
         text: "&Save data"
         shortcut: "Ctrl+S"
         onTriggered: {
-            console.log("Saving subsample mapping...")
+            console.log("Saving control points' map...")
             Main.saveData()
         }
     }

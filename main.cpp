@@ -41,13 +41,13 @@ int main(int argc, char **argv)
     parser.addPositionalArgument("dataset", "Dataset filename (.tbl file)");
 
     QCommandLineOption indicesFileOutputOption(QStringList() << "i" << "indices",
-        "Filename to store the subsample indices. Omitting this option disables saving indices.",
+        "Filename to store the control points' indices. Omitting this option disables saving indices.",
         "filename");
     parser.addOption(indicesFileOutputOption);
-    QCommandLineOption subsampleFileOutputOption(QStringList() << "s" << "subsample",
-        "Filename to store subsample mapping. Omitting this option disables saving subsamples.",
+    QCommandLineOption cpFileOutputOption(QStringList() << "c" << "cpoints",
+        "Filename to store the control points' map. Omitting this option disables saving this map.",
         "filename");
-    parser.addOption(subsampleFileOutputOption);
+    parser.addOption(cpFileOutputOption);
 
     parser.process(app);
     QStringList args = parser.positionalArguments();
@@ -61,8 +61,8 @@ int main(int argc, char **argv)
     arma::vec labels = m->labels();
 
     arma::uword n = X.n_rows;
-    int subsampleSize = (int) (3 * sqrt(n));
-    arma::uvec sampleIndices;
+    int cpSize = (int) (3 * sqrt(n));
+    arma::uvec cpIndices;
     arma::mat Ys;
 
     if (parser.isSet(indicesFileOutputOption)) {
@@ -70,27 +70,27 @@ int main(int argc, char **argv)
         m->setIndicesSavePath(indicesFilename);
         QFile indicesFile(indicesFilename);
         if (indicesFile.exists()) {
-            sampleIndices.load(indicesFilename.toStdString(), arma::raw_ascii);
-            subsampleSize = sampleIndices.n_elem;
+            cpIndices.load(indicesFilename.toStdString(), arma::raw_ascii);
+            cpSize = cpIndices.n_elem;
         } else {
-            // sampleIndices = relevanceSampling(X, subsampleSize);
-            sampleIndices = arma::randi<arma::uvec>(subsampleSize, arma::distr_param(0, n-1));
+            // cpIndices = relevanceSampling(X, cpSize);
+            cpIndices = arma::randi<arma::uvec>(cpSize, arma::distr_param(0, n-1));
         }
     }
-    if (parser.isSet(subsampleFileOutputOption)) {
-        const QString &subsampleFilename = parser.value(subsampleFileOutputOption);
-        m->setSubsampleSavePath(subsampleFilename);
-        QFile subsampleFile(subsampleFilename);
-        if (subsampleFile.exists()) {
-            Ys.load(subsampleFilename.toStdString(), arma::raw_ascii);
+    if (parser.isSet(cpFileOutputOption)) {
+        const QString &cpFilename = parser.value(cpFileOutputOption);
+        m->setCPSavePath(cpFilename);
+        QFile cpFile(cpFilename);
+        if (cpFile.exists()) {
+            Ys.load(cpFilename.toStdString(), arma::raw_ascii);
         } else {
-            Ys.set_size(subsampleSize, 2);
-            mp::forceScheme(mp::dist(X.rows(sampleIndices)), Ys);
+            Ys.set_size(cpSize, 2);
+            mp::forceScheme(mp::dist(X.rows(cpIndices)), Ys);
         }
     }
 
-    m->setSubsampleIndices(sampleIndices);
-    m->setSubsample(Ys);
+    m->setCPIndices(cpIndices);
+    m->setCP(Ys);
 
     qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
     qmlRegisterType<HistoryGraph>("PM", 1, 0, "HistoryGraph");
@@ -122,47 +122,47 @@ int main(int argc, char **argv)
 
     //ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
     //colorScale.setExtents(-1, 1);
-    Scatterplot *subsamplePlot = engine.rootObjects()[0]->findChild<Scatterplot *>("subsamplePlot");
-    subsamplePlot->setDisplaySplat(false);
-    subsamplePlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
-    // subsamplePlot->setColorData(arma::zeros<arma::vec>(subsampleSize));
-    subsamplePlot->setColorScale(&colorScale);
+    Scatterplot *cpPlot = engine.rootObjects()[0]->findChild<Scatterplot *>("cpPlot");
+    cpPlot->setDisplaySplat(false);
+    cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
+    // cpPlot->setColorData(arma::zeros<arma::vec>(cpSize));
+    cpPlot->setColorScale(&colorScale);
     Scatterplot *plot = engine.rootObjects()[0]->findChild<Scatterplot *>("plot");
     skelft2DInitialization(plot->width());
 
-    // Keep track of the current subsample (in order to save them later, if requested)
-    QObject::connect(subsamplePlot, SIGNAL(xyChanged(const arma::mat &)),
-            m, SLOT(setSubsample(const arma::mat &)));
-    QObject::connect(subsamplePlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
-            m, SLOT(setSubsample(const arma::mat &)));
+    // Keep track of the current cp (in order to save them later, if requested)
+    QObject::connect(cpPlot, SIGNAL(xyChanged(const arma::mat &)),
+            m, SLOT(setCP(const arma::mat &)));
+    QObject::connect(cpPlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
+            m, SLOT(setCP(const arma::mat &)));
 
-    // Update projection as the subsample is modified
-    InteractionHandler interactionHandler(X, sampleIndices);
+    // Update projection as the cp is modified
+    InteractionHandler interactionHandler(X, cpIndices);
     m->setInteractionHandler(&interactionHandler);
-    QObject::connect(subsamplePlot, SIGNAL(xyChanged(const arma::mat &)),
-            &interactionHandler, SLOT(setSubsample(const arma::mat &)));
-    QObject::connect(subsamplePlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
-            &interactionHandler, SLOT(setSubsample(const arma::mat &)));
-    QObject::connect(&interactionHandler, SIGNAL(subsampleChanged(const arma::mat &)),
+    QObject::connect(cpPlot, SIGNAL(xyChanged(const arma::mat &)),
+            &interactionHandler, SLOT(setCP(const arma::mat &)));
+    QObject::connect(cpPlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
+            &interactionHandler, SLOT(setCP(const arma::mat &)));
+    QObject::connect(&interactionHandler, SIGNAL(cpChanged(const arma::mat &)),
             plot, SLOT(setXY(const arma::mat &)));
     m->setTechnique(InteractionHandler::TECHNIQUE_LAMP);
 
-    // Linking between selections in subsample plot and full dataset plot
-    SelectionHandler selectionHandler(sampleIndices);
-    QObject::connect(subsamplePlot, SIGNAL(selectionChanged(const QSet<int> &)),
+    // Linking between selections in cp plot and full dataset plot
+    SelectionHandler selectionHandler(cpIndices);
+    QObject::connect(cpPlot, SIGNAL(selectionChanged(const QSet<int> &)),
             &selectionHandler, SLOT(setSelection(const QSet<int> &)));
     QObject::connect(&selectionHandler, SIGNAL(selectionChanged(const QSet<int> &)),
             plot, SLOT(setSelection(const QSet<int> &)));
 
-    // Connections between history graph and subsample plot
+    // Connections between history graph and cp plot
     //HistoryGraph *history = engine.rootObjects()[0]->findChild<HistoryGraph *>("history");
-    //QObject::connect(subsamplePlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
+    //QObject::connect(cpPlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
     //        history, SLOT(addHistoryItem(const arma::mat &)));
     //QObject::connect(history, SIGNAL(currentItemChanged(const arma::mat &)),
-    //        subsamplePlot, SLOT(setXY(const arma::mat &)));
+    //        cpPlot, SLOT(setXY(const arma::mat &)));
 
     QObject::connect(plot, SIGNAL(scaleChanged(const LinearScale<float> &, const LinearScale<float> &)),
-            subsamplePlot, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
+            cpPlot, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
 
     BarChart *barChart = engine.rootObjects()[0]->findChild<BarChart *>("barChart");
     barChart->setValues(arma::randn<arma::vec>(100));
@@ -171,10 +171,10 @@ int main(int argc, char **argv)
     plot->setColorScale(&colorScale);
     plot->setColorData(labels, false);
 
-    subsamplePlot->setAutoScale(false);
-    subsamplePlot->setColorData(labels(sampleIndices), false);
-    subsamplePlot->setXY(Ys, false);
-    subsamplePlot->update();
+    cpPlot->setAutoScale(false);
+    cpPlot->setColorData(labels(cpIndices), false);
+    cpPlot->setXY(Ys, false);
+    cpPlot->update();
 
     auto ret = app.exec();
 
