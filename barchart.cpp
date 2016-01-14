@@ -26,15 +26,18 @@ BarChart::~BarChart()
 void BarChart::setValues(const arma::vec &values)
 {
     m_values = values;
-    m_scale.setDomain(m_values.min(), m_values.max());
 
     m_originalIndices.resize(m_values.n_elem);
-    for (int i = 0; i < m_originalIndices.size(); i++) {
-        m_originalIndices[i] = i;
-    }
+    if (m_values.n_elem > 0) {
+        m_scale.setDomain(m_values.min(), m_values.max());
 
-    std::sort(m_originalIndices.begin(), m_originalIndices.end(),
-         [this](int i, int j) { return m_values[i] > m_values[j]; });
+        for (int i = 0; i < m_originalIndices.size(); i++) {
+            m_originalIndices[i] = i;
+        }
+
+        std::sort(m_originalIndices.begin(), m_originalIndices.end(),
+            [this](int i, int j) { return m_values[i] > m_values[j]; });
+    }
 
     m_shouldUpdateBars = true;
     emit valuesChanged(values);
