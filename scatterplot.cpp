@@ -10,7 +10,7 @@ static const qreal GLYPH_OPACITY_SELECTED = 1.0;
 static const QColor OUTLINE_COLOR(0, 0, 0);
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
-static const int GLYPH_SIZE = 4.0f;
+static const int GLYPH_SIZE = 8.0f;
 static const float PADDING = 10.0f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
@@ -35,7 +35,7 @@ void Scatterplot::setColorScale(ColorScale *colorScale)
 
     m_colorScale = colorScale;
     if (m_colorData.n_elem > 0) {
-        updateMaterials();
+        m_shouldUpdateMaterials = true;
     }
 }
 
@@ -76,8 +76,10 @@ void Scatterplot::setXY(const arma::mat &xy, bool updateView)
         setOpacityData(opacityData, false);
     }
 
+    m_shouldUpdateGeometry = true;
+
     if (updateView) {
-        updateGeometry();
+        update();
     }
 }
 
@@ -95,8 +97,10 @@ void Scatterplot::setColorData(const arma::vec &colorData, bool updateView)
     m_colorData = colorData;
     emit colorDataChanged(m_colorData);
 
+    m_shouldUpdateMaterials = true;
+
     if (updateView) {
-        updateMaterials();
+        update();
     }
 }
 
@@ -138,8 +142,10 @@ void Scatterplot::setScale(const LinearScale<float> &sx, const LinearScale<float
     m_sy = sy;
     emit scaleChanged(m_sx, m_sy);
 
+    m_shouldUpdateGeometry = true;
+
     if (updateView) {
-        updateGeometry();
+        update();
     }
 }
 
@@ -154,18 +160,6 @@ void Scatterplot::autoScale()
     m_sy.setDomain(m_xy.col(1).min(), m_xy.col(1).max());
 
     emit scaleChanged(m_sx, m_sy);
-}
-
-void Scatterplot::updateGeometry()
-{
-    m_shouldUpdateGeometry = true;
-    update();
-}
-
-void Scatterplot::updateMaterials()
-{
-    m_shouldUpdateMaterials = true;
-    update();
 }
 
 QSGNode *Scatterplot::newSplatNode()
@@ -408,7 +402,8 @@ void Scatterplot::mouseMoveEvent(QMouseEvent *event)
         m_currentInteractionState = INTERACTION_MOVING;
     case INTERACTION_MOVING:
         m_dragCurrentPos = event->localPos();
-        updateGeometry();
+        m_shouldUpdateGeometry = true;
+        update();
         break;
     case INTERACTION_SELECTED:
         event->ignore();
@@ -433,7 +428,8 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
     case INTERACTION_MOVING:
         m_currentInteractionState = INTERACTION_SELECTED;
         applyManipulation();
-        updateGeometry();
+        m_shouldUpdateGeometry = true;
+        update();
         m_dragOriginPos = m_dragCurrentPos;
         break;
     case INTERACTION_NONE:

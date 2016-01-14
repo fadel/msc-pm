@@ -56,9 +56,6 @@ private:
 
     void applyManipulation();
 
-    void updateGeometry();
-    void updateMaterials();
-
     void updateSplat(QSGNode *node);
     void updateGlyphs(QSGNode *node);
 
