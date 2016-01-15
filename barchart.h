@@ -8,7 +8,8 @@
 
 #include "scale.h"
 
-class BarChart : public QQuickItem
+class BarChart
+    : public QQuickItem
 {
     Q_OBJECT
 public:
