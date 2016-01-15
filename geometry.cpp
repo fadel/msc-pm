@@ -2,20 +2,20 @@
 
 static const float PI = 3.1415f;
 
-int calculateCircleVertexCount(float radius)
+int calculateCircleVertexCount(float diameter)
 {
     // 10 * sqrt(r) \approx 2*pi / acos(1 - 1 / (4*r))
-    return int(10.0 * sqrt(radius));
+    return int(10.0 * sqrt(diameter / 2));
 }
 
-void updateCircleGeometry(QSGGeometry *geometry, float radius, float cx, float cy)
+void updateCircleGeometry(QSGGeometry *geometry, float diameter, float cx, float cy)
 {
     int vertexCount = geometry->vertexCount();
 
     float theta = 2 * PI / float(vertexCount);
     float c = cosf(theta);
     float s = sinf(theta);
-    float x = radius;
+    float x = diameter / 2;
     float y = 0;
 
     QSGGeometry::Point2D *vertexData = geometry->vertexDataAsPoint2D();

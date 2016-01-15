@@ -4,13 +4,15 @@
 #include "geometry.h"
 #include <cmath>
 
-static const qreal GLYPH_OPACITY = 0.4;
+static const qreal GLYPH_OPACITY = 1.0;
 static const qreal GLYPH_OPACITY_SELECTED = 1.0;
 
-static const QColor OUTLINE_COLOR(0, 0, 0);
+static const QColor GLYPH_OUTLINE_COLOR(255, 255, 255);
+static const QColor GLYPH_OUTLINE_COLOR_SELECTED(0, 0, 0);
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
-static const int GLYPH_SIZE = 8.0f;
+static const float GLYPH_SIZE = 8.0f;
+static const float GLYPH_OUTLINE_WIDTH = 2.0f;
 static const float PADDING = 10.0f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
@@ -174,8 +176,6 @@ QSGNode *Scatterplot::newSplatNode()
     tex->setSites(m_xy);
     tex->setValues(m_colorData);
     tex->setColormap(m_colorScale);
-    tex->updateTexture();
-    window()->resetOpenGLState();
 
     node->setTexture(tex);
     node->setOwnsTexture(true);
@@ -198,13 +198,13 @@ QSGNode *Scatterplot::newGlyphTree()
 
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         QSGGeometry *glyphOutlineGeometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
-        glyphOutlineGeometry->setDrawingMode(GL_LINE_LOOP);
+        glyphOutlineGeometry->setDrawingMode(GL_POLYGON);
         QSGGeometryNode *glyphOutlineNode = new QSGGeometryNode;
         glyphOutlineNode->setGeometry(glyphOutlineGeometry);
         glyphOutlineNode->setFlag(QSGNode::OwnsGeometry);
 
         QSGFlatColorMaterial *material = new QSGFlatColorMaterial;
-        material->setColor(OUTLINE_COLOR);
+        material->setColor(GLYPH_OUTLINE_COLOR);
         glyphOutlineNode->setMaterial(material);
         glyphOutlineNode->setFlag(QSGNode::OwnsMaterial);
 
@@ -315,6 +315,7 @@ void Scatterplot::updateSplat(QSGNode *node)
 
     bool updated = tex->updateTexture();
     if (updated) {
+        texNode->markDirty(QSGNode::DirtyMaterial);
         window()->resetOpenGLState();
     }
 }
@@ -349,15 +350,20 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
             y = m_sy(row[1]) + ty * moveTranslationF;
 
             QSGGeometry *geometry = glyphOutlineNode->geometry();
-            updateCircleGeometry(geometry, GLYPH_SIZE / 2, x, y);
+            updateCircleGeometry(geometry, GLYPH_SIZE, x, y);
             glyphOutlineNode->markDirty(QSGNode::DirtyGeometry);
 
             geometry = glyphNode->geometry();
-            updateCircleGeometry(geometry, GLYPH_SIZE / 2 - 0.5, x, y);
+            updateCircleGeometry(geometry, GLYPH_SIZE - 2*GLYPH_OUTLINE_WIDTH, x, y);
             glyphNode->markDirty(QSGNode::DirtyGeometry);
         }
         if (m_shouldUpdateMaterials) {
-            QSGFlatColorMaterial *material = static_cast<QSGFlatColorMaterial *>(glyphNode->material());
+            QSGFlatColorMaterial *material = static_cast<QSGFlatColorMaterial *>(glyphOutlineNode->material());
+            material->setColor(isSelected ? GLYPH_OUTLINE_COLOR_SELECTED : GLYPH_OUTLINE_COLOR);
+            glyphOutlineNode->setMaterial(material);
+            glyphOutlineNode->markDirty(QSGNode::DirtyMaterial);
+
+            material = static_cast<QSGFlatColorMaterial *>(glyphNode->material());
             material->setColor(m_colorScale->color(m_colorData[i]));
             glyphNode->setMaterial(material);
             glyphNode->markDirty(QSGNode::DirtyMaterial);
@@ -477,6 +483,7 @@ void Scatterplot::setSelection(const QSet<int> &selection)
             it != m_selectedGlyphs.cend(); it++) {
         m_opacityData[*it] = GLYPH_OPACITY_SELECTED;
     }
+    m_shouldUpdateMaterials = true;
     update();
 
     emit selectionChanged(selection);
