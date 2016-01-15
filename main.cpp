@@ -96,6 +96,7 @@ int main(int argc, char **argv)
     qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
     qmlRegisterType<HistoryGraph>("PM", 1, 0, "HistoryGraph");
     qmlRegisterType<BarChart>("PM", 1, 0, "BarChart");
+    qmlRegisterType<VoronoiSplat>("PM", 1, 0, "VoronoiSplat");
     qmlRegisterType<InteractionHandler>("PM", 1, 0, "InteractionHandler");
     qmlRegisterSingletonType<Main>("PM", 1, 0, "Main", mainProvider);
 
@@ -112,28 +113,28 @@ int main(int argc, char **argv)
 
     QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
 
-    ColorScale colorScale{
-        QColor("#1f77b4"),
-        QColor("#ff7f0e"),
-        QColor("#2ca02c"),
-        QColor("#d62728"),
-        QColor("#9467bd"),
-        QColor("#8c564b"),
-        QColor("#e377c2"),
-        QColor("#17becf"),
-        QColor("#7f7f7f"),
-    };
-    colorScale.setExtents(labels.min(), labels.max());
+    //ColorScale colorScale{
+    //    QColor("#1f77b4"),
+    //    QColor("#ff7f0e"),
+    //    QColor("#2ca02c"),
+    //    QColor("#d62728"),
+    //    QColor("#9467bd"),
+    //    QColor("#8c564b"),
+    //    QColor("#e377c2"),
+    //    QColor("#17becf"),
+    //    QColor("#7f7f7f"),
+    //};
+    //colorScale.setExtents(labels.min(), labels.max());
 
-    //ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
-    //colorScale.setExtents(-1, 1);
+    ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
+    colorScale.setExtents(labels.min(), labels.max());
     Scatterplot *cpPlot = engine.rootObjects()[0]->findChild<Scatterplot *>("cpPlot");
-    cpPlot->setDisplaySplat(false);
     cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
     // cpPlot->setColorData(arma::zeros<arma::vec>(cpSize));
     cpPlot->setColorScale(&colorScale);
     Scatterplot *plot = engine.rootObjects()[0]->findChild<Scatterplot *>("plot");
-    skelft2DInitialization(plot->width());
+    VoronoiSplat *splat = engine.rootObjects()[0]->findChild<VoronoiSplat *>("splat");
+    skelft2DInitialization(splat->width());
 
     // Keep track of the current cp (in order to save them later, if requested)
     QObject::connect(cpPlot, SIGNAL(xyChanged(const arma::mat &)),
@@ -150,6 +151,8 @@ int main(int argc, char **argv)
             &interactionHandler, SLOT(setCP(const arma::mat &)));
     QObject::connect(&interactionHandler, SIGNAL(cpChanged(const arma::mat &)),
             plot, SLOT(setXY(const arma::mat &)));
+    QObject::connect(&interactionHandler, SIGNAL(cpChanged(const arma::mat &)),
+            splat, SLOT(setSites(const arma::mat &)));
     m->setTechnique(InteractionHandler::TECHNIQUE_LAMP);
 
     // Linking between selections in cp plot and full dataset plot
@@ -175,6 +178,8 @@ int main(int argc, char **argv)
     //history->addHistoryItem(Ys);
     plot->setColorScale(&colorScale);
     plot->setColorData(labels, false);
+    splat->setValues(labels);
+    splat->update();
 
     cpPlot->setAutoScale(false);
     cpPlot->setColorData(labels(cpIndices), false);

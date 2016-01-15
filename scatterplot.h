@@ -1,16 +1,16 @@
 #ifndef SCATTERPLOT_H
 #define SCATTERPLOT_H
 
-#include <memory>
-#include <armadillo>
 #include <QtQuick>
 #include <QSet>
-#include <QEasingCurve>
+
+#include <armadillo>
 
 #include "colorscale.h"
 #include "scale.h"
 
-class Scatterplot : public QQuickItem
+class Scatterplot
+    : public QQuickItem
 {
     Q_OBJECT
 public:
@@ -31,7 +31,6 @@ signals:
     void colorDataChanged(const arma::vec &colorData) const;
     void opacityDataChanged(const arma::vec &opacityData) const;
     void selectionChanged(const QSet<int> &selection) const;
-    void displaySplatChanged(bool displaySplat) const;
     void scaleChanged(const LinearScale<float> &sx, const LinearScale<float> &sy) const;
 
 public slots:
@@ -39,7 +38,6 @@ public slots:
     void setColorData(const arma::vec &colorData);
     void setOpacityData(const arma::vec &opacityData);
     void setSelection(const QSet<int> &selection);
-    void setDisplaySplat(bool displaySplat);
     void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
 
 protected:
@@ -50,14 +48,13 @@ protected:
 
 private:
     QSGNode *newSceneGraph();
-    QSGNode *newSplatNode();
     QSGNode *newGlyphTree();
-    bool updateSelection(bool mergeSelection);
 
     void applyManipulation();
 
-    void updateSplat(QSGNode *node);
     void updateGlyphs(QSGNode *node);
+
+    bool updateSelection(bool mergeSelection);
 
     arma::mat m_xy;
 
@@ -79,7 +76,6 @@ private:
 
     bool m_shouldUpdateGeometry, m_shouldUpdateMaterials;
 
-    bool m_displaySplat;
     ColorScale *m_colorScale;
 
     arma::vec m_colorData;

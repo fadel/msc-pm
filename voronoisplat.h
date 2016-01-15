@@ -1,63 +1,50 @@
 #ifndef VORONOISPLAT_H
 #define VORONOISPLAT_H
 
-#include <QSGDynamicTexture>
-#include <QOpenGLFunctions>
-#include <QOpenGLShaderProgram>
-#include <QOpenGLVertexArrayObject>
+#include <QQuickFramebufferObject>
+
 #include <armadillo>
 
 #include "colorscale.h"
 
-class VoronoiSplatTexture
-    : public QSGDynamicTexture
+class VoronoiSplat
+    : public QQuickFramebufferObject
 {
+    Q_OBJECT
 public:
-    // 'size' must be square (and power of 2)
-    VoronoiSplatTexture(const QSize &size);
-    virtual ~VoronoiSplatTexture();
+    VoronoiSplat(QQuickItem *parent = 0);
 
-    void bind();
+    Renderer *createRenderer() const;
 
-    // Call this whenever the texture should be updated (after changing the
-    // sites, values or colormap). When true is returned, should probably call
-    // resetOpenGLState() on QtQuick window
-    bool updateTexture();
+    const std::vector<float> &sites() const    { return m_sites; }
+    const std::vector<float> &values() const   { return m_values; }
+    const std::vector<float> &colormap() const { return m_cmap; }
 
-    bool hasAlphaChannel() const { return true; }
-    bool hasMipmaps() const { return false; }
-    int textureId() const { return m_tex; }
-    QSize textureSize() const { return m_size; }
+    bool sitesChanged() const    { return m_sitesChanged; }
+    bool valuesChanged() const   { return m_valuesChanged; }
+    bool colormapChanged() const { return m_colormapChanged; }
 
+    void setSitesChanged(bool sitesChanged)       { m_sitesChanged = sitesChanged; }
+    void setValuesChanged(bool valuesChanged)     { m_valuesChanged = valuesChanged; }
+    void setColormapChanged(bool colormapChanged) { m_colormapChanged = colormapChanged; }
+
+signals:
+    void sitesChanged(const arma::mat &sites);
+    void valuesChanged(const arma::vec &values);
+    void colormapChanged(const ColorScale *scale);
+
+public slots:
     // 'points' should be a 2D points matrix (each point in a row)
     void setSites(const arma::mat &points);
 
     // Set the value to be colormapped in each site
     void setValues(const arma::vec &values);
 
-    // Set colormap data based on the given color scale;
+    // Set colormap data based on the given color scale
     void setColormap(const ColorScale *scale);
 
 private:
-    void setupShaders();
-    void setupVAOs();
-    void setupTextures();
-
-    void updateSites();
-    void updateValues();
-    void updateColormap();
-    void computeDT();
-
-    QOpenGLFunctions gl;
-    QOpenGLShaderProgram *m_program1, *m_program2;
-    GLuint m_FBO;
-    GLuint m_VBOs[3];
-    GLuint m_textures[2], m_colormapTex, m_tex;
-    QOpenGLVertexArrayObject m_sitesVAO, m_2ndPassVAO;
-
     std::vector<float> m_sites, m_values, m_cmap;
-    QSize m_size;
-
     bool m_sitesChanged, m_valuesChanged, m_colormapChanged;
 };
 

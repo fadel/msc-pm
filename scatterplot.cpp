@@ -1,6 +1,5 @@
 #include "scatterplot.h"
 
-#include "voronoisplat.h"
 #include "geometry.h"
 #include <cmath>
 
@@ -23,7 +22,6 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     , m_currentInteractionState(INTERACTION_NONE)
     , m_shouldUpdateGeometry(false)
     , m_shouldUpdateMaterials(false)
-    , m_displaySplat(true)
 {
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
@@ -164,26 +162,6 @@ void Scatterplot::autoScale()
     emit scaleChanged(m_sx, m_sy);
 }
 
-QSGNode *Scatterplot::newSplatNode()
-{
-    if (m_xy.n_rows < 1) {
-        return 0;
-    }
-
-    QSGSimpleTextureNode *node = new QSGSimpleTextureNode;
-    VoronoiSplatTexture *tex = new VoronoiSplatTexture(QSize(width(), height()));
-
-    tex->setSites(m_xy);
-    tex->setValues(m_colorData);
-    tex->setColormap(m_colorScale);
-
-    node->setTexture(tex);
-    node->setOwnsTexture(true);
-    node->setSourceRect(0, 0, width(), height());
-
-    return node;
-}
-
 QSGNode *Scatterplot::newGlyphTree()
 {
     // NOTE:
@@ -235,10 +213,6 @@ QSGNode *Scatterplot::newSceneGraph()
     // The hierarchy in the scene graph is as follows:
     // root [[splatNode] [glyphsRoot [glyph [...]]] [selectionNode]]
     QSGNode *root = new QSGNode;
-    QSGNode *splatNode = newSplatNode();
-    if (splatNode) {
-        root->appendChildNode(splatNode);
-    }
     QSGNode *glyphTreeRoot = newGlyphTree();
     if (glyphTreeRoot) {
         root->appendChildNode(glyphTreeRoot);
@@ -261,9 +235,6 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
     // This keeps track of where we are in the scene when updating
     QSGNode *node = root->firstChild();
-
-    updateSplat(node);
-    node = node->nextSibling();
 
     updateGlyphs(node);
     node = node->nextSibling();
@@ -288,36 +259,6 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     node = node->nextSibling();
 
     return root;
-}
-
-void Scatterplot::updateSplat(QSGNode *node)
-{
-    QSGSimpleTextureNode *texNode = static_cast<QSGSimpleTextureNode *>(node);
-
-    if (!m_displaySplat) {
-        // Hide the splat and return, ignoring update requests
-        texNode->setRect(0, 0, 0, 0);
-        return;
-    }
-
-    texNode->setRect(x(), y(), width(), height());
-
-    VoronoiSplatTexture *tex =
-        static_cast<VoronoiSplatTexture *>(texNode->texture());
-    if (m_shouldUpdateGeometry) {
-        tex->setSites(m_xy);
-    }
-
-    if (m_shouldUpdateMaterials) {
-        tex->setValues(m_colorData);
-        tex->setColormap(m_colorScale);
-    }
-
-    bool updated = tex->updateTexture();
-    if (updated) {
-        texNode->markDirty(QSGNode::DirtyMaterial);
-        window()->resetOpenGLState();
-    }
 }
 
 void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
@@ -485,18 +426,6 @@ void Scatterplot::setSelection(const QSet<int> &selection)
     update();
 
     emit selectionChanged(selection);
-}
-
-void Scatterplot::setDisplaySplat(bool displaySplat)
-{
-    if (m_displaySplat != displaySplat) {
-        m_displaySplat = displaySplat;
-        m_shouldUpdateGeometry = true;
-        m_shouldUpdateMaterials = true;
-        update();
-
-        emit displaySplatChanged(displaySplat);
-    }
 }
 
 void Scatterplot::applyManipulation()

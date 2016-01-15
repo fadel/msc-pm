@@ -102,6 +102,14 @@ ApplicationWindow {
             border.width: 1
             border.color: "#cccccc"
 
+            VoronoiSplat {
+                id: splat
+                objectName: "splat"
+                x: parent.x
+                y: parent.y
+                anchors.fill: parent
+            }
+
             Scatterplot {
                 id: plot
                 objectName: "plot"
