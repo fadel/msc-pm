@@ -101,9 +101,13 @@ int main(int argc, char **argv)
 
     // Set up multisampling
     QSurfaceFormat fmt;
-    fmt.setSamples(16);
     fmt.setRenderableType(QSurfaceFormat::OpenGL);
     fmt.setVersion(4, 5);
+    fmt.setRedBufferSize(8);
+    fmt.setGreenBufferSize(8);
+    fmt.setBlueBufferSize(8);
+    fmt.setAlphaBufferSize(8);
+    fmt.setSamples(8);
     QSurfaceFormat::setDefaultFormat(fmt);
 
     QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
@@ -178,7 +182,7 @@ int main(int argc, char **argv)
     cpPlot->update();
 
     arma::vec plotOpacities(X.n_rows);
-    plotOpacities.fill(0.4f);
+    plotOpacities.fill(0.0f);
     plotOpacities(cpIndices).fill(0.0f);
     plot->setOpacityData(plotOpacities);
 
