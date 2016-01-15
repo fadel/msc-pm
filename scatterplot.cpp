@@ -194,7 +194,7 @@ QSGNode *Scatterplot::newGlyphTree()
     }
 
     QSGNode *node = new QSGNode;
-    int vertexCount = calculateCircleVertexCount(GLYPH_SIZE / 2);
+    int vertexCount = calculateCircleVertexCount(GLYPH_SIZE);
 
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         QSGGeometry *glyphOutlineGeometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
