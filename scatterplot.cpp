@@ -360,12 +360,10 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
         if (m_shouldUpdateMaterials) {
             QSGFlatColorMaterial *material = static_cast<QSGFlatColorMaterial *>(glyphOutlineNode->material());
             material->setColor(isSelected ? GLYPH_OUTLINE_COLOR_SELECTED : GLYPH_OUTLINE_COLOR);
-            glyphOutlineNode->setMaterial(material);
             glyphOutlineNode->markDirty(QSGNode::DirtyMaterial);
 
             material = static_cast<QSGFlatColorMaterial *>(glyphNode->material());
             material->setColor(m_colorScale->color(m_colorData[i]));
-            glyphNode->setMaterial(material);
             glyphNode->markDirty(QSGNode::DirtyMaterial);
         }
 
