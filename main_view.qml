@@ -47,6 +47,18 @@ ApplicationWindow {
         }
 
         Menu {
+            title: "Mode"
+            MenuItem {
+                action: cpModeAction
+                exclusiveGroup: modeGroup
+            }
+            MenuItem {
+                action: rpModeAction
+                exclusiveGroup: modeGroup
+            }
+        }
+
+        Menu {
             title: "View"
             MenuItem {
                 action: labelColorAction
@@ -63,6 +75,16 @@ ApplicationWindow {
             MenuItem {
                 action: silhouetteColorAction
                 exclusiveGroup: coloringGroup
+            }
+        }
+    }
+
+    statusBar: StatusBar {
+        RowLayout {
+            anchors.fill: parent
+            Label {
+                id: statusLabel
+                text: "Selecting control points"
             }
         }
     }
@@ -147,7 +169,6 @@ ApplicationWindow {
                 Main.setTechnique(InteractionHandler.TECHNIQUE_LAMP)
             }
         }
-
         Action {
             id: lspTechniqueAction
             text: "LSP"
@@ -157,7 +178,6 @@ ApplicationWindow {
                 Main.setTechnique(InteractionHandler.TECHNIQUE_LSP)
             }
         }
-
         Action {
             id: plmpTechniqueAction
             text: "PLMP"
@@ -167,7 +187,6 @@ ApplicationWindow {
                 Main.setTechnique(InteractionHandler.TECHNIQUE_PLMP)
             }
         }
-
         Action {
             id: pekalskaTechniqueAction
             text: "Pekalska"
@@ -176,6 +195,24 @@ ApplicationWindow {
             onTriggered: {
                 Main.setTechnique(InteractionHandler.TECHNIQUE_PEKALSKA)
             }
+        }
+    }
+
+    ExclusiveGroup {
+        id: modeGroup
+
+        Action {
+            id: cpModeAction
+            text: "Control points"
+            checked: true
+            checkable: true
+            onTriggered: statusLabel.text = "Selecting control points"
+        }
+        Action {
+            id: rpModeAction
+            text: "Regular points"
+            checkable: true
+            onTriggered: statusLabel.text = "Selecting regular points"
         }
     }
 
