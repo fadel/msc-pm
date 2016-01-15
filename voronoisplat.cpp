@@ -120,8 +120,7 @@ void main() {
   else {
     vec4 accum = texelFetch(accumTex, ivec2(gl_FragCoord.xy), 0);
     float value = (accum.g == 0.0) ? 0.0 : accum.r / accum.g;
-    fragColor.rgb = getRGB(value);
-    fragColor.a = 1.0 - dt / rad_max;
+    fragColor = vec4(getRGB(value), 1.0 - dt / rad_max);
   }
 }
 )EOF");
@@ -149,11 +148,10 @@ void VoronoiSplatTexture::setupVAOs()
     // 2ndPassVAO: VBO 2 is a quad mapping the final texture to the framebuffer
     m_2ndPassVAO.create();
     m_2ndPassVAO.bind();
-    gl.glBindBuffer(GL_ARRAY_BUFFER, m_VBOs[2]);
     GLfloat verts[] = {-1.0f, -1.0f, -1.0f, 1.0f,
                         1.0f, -1.0f,  1.0f, 1.0f};
+    gl.glBindBuffer(GL_ARRAY_BUFFER, m_VBOs[2]);
     gl.glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-
     vertAttrib = m_program2->attributeLocation("vert");
     gl.glVertexAttribPointer(vertAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
     gl.glEnableVertexAttribArray(vertAttrib);
@@ -330,7 +328,7 @@ void VoronoiSplatTexture::computeDT()
     int w = m_size.width(), h = m_size.height();
 
     // Compute FT of the sites
-    std::vector<float> buf(w*h, 0.0f);
+    std::vector<float> buf(w*h);
     for (unsigned i = 0; i < m_sites.size(); i += 2) {
         buf[int(m_sites[i + 1])*h + int(m_sites[i])] = (float) i/2 + 1;
     }
