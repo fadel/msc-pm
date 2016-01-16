@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <QtQuick>
+
 #include <armadillo>
 
 #include "scale.h"
