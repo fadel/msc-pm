@@ -35,16 +35,13 @@ void ColorScale::sample(int samples, OutputIterator it) const
         return;
     }
 
-    float t = min();
     float step = (max() - min()) / samples;
     qreal r, g, b;
-    for (unsigned i = 0; i < 3*samples; i += 3) {
+    for (float t = min(); t < max(); t += step) {
         color(t).getRgbF(&r, &g, &b);
         *it = r; it++;
         *it = g; it++;
         *it = b; it++;
-
-        t += step;
     }
 }
 
