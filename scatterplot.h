@@ -25,6 +25,8 @@ public:
     void setAutoScale(bool autoScale);
     Q_INVOKABLE bool saveToFile(const QUrl &url);
 
+    static const int PADDING = 10;
+
 signals:
     void xyChanged(const arma::mat &XY) const;
     void xyInteractivelyChanged(const arma::mat &XY) const;

@@ -31,7 +31,7 @@ public:
 signals:
     void sitesChanged(const arma::mat &sites);
     void valuesChanged(const arma::vec &values);
-    void colormapChanged(const ColorScale *scale);
+    void colormapChanged(const ColorScale &scale);
 
 public slots:
     // 'points' should be a 2D points matrix (each point in a row)
@@ -41,7 +41,7 @@ public slots:
     void setValues(const arma::vec &values);
 
     // Set colormap data based on the given color scale
-    void setColormap(const ColorScale *scale);
+    void setColormap(const ColorScale &scale);
 
 private:
     std::vector<float> m_sites, m_values, m_cmap;

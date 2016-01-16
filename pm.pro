@@ -11,6 +11,7 @@ HEADERS += main.h \
     scale.h \
     scatterplot.h \
     voronoisplat.h \
+    colormap.h \
     historygraph.h \
     barchart.h \
     interactionhandler.h \
@@ -28,6 +29,7 @@ SOURCES += main.cpp \
     geometry.cpp \
     scatterplot.cpp \
     voronoisplat.cpp \
+    colormap.cpp \
     historygraph.cpp \
     barchart.cpp \
     interactionhandler.cpp \

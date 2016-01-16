@@ -12,7 +12,6 @@ static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
 static const float GLYPH_SIZE = 8.0f;
 static const float GLYPH_OUTLINE_WIDTH = 2.0f;
-static const float PADDING = 10.0f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
@@ -239,7 +238,6 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     updateGlyphs(node);
     node = node->nextSibling();
 
-    // Change update hints to false; the splat and glyphs were just updated
     if (m_shouldUpdateGeometry) {
         m_shouldUpdateGeometry = false;
     }
@@ -264,6 +262,10 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
 {
     qreal x, y, tx, ty, moveTranslationF;
+
+    if (!m_shouldUpdateGeometry && !m_shouldUpdateMaterials) {
+        return;
+    }
 
     if (m_currentInteractionState == INTERACTION_MOVING) {
         tx = m_dragCurrentPos.x() - m_dragOriginPos.x();

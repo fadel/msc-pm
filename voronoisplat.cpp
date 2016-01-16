@@ -7,12 +7,12 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 
+#include "colormap.h"
 #include "scale.h"
+#include "scatterplot.h"
 #include "skelft.h"
 
 static const float RAD_BLUR = 5.0f;
-static const int COLORMAP_SAMPLES = 128;
-static const float PADDING = 10.0f; // in screen pixels
 
 static int nextPow2(int n)
 {
@@ -64,7 +64,7 @@ private:
 
 VoronoiSplat::VoronoiSplat(QQuickItem *parent)
     : QQuickFramebufferObject(parent)
-    , m_cmap(3*COLORMAP_SAMPLES)
+    , m_cmap(3*Colormap::SAMPLES)
 {
     setTextureFollowsItemSize(false);
 }
@@ -84,19 +84,20 @@ void VoronoiSplat::setSites(const arma::mat &points)
 
     // Coords are packed into 'm_sites' as [ x1, y1, x2, y2, ... ]
     m_sites.resize(2*points.n_rows);
-    LinearScale<float> sx(minX, maxX, PADDING, width() - PADDING);
+    LinearScale<float> sx(minX, maxX, Scatterplot::PADDING, width() - Scatterplot::PADDING);
     const double *col = points.colptr(0);
     for (unsigned i = 0; i < points.n_rows; i++) {
         m_sites[2*i] = sx(col[i]);
     }
 
     col = points.colptr(1);
-    LinearScale<float> sy(minY, maxY, height() - PADDING, PADDING);
+    LinearScale<float> sy(minY, maxY, height() - Scatterplot::PADDING, Scatterplot::PADDING);
     for (unsigned i = 0; i < points.n_rows; i++) {
         m_sites[2*i + 1] = sy(col[i]);
     }
 
     setSitesChanged(true);
+    update();
 }
 
 void VoronoiSplat::setValues(const arma::vec &values)
@@ -109,29 +110,19 @@ void VoronoiSplat::setValues(const arma::vec &values)
     m_values.resize(values.n_elem);
     LinearScale<float> scale(values.min(), values.max(), 0, 1.0f);
     std::transform(values.begin(), values.end(), m_values.begin(), scale);
+    emit valuesChanged(values);
 
     setValuesChanged(true);
+    update();
 }
 
-void VoronoiSplat::setColormap(const ColorScale *scale)
+void VoronoiSplat::setColormap(const ColorScale &scale)
 {
-    if (!scale) {
-        return;
-    }
-
-    float t = scale->min();
-    float step = (scale->max() - scale->min()) / COLORMAP_SAMPLES;
-    qreal r, g, b;
-    for (unsigned i = 0; i < m_cmap.size(); i += 3) {
-        scale->color(t).getRgbF(&r, &g, &b);
-        m_cmap[i + 0] = r;
-        m_cmap[i + 1] = g;
-        m_cmap[i + 2] = b;
-
-        t += step;
-    }
+    scale.sample(Colormap::SAMPLES, m_cmap.begin());
+    emit colormapChanged(scale);
 
     setColormapChanged(true);
+    update();
 }
 
 QQuickFramebufferObject::Renderer *VoronoiSplat::createRenderer() const
@@ -274,29 +265,12 @@ void VoronoiSplatRenderer::setupVAOs()
 void VoronoiSplatRenderer::setupTextures()
 {
     gl.glGenTextures(2, m_textures);
-    gl.glGenTextures(1, &m_colormapTex);
-}
-
-void VoronoiSplatRenderer::resizeTextures()
-{
-    // textures[0] stores the DT values for each pixel
-    gl.glBindTexture(GL_TEXTURE_2D, m_textures[0]);
-    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, m_size.width(),
-            m_size.height(), 0, GL_RG, GL_FLOAT, 0);
-    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    // textures[1] is the result of the first pass
-    gl.glBindTexture(GL_TEXTURE_2D, m_textures[1]);
-    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, m_size.width(),
-            m_size.height(), 0, GL_RGBA, GL_FLOAT, 0);
-    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     // Used for colormap lookup in the frag shader
     // (2D texture for compatibility; used to be a 1D texture)
+    gl.glGenTextures(1, &m_colormapTex);
     gl.glBindTexture(GL_TEXTURE_2D, m_colormapTex);
-    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, COLORMAP_SAMPLES, 1, 0, GL_RGB,
+    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Colormap::SAMPLES, 1, 0, GL_RGB,
             GL_FLOAT, 0);
     gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -312,6 +286,23 @@ VoronoiSplatRenderer::~VoronoiSplatRenderer()
 
     delete m_program1;
     delete m_program2;
+}
+
+void VoronoiSplatRenderer::resizeTextures()
+{
+    // textures[0] stores the DT values for each pixel
+    gl.glBindTexture(GL_TEXTURE_2D, m_textures[0]);
+    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, m_size.width(),
+            m_size.height(), 0, GL_RED, GL_FLOAT, 0);
+    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    // textures[1] is the result of the first pass
+    gl.glBindTexture(GL_TEXTURE_2D, m_textures[1]);
+    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, m_size.width(),
+            m_size.height(), 0, GL_RGBA, GL_FLOAT, 0);
+    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }
 
 QOpenGLFramebufferObject *VoronoiSplatRenderer::createFramebufferObject(const QSize &size)
@@ -339,6 +330,7 @@ void VoronoiSplatRenderer::render()
 
     int originalFBO;
     gl.glGetIntegerv(GL_FRAMEBUFFER_BINDING, &originalFBO);
+
     gl.glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
 
     // First pass
@@ -369,6 +361,9 @@ void VoronoiSplatRenderer::render()
     m_sitesVAO.release();
 
     m_program1->release();
+
+    // For some reason this call makes the splat circle of the correct size
+    //m_window->resetOpenGLState();
 
     // Second pass
     m_program2->bind();
@@ -408,6 +403,12 @@ void VoronoiSplatRenderer::synchronize(QQuickFramebufferObject *item)
     m_sitesChanged    = splat->sitesChanged();
     m_valuesChanged   = splat->valuesChanged();
     m_colormapChanged = splat->colormapChanged();
+
+    // Reset these so that by the next synchronize() we have the correct values
+    splat->setSitesChanged(false);
+    splat->setValuesChanged(false);
+    splat->setColormapChanged(false);
+
     m_sites           = &(splat->sites());
     m_values          = &(splat->values());
     m_cmap            = &(splat->colormap());
@@ -437,8 +438,11 @@ void VoronoiSplatRenderer::updateValues()
 
 void VoronoiSplatRenderer::updateColormap()
 {
+    gl.glActiveTexture(GL_TEXTURE0);
     gl.glBindTexture(GL_TEXTURE_2D, m_colormapTex);
-    gl.glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, COLORMAP_SAMPLES, 1, GL_RGB,
+    //gl.glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Colormap::SAMPLES, 1, GL_RGB,
+    //        GL_FLOAT, m_cmap->data());
+    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Colormap::SAMPLES, 1, 0, GL_RGB,
             GL_FLOAT, m_cmap->data());
 
     m_colormapChanged = false;
@@ -452,21 +456,18 @@ void VoronoiSplatRenderer::computeDT()
     std::vector<float> buf(w*h);
     const std::vector<float> &sites = *m_sites;
     for (unsigned i = 0; i < sites.size(); i += 2) {
-        buf[int(sites[i + 1])*h + int(sites[i])] = (float) i/2 + 1;
+        buf[int(sites[i + 1])*h + int(sites[i])] = i/2.0f + 1.0f;
     }
     skelft2DFT(0, buf.data(), 0, 0, w, h, w);
 
     // Compute DT of the sites (from the resident FT)
     skelft2DDT(buf.data(), 0, 0, w, h);
 
-    std::vector<GLfloat> dtTexData(2*w*h, 0.0f);
-    for (unsigned i = 0; i < buf.size(); i++) {
-        dtTexData[2*i] = buf[i];
-    }
-
     // Upload result to lookup texture
+    gl.glActiveTexture(GL_TEXTURE0);
     gl.glBindTexture(GL_TEXTURE_2D, m_textures[0]);
-    gl.glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RG, GL_FLOAT,
-            dtTexData.data());
+    //gl.glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RED, GL_FLOAT,
+    //        buf.data());
+    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RED, GL_FLOAT,
+            buf.data());
 }
-

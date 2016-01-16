@@ -125,6 +125,15 @@ ApplicationWindow {
                 y: parent.y
                 anchors.fill: parent
             }
+
+            Colormap {
+                id: colormap
+                objectName: "colormap"
+                x: parent.x + 5
+                y: parent.y + 5
+                width: 128
+                height: 10
+            }
         }
 
         Rectangle {
