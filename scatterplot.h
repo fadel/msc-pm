@@ -17,7 +17,7 @@ public:
     Scatterplot(QQuickItem *parent = 0);
 
     arma::mat XY() const;
-    void setColorScale(ColorScale *colorScale);
+    void setColorScale(const ColorScale *colorScale);
     void setXY(const arma::mat &xy, bool updateView);
     void setColorData(const arma::vec &colorData, bool updateView);
     void setOpacityData(const arma::vec &opacityData, bool updateView);
@@ -78,7 +78,7 @@ private:
 
     bool m_shouldUpdateGeometry, m_shouldUpdateMaterials;
 
-    ColorScale *m_colorScale;
+    const ColorScale *m_colorScale;
 
     arma::vec m_colorData;
     arma::vec m_opacityData;

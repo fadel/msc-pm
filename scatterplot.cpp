@@ -26,7 +26,7 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     setFlag(QQuickItem::ItemHasContents);
 }
 
-void Scatterplot::setColorScale(ColorScale *colorScale)
+void Scatterplot::setColorScale(const ColorScale *colorScale)
 {
     if (!colorScale) {
         return;
