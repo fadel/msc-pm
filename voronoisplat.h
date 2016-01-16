@@ -18,34 +18,40 @@ public:
 
     const std::vector<float> &sites() const    { return m_sites; }
     const std::vector<float> &values() const   { return m_values; }
-    const std::vector<float> &colormap() const { return m_cmap; }
+    const std::vector<float> &colorScale() const { return m_cmap; }
 
     bool sitesChanged() const    { return m_sitesChanged; }
     bool valuesChanged() const   { return m_valuesChanged; }
-    bool colormapChanged() const { return m_colormapChanged; }
+    bool colorScaleChanged() const { return m_colorScaleChanged; }
 
-    void setSitesChanged(bool sitesChanged)       { m_sitesChanged = sitesChanged; }
-    void setValuesChanged(bool valuesChanged)     { m_valuesChanged = valuesChanged; }
-    void setColormapChanged(bool colormapChanged) { m_colormapChanged = colormapChanged; }
+    void setSitesChanged(bool sitesChanged) {
+        m_sitesChanged = sitesChanged;
+    }
+    void setValuesChanged(bool valuesChanged) {
+        m_valuesChanged = valuesChanged;
+    }
+    void setColorScaleChanged(bool colorScaleChanged) {
+        m_colorScaleChanged = colorScaleChanged;
+    }
 
 signals:
-    void sitesChanged(const arma::mat &sites);
-    void valuesChanged(const arma::vec &values);
-    void colormapChanged(const ColorScale &scale);
+    void sitesChanged(const arma::mat &sites) const;
+    void valuesChanged(const arma::vec &values) const;
+    void colorScaleChanged(const ColorScale &scale) const;
 
 public slots:
     // 'points' should be a 2D points matrix (each point in a row)
     void setSites(const arma::mat &points);
 
-    // Set the value to be colormapped in each site
+    // Set the value to be colorScaleped in each site
     void setValues(const arma::vec &values);
 
-    // Set colormap data based on the given color scale
-    void setColormap(const ColorScale &scale);
+    // Set colorScale data based on the given color scale
+    void setColorScale(const ColorScale &scale);
 
 private:
     std::vector<float> m_sites, m_values, m_cmap;
-    bool m_sitesChanged, m_valuesChanged, m_colormapChanged;
+    bool m_sitesChanged, m_valuesChanged, m_colorScaleChanged;
 };
 
 #endif // VORONOISPLAT_H
