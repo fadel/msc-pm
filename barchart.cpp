@@ -16,7 +16,7 @@ BarChart::BarChart(QQuickItem *parent)
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
     // setAcceptedMouseButtons(Qt::LeftButton);
-    setAcceptHoverEvents(true);
+    // setAcceptHoverEvents(true);
 }
 
 BarChart::~BarChart()
