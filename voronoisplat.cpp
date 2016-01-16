@@ -24,44 +24,6 @@ static int nextPow2(int n)
     return n + 1;
 }
 
-class VoronoiSplatRenderer
-    : public QQuickFramebufferObject::Renderer
-{
-public:
-    // 'size' must be square (and power of 2)
-    VoronoiSplatRenderer();
-    virtual ~VoronoiSplatRenderer();
-
-protected:
-    QOpenGLFramebufferObject *createFramebufferObject(const QSize &size);
-    void render();
-    void synchronize(QQuickFramebufferObject *item);
-
-private:
-    void setupShaders();
-    void setupVAOs();
-    void setupTextures();
-    void resizeTextures();
-
-    void updateSites();
-    void updateValues();
-    void updateColorScale();
-    void computeDT();
-
-    QSize m_size;
-    const std::vector<float> *m_sites, *m_values, *m_cmap;
-
-    QQuickWindow *m_window; // used to reset OpenGL state (as per docs)
-    QOpenGLFunctions gl;
-    QOpenGLShaderProgram *m_program1, *m_program2;
-    GLuint m_FBO;
-    GLuint m_VBOs[3];
-    GLuint m_textures[2], m_colormapTex;
-    QOpenGLVertexArrayObject m_sitesVAO, m_2ndPassVAO;
-    bool m_sitesChanged, m_valuesChanged, m_colorScaleChanged;
-};
-
-
 VoronoiSplat::VoronoiSplat(QQuickItem *parent)
     : QQuickFramebufferObject(parent)
     , m_cmap(3*Colormap::SAMPLES)
@@ -124,6 +86,45 @@ void VoronoiSplat::setColorScale(const ColorScale &scale)
     setColorScaleChanged(true);
     update();
 }
+
+// ----------------------------------------------------------------------------
+
+class VoronoiSplatRenderer
+    : public QQuickFramebufferObject::Renderer
+{
+public:
+    // 'size' must be square (and power of 2)
+    VoronoiSplatRenderer();
+    virtual ~VoronoiSplatRenderer();
+
+protected:
+    QOpenGLFramebufferObject *createFramebufferObject(const QSize &size);
+    void render();
+    void synchronize(QQuickFramebufferObject *item);
+
+private:
+    void setupShaders();
+    void setupVAOs();
+    void setupTextures();
+    void resizeTextures();
+
+    void updateSites();
+    void updateValues();
+    void updateColorScale();
+    void computeDT();
+
+    QSize m_size;
+    const std::vector<float> *m_sites, *m_values, *m_cmap;
+
+    QQuickWindow *m_window; // used to reset OpenGL state (as per docs)
+    QOpenGLFunctions gl;
+    QOpenGLShaderProgram *m_program1, *m_program2;
+    GLuint m_FBO;
+    GLuint m_VBOs[3];
+    GLuint m_textures[2], m_colormapTex;
+    QOpenGLVertexArrayObject m_sitesVAO, m_2ndPassVAO;
+    bool m_sitesChanged, m_valuesChanged, m_colorScaleChanged;
+};
 
 QQuickFramebufferObject::Renderer *VoronoiSplat::createRenderer() const
 {
