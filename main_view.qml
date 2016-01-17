@@ -25,25 +25,25 @@ ApplicationWindow {
             MenuItem { action: quitAction }
         }
 
-        Menu {
-            title: "Technique"
-            MenuItem {
-                action: lampTechniqueAction
-                exclusiveGroup: techniqueGroup
-            }
-            MenuItem {
-                action: lspTechniqueAction
-                exclusiveGroup: techniqueGroup
-            }
-            MenuItem {
-                action: plmpTechniqueAction
-                exclusiveGroup: techniqueGroup
-            }
-            MenuItem {
-                action: pekalskaTechniqueAction
-                exclusiveGroup: techniqueGroup
-            }
-        }
+        //Menu {
+        //    title: "Technique"
+        //    MenuItem {
+        //        action: lampTechniqueAction
+        //        exclusiveGroup: techniqueGroup
+        //    }
+        //    MenuItem {
+        //        action: lspTechniqueAction
+        //        exclusiveGroup: techniqueGroup
+        //    }
+        //    MenuItem {
+        //        action: plmpTechniqueAction
+        //        exclusiveGroup: techniqueGroup
+        //    }
+        //    MenuItem {
+        //        action: pekalskaTechniqueAction
+        //        exclusiveGroup: techniqueGroup
+        //    }
+        //}
 
         Menu {
             title: "Mode"
@@ -326,47 +326,47 @@ ApplicationWindow {
         onTriggered: Qt.quit()
     }
 
-    ExclusiveGroup {
-        id: techniqueGroup
+    //ExclusiveGroup {
+    //    id: techniqueGroup
 
-        Action {
-            id: lampTechniqueAction
-            text: "LAMP"
-            shortcut: "Ctrl+1"
-            checked: true
-            checkable: true
-            onTriggered: {
-                Main.setTechnique(InteractionHandler.TECHNIQUE_LAMP)
-            }
-        }
-        Action {
-            id: lspTechniqueAction
-            text: "LSP"
-            shortcut: "Ctrl+2"
-            checkable: true
-            onTriggered: {
-                Main.setTechnique(InteractionHandler.TECHNIQUE_LSP)
-            }
-        }
-        Action {
-            id: plmpTechniqueAction
-            text: "PLMP"
-            shortcut: "Ctrl+3"
-            checkable: true
-            onTriggered: {
-                Main.setTechnique(InteractionHandler.TECHNIQUE_PLMP)
-            }
-        }
-        Action {
-            id: pekalskaTechniqueAction
-            text: "Pekalska"
-            shortcut: "Ctrl+4"
-            checkable: true
-            onTriggered: {
-                Main.setTechnique(InteractionHandler.TECHNIQUE_PEKALSKA)
-            }
-        }
-    }
+    //    Action {
+    //        id: lampTechniqueAction
+    //        text: "LAMP"
+    //        shortcut: "Ctrl+1"
+    //        checked: true
+    //        checkable: true
+    //        onTriggered: {
+    //            Main.setTechnique(InteractionHandler.TECHNIQUE_LAMP)
+    //        }
+    //    }
+    //    Action {
+    //        id: lspTechniqueAction
+    //        text: "LSP"
+    //        shortcut: "Ctrl+2"
+    //        checkable: true
+    //        onTriggered: {
+    //            Main.setTechnique(InteractionHandler.TECHNIQUE_LSP)
+    //        }
+    //    }
+    //    Action {
+    //        id: plmpTechniqueAction
+    //        text: "PLMP"
+    //        shortcut: "Ctrl+3"
+    //        checkable: true
+    //        onTriggered: {
+    //            Main.setTechnique(InteractionHandler.TECHNIQUE_PLMP)
+    //        }
+    //    }
+    //    Action {
+    //        id: pekalskaTechniqueAction
+    //        text: "Pekalska"
+    //        shortcut: "Ctrl+4"
+    //        checkable: true
+    //        onTriggered: {
+    //            Main.setTechnique(InteractionHandler.TECHNIQUE_PEKALSKA)
+    //        }
+    //    }
+    //}
 
     ExclusiveGroup {
         id: modeGroup
