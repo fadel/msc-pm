@@ -11,6 +11,7 @@ static const float DEFAULT_OPACITY = 0.8f;
 BarChart::BarChart(QQuickItem *parent)
     : QQuickItem(parent)
     , m_shouldUpdateBars(false)
+    , m_colorScale(0)
     , m_scale(0, 1, 0, 1)
 {
     setClip(true);
@@ -38,9 +39,18 @@ void BarChart::setValues(const arma::vec &values)
         std::sort(m_originalIndices.begin(), m_originalIndices.end(),
             [this](int i, int j) { return m_values[i] > m_values[j]; });
     }
+    emit valuesChanged(values);
 
     m_shouldUpdateBars = true;
-    emit valuesChanged(values);
+}
+
+void BarChart::setColorScale(const ColorScale *scale)
+{
+    m_colorScale = scale;
+    emit colorScaleChanged(m_colorScale);
+
+    m_shouldUpdateBars = true;
+    update();
 }
 
 QSGNode *BarChart::newBarNode() const
@@ -73,21 +83,35 @@ QSGNode *BarChart::newBarNode() const
     QSGOpacityNode *opacityNode = new QSGOpacityNode;
     opacityNode->setOpacity(DEFAULT_OPACITY);
     opacityNode->appendChildNode(barGeomNode);
-    opacityNode->appendChildNode(outlineGeomNode);
+    //opacityNode->appendChildNode(outlineGeomNode);
 
     return opacityNode;
 }
 
 void BarChart::updateBarNodeGeom(QSGNode *barNode, float x, float barWidth, float barHeight)
 {
-    QSGGeometryNode *outlineGeomNode =
-        static_cast<QSGGeometryNode *>(barNode->firstChild());
-    QSGGeometryNode *barGeomNode =
-        static_cast<QSGGeometryNode *>(barNode->firstChild()->nextSibling());
-
     float y = height() - barHeight;
-    updateRectGeometry(outlineGeomNode->geometry(), x, y, barWidth, barHeight);
+
+    QSGGeometryNode *barGeomNode =
+        static_cast<QSGGeometryNode *>(barNode->firstChild());
     updateRectGeometry(barGeomNode->geometry(), x, y, barWidth, barHeight);
+    barGeomNode->markDirty(QSGNode::DirtyGeometry);
+
+    //QSGGeometryNode *outlineGeomNode =
+    //    static_cast<QSGGeometryNode *>(barGeomNode->nextSibling());
+    //updateRectGeometry(outlineGeomNode->geometry(), x, y, barWidth, barHeight);
+    //outlineGeomNode->markDirty(QSGNode::DirtyGeometry);
+}
+
+void BarChart::updateBarNodeColor(QSGNode *barNode, const QColor &color)
+{
+    QSGGeometryNode *barGeomNode =
+        static_cast<QSGGeometryNode *>(barNode->firstChild());
+
+    QSGFlatColorMaterial *material =
+        static_cast<QSGFlatColorMaterial *>(barGeomNode->material());
+    material->setColor(color);
+    barGeomNode->markDirty(QSGNode::DirtyMaterial);
 }
 
 void BarChart::updateBars(QSGNode *root)
@@ -99,6 +123,7 @@ void BarChart::updateBars(QSGNode *root)
     m_scale.setRange(0, height());
     for (auto it = m_originalIndices.cbegin(); it != m_originalIndices.cend(); it++) {
         updateBarNodeGeom(node, x, barWidth, m_scale(m_values[*it]));
+        updateBarNodeColor(node, m_colorScale->color(m_values[*it]));
         x += barWidth;
         node = node->nextSibling();
     }
@@ -120,7 +145,7 @@ QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
             root->removeChildNode(root->firstChild());
         }
 
-        // Then, update the geometry of bars to reflect the values
+        // Then, update the bars to reflect the values
         updateBars(root);
         m_shouldUpdateBars = false;
     }

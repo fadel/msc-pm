@@ -179,6 +179,7 @@ int main(int argc, char **argv)
             cpPlot, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
 
     BarChart *barChart = engine.rootObjects()[0]->findChild<BarChart *>("barChart");
+    barChart->setColorScale(&colorScale);
     barChart->setValues(labels);
 
     //history->addHistoryItem(Ys);
