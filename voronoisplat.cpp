@@ -27,7 +27,6 @@ static int nextPow2(int n)
 
 VoronoiSplat::VoronoiSplat(QQuickItem *parent)
     : QQuickFramebufferObject(parent)
-    , m_cmap(3*Colormap::SAMPLES)
     , m_alpha(DEFAULT_ALPHA)
     , m_beta(DEFAULT_BETA)
 {
@@ -36,9 +35,14 @@ VoronoiSplat::VoronoiSplat(QQuickItem *parent)
 
 void VoronoiSplat::setSites(const arma::mat &points)
 {
-    if (points.n_rows < 1 || points.n_cols != 2
-        || (m_values.size() != 0 && points.n_rows != m_values.size())) {
+    if (points.n_rows < 1 || points.n_cols != 2) {
         return;
+    }
+
+    if (m_values.size() > 0 && m_values.size() != points.n_rows) {
+        // Old values are no longer valid, clean up
+        m_values.resize(points.n_rows);
+        m_values.assign(points.n_rows, 0);
     }
 
     // Copy 'points' to internal data structure(s)
@@ -83,7 +87,8 @@ void VoronoiSplat::setValues(const arma::vec &values)
 
 void VoronoiSplat::setColorScale(const ColorScale &scale)
 {
-    scale.sample(Colormap::SAMPLES, m_cmap.begin());
+    m_cmap.resize(scale.numColors() * 3);
+    scale.sample(scale.numColors(), m_cmap.begin());
     emit colorScaleChanged(scale);
 
     setColorScaleChanged(true);
@@ -231,7 +236,7 @@ uniform float rad_max;
 layout (location = 0) out vec4 fragColor;
 
 vec3 getRGB(float value) {
-  return texture(colorScale, vec2(value, 0)).rgb;
+  return texture(colorScale, vec2(mix(0.005, 0.995, value), 0)).rgb;
 }
 
 void main() {
@@ -287,8 +292,6 @@ void VoronoiSplatRenderer::setupTextures()
     // (2D texture for compatibility; used to be a 1D texture)
     gl.glGenTextures(1, &m_colormapTex);
     gl.glBindTexture(GL_TEXTURE_2D, m_colormapTex);
-    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Colormap::SAMPLES, 1, 0, GL_RGB,
-            GL_FLOAT, 0);
     gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 }
@@ -421,7 +424,7 @@ void VoronoiSplatRenderer::synchronize(QQuickFramebufferObject *item)
     m_valuesChanged   = splat->valuesChanged();
     m_colorScaleChanged = splat->colorScaleChanged();
 
-    // Reset these so that by the next synchronize() we have the correct values
+    // Reset so that we have the correct values by the next synchronize()
     splat->setSitesChanged(false);
     splat->setValuesChanged(false);
     splat->setColorScaleChanged(false);
@@ -457,11 +460,8 @@ void VoronoiSplatRenderer::updateValues()
 
 void VoronoiSplatRenderer::updateColorScale()
 {
-    gl.glActiveTexture(GL_TEXTURE0);
     gl.glBindTexture(GL_TEXTURE_2D, m_colormapTex);
-    //gl.glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, Colormap::SAMPLES, 1, GL_RGB,
-    //        GL_FLOAT, m_cmap->data());
-    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Colormap::SAMPLES, 1, 0, GL_RGB,
+    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_cmap->size() / 3, 1, 0, GL_RGB,
             GL_FLOAT, m_cmap->data());
 
     m_colorScaleChanged = false;
@@ -485,8 +485,6 @@ void VoronoiSplatRenderer::computeDT()
     // Upload result to lookup texture
     gl.glActiveTexture(GL_TEXTURE0);
     gl.glBindTexture(GL_TEXTURE_2D, m_textures[0]);
-    //gl.glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RED, GL_FLOAT,
-    //        buf.data());
-    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RED, GL_FLOAT,
+    gl.glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RED, GL_FLOAT,
             buf.data());
 }

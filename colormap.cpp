@@ -28,7 +28,7 @@ private:
 
 ColormapTexture::ColormapTexture(const std::vector<float> *cmap)
     : gl(QOpenGLContext::currentContext())
-    , m_size(Colormap::SAMPLES, 1)
+    , m_size(cmap->size() / 3, 1)
     , m_cmap(cmap)
 {
     // Setup OpenGL texture
@@ -61,7 +61,6 @@ Colormap::Colormap(QQuickItem *parent)
     : QQuickItem(parent)
     , m_texture(0)
     , m_shouldUpdateTexture(false)
-    , m_cmap(3*SAMPLES)
 {
     setFlag(QQuickItem::ItemHasContents);
 }
@@ -76,7 +75,8 @@ Colormap::~Colormap()
 
 void Colormap::setColorScale(const ColorScale &scale)
 {
-    scale.sample(SAMPLES, m_cmap.begin());
+    m_cmap.resize(scale.numColors() * 3);
+    scale.sample(scale.numColors(), m_cmap.data());
     emit colorScaleChanged(scale);
 
     m_shouldUpdateTexture = true;
