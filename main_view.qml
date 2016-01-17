@@ -97,8 +97,7 @@ ApplicationWindow {
             Rectangle {
                 width: 512
                 height: 512
-                border.width: 1
-                border.color: "#cccccc"
+                color: "#ffffff"
 
                 Item {
                     id: mainView
@@ -134,15 +133,31 @@ ApplicationWindow {
                         y: parent.y + 5
                         width: 128
                         height: 10
+
+                        Rectangle { // Adds a border around the colormap
+                            x: parent.x - 1
+                            y: parent.y - 1
+                            width: parent.width + 2
+                            height: parent.height + 2
+                            border.width: 1
+                            border.color: "#000000"
+                            color: "transparent"
+                        }
                     }
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    border.width: 1
+                    border.color: "#cccccc"
+                    color: "transparent"
                 }
             }
 
             Rectangle {
                 Layout.minimumHeight: 80
                 width: mainView.width
-                border.width: 1
-                border.color: "#cccccc"
+                color: "#ffffff"
 
                 Item {
                     id: bottomView
@@ -159,11 +174,19 @@ ApplicationWindow {
                     //    anchors.fill: parent
                     //}
                 }
+
+                Rectangle {
+                    anchors.fill: parent
+                    border.width: 1
+                    border.color: "#cccccc"
+                    color: "transparent"
+                }
             }
         }
 
         // Options panel
         RowLayout {
+            Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
             anchors.margins: parent.anchors.margins
 
             // Left column
@@ -191,7 +214,7 @@ ApplicationWindow {
                                 Label { text: "Control points:" }
                                 SpinBox {
                                     id: cpGlyphSizeSpinBox
-                                    maximumValue: 50
+                                    maximumValue: 100
                                     minimumValue: 8
                                     value: cpPlot.glyphSize()
                                     decimals: 1
@@ -202,7 +225,7 @@ ApplicationWindow {
                                 Label { text: "Regular points:" }
                                 SpinBox {
                                     id: rpGlyphSizeSpinBox
-                                    maximumValue: 50
+                                    maximumValue: 100
                                     minimumValue: 8
                                     value: plot.glyphSize()
                                     decimals: 1
@@ -219,6 +242,15 @@ ApplicationWindow {
 
                     GridLayout {
                         columns: 2
+
+                        Label { text: "Display:" }
+                        CheckBox {
+                            checked: true
+                            onClicked: {
+                                splatOpacitySpinBox.enabled = this.checked
+                                splat.visible = this.checked
+                            }
+                        }
 
                         Label { text: "Alpha:" }
                         SpinBox {
