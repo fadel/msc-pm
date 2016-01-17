@@ -198,6 +198,15 @@ ApplicationWindow {
                         GridLayout {
                             columns: 2
 
+                            Label { text: "Display:" }
+                            CheckBox {
+                                checked: true
+                                onClicked: {
+                                    cpPlot.visible = this.checked
+                                    plot.visible = this.checked
+                                }
+                            }
+
                             Label { text: "Colors:" }
                             ComboBox {
                                 id: colormapCombo
