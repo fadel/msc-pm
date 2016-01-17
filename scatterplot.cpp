@@ -6,7 +6,7 @@
 static const qreal GLYPH_OPACITY = 1.0;
 static const qreal GLYPH_OPACITY_SELECTED = 1.0;
 
-static const QColor GLYPH_OUTLINE_COLOR(255, 255, 255);
+static const QColor GLYPH_OUTLINE_COLOR(225, 225, 225);
 static const QColor GLYPH_OUTLINE_COLOR_SELECTED(0, 0, 0);
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
