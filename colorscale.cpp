@@ -63,15 +63,14 @@ QColor ColorScale::color(float t) const
     }
 
     // find which colors in the scale are adjacent to ours
-    float step = 1.0 / m_colors.size();
-    int i = int(t / step);
+    int i = int(t * m_colors.size());
     int j = i + 1;
-
     if (i >= m_colors.size() - 1) {
         return QColor(m_colors.last());
     }
 
     // normalize t between the two colors
+    float step = 1.0f / m_colors.size();
     t = (t - i*step) / (j*step - i*step);
     return lerp(m_colors[i], m_colors[j], t);
 }

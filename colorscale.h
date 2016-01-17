@@ -19,6 +19,7 @@ public:
     void setExtents(float min, float max);
     float min() const { return m_min; }
     float max() const { return m_max; }
+    int numColors() const { return m_colors.size(); }
 
     template<typename OutputIterator>
     void sample(int samples, OutputIterator it) const;
@@ -37,11 +38,11 @@ void ColorScale::sample(int samples, OutputIterator it) const
 
     float step = (max() - min()) / samples;
     qreal r, g, b;
-    for (float t = min(); t < max(); t += step) {
+    for (float t = min(); samples-- > 0; t += step) {
         color(t).getRgbF(&r, &g, &b);
-        *it = r; it++;
-        *it = g; it++;
-        *it = b; it++;
+        *it++ = r;
+        *it++ = g;
+        *it++ = b;
     }
 }
 
