@@ -10,10 +10,8 @@ ApplicationWindow {
     id: mainWindow
     title: "Projection"
     visible: true
-    contentItem.minimumWidth: 532
+    contentItem.minimumWidth: 800
     contentItem.minimumHeight: 622
-    contentItem.maximumWidth: contentItem.minimumWidth
-    contentItem.maximumHeight: contentItem.minimumHeight
     Component.onCompleted: {
         setX(Screen.width / 2 - width / 2);
         setY(Screen.height / 2 - height / 2);
@@ -23,6 +21,7 @@ ApplicationWindow {
         Menu {
             title: "File"
             MenuItem { action: savePlotAction }
+            MenuItem { action: screenshotAction }
             MenuItem { action: quitAction }
         }
 
@@ -89,78 +88,193 @@ ApplicationWindow {
         }
     }
 
-    ColumnLayout {
-        spacing: 10
+    GridLayout {
         anchors.fill: parent
-        anchors.margins: this.spacing
+        anchors.margins: 10
 
-        Rectangle {
-            //Layout.fillWidth: true
-            //Layout.fillHeight: true
-            width: 512
-            height: 512
-            border.width: 1
-            border.color: "#cccccc"
+        // Main panel
+        ColumnLayout {
+            Rectangle {
+                width: 512
+                height: 512
+                border.width: 1
+                border.color: "#cccccc"
 
-            VoronoiSplat {
-                id: splat
-                objectName: "splat"
-                x: parent.x
-                y: parent.y
-                anchors.fill: parent
+                Item {
+                    id: mainView
+                    anchors.fill: parent
+                    VoronoiSplat {
+                        id: splat
+                        objectName: "splat"
+                        x: parent.x
+                        y: parent.y
+                        anchors.fill: parent
+                    }
+
+                    Scatterplot {
+                        id: plot
+                        objectName: "plot"
+                        x: parent.x
+                        y: parent.y
+                        anchors.fill: parent
+                    }
+
+                    Scatterplot {
+                        id: cpPlot
+                        objectName: "cpPlot"
+                        x: parent.x
+                        y: parent.y
+                        anchors.fill: parent
+                    }
+
+                    Colormap {
+                        id: colormap
+                        objectName: "colormap"
+                        x: parent.x + 5
+                        y: parent.y + 5
+                        width: 128
+                        height: 10
+                    }
+                }
             }
 
-            Scatterplot {
-                id: plot
-                objectName: "plot"
-                x: parent.x
-                y: parent.y
-                anchors.fill: parent
-            }
+            Rectangle {
+                Layout.minimumHeight: 80
+                width: mainView.width
+                border.width: 1
+                border.color: "#cccccc"
 
-            Scatterplot {
-                id: cpPlot
-                objectName: "cpPlot"
-                x: parent.x
-                y: parent.y
-                anchors.fill: parent
-            }
+                Item {
+                    id: bottomView
+                    anchors.fill: parent
+                    BarChart {
+                        id: barChart
+                        objectName: "barChart"
+                        anchors.fill: parent
+                    }
 
-            Colormap {
-                id: colormap
-                objectName: "colormap"
-                x: parent.x + 5
-                y: parent.y + 5
-                width: 128
-                height: 10
+                    //HistoryGraph {
+                    //    id: history
+                    //    objectName: "history"
+                    //    anchors.fill: parent
+                    //}
+                }
             }
         }
 
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.minimumHeight: 80
-            border.width: 1
-            border.color: "#cccccc"
+        // Options panel
+        RowLayout {
+            anchors.margins: parent.anchors.margins
 
-            BarChart {
-                id: barChart
-                objectName: "barChart"
-                anchors.fill: parent
+            // Left column
+            ColumnLayout {
+                GroupBox {
+                    title: "Scatterplot"
+
+                    ColumnLayout {
+                        GridLayout {
+                            columns: 2
+
+                            Label { text: "Colors:" }
+                            ComboBox {
+                                id: colormapCombo
+                                model: [ "Categorical", "Continuous", "Divergent", "Rainbow" ]
+                            }
+                        }
+
+                        GroupBox {
+                            flat: true
+                            title: "Glyph size"
+
+                            GridLayout {
+                                columns: 2
+                                Label { text: "Control points:" }
+                                SpinBox {
+                                    id: cpGlyphSizeSpinBox
+                                    maximumValue: 50
+                                    minimumValue: 8
+                                    value: cpPlot.glyphSize()
+                                    decimals: 1
+                                    stepSize: 1
+                                    onValueChanged: cpPlot.setGlyphSize(this.value)
+                                }
+
+                                Label { text: "Regular points:" }
+                                SpinBox {
+                                    id: rpGlyphSizeSpinBox
+                                    maximumValue: 50
+                                    minimumValue: 8
+                                    value: plot.glyphSize()
+                                    decimals: 1
+                                    stepSize: 1
+                                    onValueChanged: plot.setGlyphSize(this.value)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                GroupBox {
+                    title: "Splat"
+
+                    GridLayout {
+                        columns: 2
+
+                        Label { text: "Alpha:" }
+                        SpinBox {
+                            id: alphaSpinBox
+                            maximumValue: 100
+                            minimumValue: 1
+                            value: splat.alpha()
+                            decimals: 2
+                            stepSize: 1
+                            onValueChanged: splat.setAlpha(this.value)
+                        }
+
+                        Label { text: "Beta:" }
+                        SpinBox {
+                            id: betaSpinBox
+                            maximumValue: 100
+                            minimumValue: 1
+                            value: splat.beta()
+                            decimals: 2
+                            stepSize: 1
+                            onValueChanged: splat.setBeta(this.value)
+                        }
+
+                        Label { text: "Opacity (%):" }
+                        SpinBox {
+                            id: splatOpacitySpinBox
+                            maximumValue: 100
+                            minimumValue: 0
+                            value: 100 * splat.opacity
+                            decimals: 0
+                            stepSize: 1
+                            onValueChanged: splat.opacity = this.value / 100
+                        }
+                    }
+                }
             }
 
-            //HistoryGraph {
-            //    id: history
-            //    objectName: "history"
-            //    anchors.fill: parent
-            //}
+            // Right column
+            ColumnLayout {
+            }
         }
     }
 
     Action {
-        id: quitAction
-        text: "&Quit"
-        shortcut: "Ctrl+Q"
-        onTriggered: Qt.quit()
+        id: screenshotAction
+        text: "Save screenshot"
+        shortcut: "Ctrl+Shift+S"
+        onTriggered: {
+            mainView.grabToImage(function(result) {
+                result.saveToFile("screenshot-main.png");
+            });
+
+            bottomView.grabToImage(function(result) {
+                result.saveToFile("screenshot-bottom.png");
+            });
+        }
     }
 
     Action {
@@ -171,6 +285,13 @@ ApplicationWindow {
             console.log("Saving control points' map...")
             Main.saveData()
         }
+    }
+
+    Action {
+        id: quitAction
+        text: "&Quit"
+        shortcut: "Ctrl+Q"
+        onTriggered: Qt.quit()
     }
 
     ExclusiveGroup {
@@ -269,12 +390,4 @@ ApplicationWindow {
             onTriggered: console.log("stub: Silhouette")
         }
     }
-
-    // TODO
-    //Window {
-    //    title: "Options"
-    //    minimumWidth: 500
-    //    minimumHeight: 300
-    //    visible: false
-    //}
 }

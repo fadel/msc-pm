@@ -22,8 +22,11 @@ public:
     void setColorData(const arma::vec &colorData, bool updateView);
     void setOpacityData(const arma::vec &opacityData, bool updateView);
     void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy, bool updateView);
+    void setGlyphSize(float glyphSize, bool updateView);
     void setAutoScale(bool autoScale);
     Q_INVOKABLE bool saveToFile(const QUrl &url);
+
+    Q_INVOKABLE float glyphSize() const { return m_glyphSize; }
 
     static const int PADDING = 10;
 
@@ -34,6 +37,7 @@ signals:
     void opacityDataChanged(const arma::vec &opacityData) const;
     void selectionChanged(const QSet<int> &selection) const;
     void scaleChanged(const LinearScale<float> &sx, const LinearScale<float> &sy) const;
+    void glyphSizeChanged(float glyphSize) const;
 
 public slots:
     void setXY(const arma::mat &xy);
@@ -41,6 +45,7 @@ public slots:
     void setOpacityData(const arma::vec &opacityData);
     void setSelection(const QSet<int> &selection);
     void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
+    Q_INVOKABLE void setGlyphSize(float glyphSize);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
@@ -53,16 +58,24 @@ private:
     QSGNode *newGlyphTree();
 
     void applyManipulation();
-
     void updateGlyphs(QSGNode *node);
 
-    bool updateSelection(bool mergeSelection);
-
+    // Data
     arma::mat m_xy;
+    arma::vec m_colorData;
+    arma::vec m_opacityData;
+
+    // Visuals
+    float m_glyphSize;
+    const ColorScale *m_colorScale;
 
     void autoScale();
     bool m_autoScale;
     LinearScale<float> m_sx, m_sy;
+
+    // Internal state
+    bool updateSelection(bool mergeSelection);
+    QSet<int> m_selectedGlyphs;
 
     enum InteractionState {
         INTERACTION_NONE,
@@ -74,14 +87,7 @@ private:
 
     QPointF m_dragOriginPos, m_dragCurrentPos;
 
-    QSet<int> m_selectedGlyphs;
-
     bool m_shouldUpdateGeometry, m_shouldUpdateMaterials;
-
-    const ColorScale *m_colorScale;
-
-    arma::vec m_colorData;
-    arma::vec m_opacityData;
 };
 
 #endif // SCATTERPLOT_H

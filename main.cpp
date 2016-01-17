@@ -78,6 +78,8 @@ int main(int argc, char **argv)
             // cpIndices = relevanceSampling(X, cpSize);
             cpIndices = arma::randi<arma::uvec>(cpSize, arma::distr_param(0, n-1));
         }
+
+        arma::sort(cpIndices);
     }
     if (parser.isSet(cpFileOutputOption)) {
         const QString &cpFilename = parser.value(cpFileOutputOption);
@@ -115,21 +117,21 @@ int main(int argc, char **argv)
 
     QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
 
-    ColorScale colorScale{
-        QColor("#1f77b4"),
-        QColor("#ff7f0e"),
-        QColor("#2ca02c"),
-        QColor("#d62728"),
-        QColor("#9467bd"),
-        QColor("#8c564b"),
-        QColor("#e377c2"),
-        QColor("#17becf"),
-        QColor("#7f7f7f"),
-    };
-    colorScale.setExtents(labels.min(), labels.max());
-
-    //ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE);
+    //ColorScale colorScale{
+    //    QColor("#1f77b4"),
+    //    QColor("#ff7f0e"),
+    //    QColor("#2ca02c"),
+    //    QColor("#d62728"),
+    //    QColor("#9467bd"),
+    //    QColor("#8c564b"),
+    //    QColor("#e377c2"),
+    //    QColor("#17becf"),
+    //    QColor("#7f7f7f"),
+    //};
     //colorScale.setExtents(labels.min(), labels.max());
+
+    ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RAINBOW);
+    colorScale.setExtents(labels.min(), labels.max());
 
     Scatterplot *cpPlot = engine.rootObjects()[0]->findChild<Scatterplot *>("cpPlot");
     cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
@@ -177,13 +179,13 @@ int main(int argc, char **argv)
             cpPlot, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
 
     BarChart *barChart = engine.rootObjects()[0]->findChild<BarChart *>("barChart");
-    barChart->setValues(arma::randn<arma::vec>(100));
+    barChart->setValues(labels);
 
     //history->addHistoryItem(Ys);
     colormap->setColorScale(colorScale);
     plot->setColorScale(&colorScale);
     plot->setColorData(labels, false);
-    //splat->setColormap(colorScale);
+    splat->setColorScale(colorScale);
     splat->setValues(labels);
 
     cpPlot->setAutoScale(false);

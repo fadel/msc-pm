@@ -16,12 +16,14 @@ public:
 
     Renderer *createRenderer() const;
 
-    const std::vector<float> &sites() const    { return m_sites; }
-    const std::vector<float> &values() const   { return m_values; }
+    const std::vector<float> &sites() const      { return m_sites; }
+    const std::vector<float> &values() const     { return m_values; }
     const std::vector<float> &colorScale() const { return m_cmap; }
+    Q_INVOKABLE float alpha() const { return m_alpha; }
+    Q_INVOKABLE float beta() const  { return m_beta; }
 
-    bool sitesChanged() const    { return m_sitesChanged; }
-    bool valuesChanged() const   { return m_valuesChanged; }
+    bool sitesChanged() const      { return m_sitesChanged; }
+    bool valuesChanged() const     { return m_valuesChanged; }
     bool colorScaleChanged() const { return m_colorScaleChanged; }
 
     void setSitesChanged(bool sitesChanged) {
@@ -38,6 +40,7 @@ signals:
     void sitesChanged(const arma::mat &sites) const;
     void valuesChanged(const arma::vec &values) const;
     void colorScaleChanged(const ColorScale &scale) const;
+    void alphaChanged(float alpha) const;
 
 public slots:
     // 'points' should be a 2D points matrix (each point in a row)
@@ -49,8 +52,15 @@ public slots:
     // Set colorScale data based on the given color scale
     void setColorScale(const ColorScale &scale);
 
+    // Shepard blur radius
+    Q_INVOKABLE void setAlpha(float alpha);
+
+    // Maximum blur radius
+    Q_INVOKABLE void setBeta(float beta);
+
 private:
     std::vector<float> m_sites, m_values, m_cmap;
+    float m_alpha, m_beta;
     bool m_sitesChanged, m_valuesChanged, m_colorScaleChanged;
 };
 

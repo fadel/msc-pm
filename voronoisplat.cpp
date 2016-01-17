@@ -12,7 +12,8 @@
 #include "scatterplot.h"
 #include "skelft.h"
 
-static const float RAD_BLUR = 5.0f;
+static const float DEFAULT_ALPHA = 5.0f;
+static const float DEFAULT_BETA = 20.0f;
 
 static int nextPow2(int n)
 {
@@ -27,6 +28,8 @@ static int nextPow2(int n)
 VoronoiSplat::VoronoiSplat(QQuickItem *parent)
     : QQuickFramebufferObject(parent)
     , m_cmap(3*Colormap::SAMPLES)
+    , m_alpha(DEFAULT_ALPHA)
+    , m_beta(DEFAULT_BETA)
 {
     setTextureFollowsItemSize(false);
 }
@@ -87,6 +90,18 @@ void VoronoiSplat::setColorScale(const ColorScale &scale)
     update();
 }
 
+void VoronoiSplat::setAlpha(float alpha)
+{
+    m_alpha = alpha;
+    update();
+}
+
+void VoronoiSplat::setBeta(float beta)
+{
+    m_beta = beta;
+    update();
+}
+
 // ----------------------------------------------------------------------------
 
 class VoronoiSplatRenderer
@@ -115,6 +130,7 @@ private:
 
     QSize m_size;
     const std::vector<float> *m_sites, *m_values, *m_cmap;
+    float m_alpha, m_beta;
 
     QQuickWindow *m_window; // used to reset OpenGL state (as per docs)
     QOpenGLFunctions gl;
@@ -336,8 +352,8 @@ void VoronoiSplatRenderer::render()
 
     // First pass
     m_program1->bind();
-    m_program1->setUniformValue("rad_max", 20.0f);
-    m_program1->setUniformValue("rad_blur", RAD_BLUR);
+    m_program1->setUniformValue("rad_max", m_beta);
+    m_program1->setUniformValue("rad_blur", m_alpha);
     m_program1->setUniformValue("fb_size", float(m_size.width()));
 
     gl.glActiveTexture(GL_TEXTURE0);
@@ -368,7 +384,7 @@ void VoronoiSplatRenderer::render()
 
     // Second pass
     m_program2->bind();
-    m_program2->setUniformValue("rad_max", 20.0f);
+    m_program2->setUniformValue("rad_max", m_beta);
 
     gl.glActiveTexture(GL_TEXTURE0);
     gl.glBindTexture(GL_TEXTURE_2D, m_textures[0]);
@@ -410,6 +426,8 @@ void VoronoiSplatRenderer::synchronize(QQuickFramebufferObject *item)
     splat->setValuesChanged(false);
     splat->setColorScaleChanged(false);
 
+    m_alpha           = splat->alpha();
+    m_beta            = splat->beta();
     m_sites           = &(splat->sites());
     m_values          = &(splat->values());
     m_cmap            = &(splat->colorScale());

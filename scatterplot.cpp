@@ -10,11 +10,12 @@ static const QColor GLYPH_OUTLINE_COLOR(255, 255, 255);
 static const QColor GLYPH_OUTLINE_COLOR_SELECTED(0, 0, 0);
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
-static const float GLYPH_SIZE = 8.0f;
+static const float DEFAULT_GLYPH_SIZE = 8.0f;
 static const float GLYPH_OUTLINE_WIDTH = 2.0f;
 
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
+    , m_glyphSize(DEFAULT_GLYPH_SIZE)
     , m_autoScale(true)
     , m_sx(0, 1, 0, 1)
     , m_sy(0, 1, 0, 1)
@@ -76,7 +77,6 @@ void Scatterplot::setXY(const arma::mat &xy, bool updateView)
     }
 
     m_shouldUpdateGeometry = true;
-
     if (updateView) {
         update();
     }
@@ -97,7 +97,6 @@ void Scatterplot::setColorData(const arma::vec &colorData, bool updateView)
     emit colorDataChanged(m_colorData);
 
     m_shouldUpdateMaterials = true;
-
     if (updateView) {
         update();
     }
@@ -106,14 +105,6 @@ void Scatterplot::setColorData(const arma::vec &colorData, bool updateView)
 void Scatterplot::setColorData(const arma::vec &colorData)
 {
     setColorData(colorData, true);
-}
-
-void Scatterplot::setAutoScale(bool autoScale)
-{
-    m_autoScale = autoScale;
-    if (autoScale) {
-        this->autoScale();
-    }
 }
 
 void Scatterplot::setOpacityData(const arma::vec &opacityData, bool updateView)
@@ -142,7 +133,6 @@ void Scatterplot::setScale(const LinearScale<float> &sx, const LinearScale<float
     emit scaleChanged(m_sx, m_sy);
 
     m_shouldUpdateGeometry = true;
-
     if (updateView) {
         update();
     }
@@ -153,12 +143,36 @@ void Scatterplot::setScale(const LinearScale<float> &sx, const LinearScale<float
     setScale(sx, sy, true);
 }
 
+void Scatterplot::setAutoScale(bool autoScale)
+{
+    m_autoScale = autoScale;
+    if (autoScale) {
+        this->autoScale();
+    }
+}
+
 void Scatterplot::autoScale()
 {
     m_sx.setDomain(m_xy.col(0).min(), m_xy.col(0).max());
     m_sy.setDomain(m_xy.col(1).min(), m_xy.col(1).max());
 
     emit scaleChanged(m_sx, m_sy);
+}
+
+void Scatterplot::setGlyphSize(float glyphSize, bool updateView)
+{
+    m_glyphSize = glyphSize;
+    emit glyphSizeChanged(m_glyphSize);
+
+    m_shouldUpdateGeometry = true;
+    if (updateView) {
+        update();
+    }
+}
+
+void Scatterplot::setGlyphSize(float glyphSize)
+{
+    setGlyphSize(glyphSize, true);
 }
 
 QSGNode *Scatterplot::newGlyphTree()
@@ -171,7 +185,7 @@ QSGNode *Scatterplot::newGlyphTree()
     }
 
     QSGNode *node = new QSGNode;
-    int vertexCount = calculateCircleVertexCount(GLYPH_SIZE);
+    int vertexCount = calculateCircleVertexCount(m_glyphSize);
 
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         QSGGeometry *glyphOutlineGeometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
@@ -293,11 +307,11 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
             y = m_sy(row[1]) + ty * moveTranslationF;
 
             QSGGeometry *geometry = glyphOutlineNode->geometry();
-            updateCircleGeometry(geometry, GLYPH_SIZE, x, y);
+            updateCircleGeometry(geometry, m_glyphSize, x, y);
             glyphOutlineNode->markDirty(QSGNode::DirtyGeometry);
 
             geometry = glyphNode->geometry();
-            updateCircleGeometry(geometry, GLYPH_SIZE - 2*GLYPH_OUTLINE_WIDTH, x, y);
+            updateCircleGeometry(geometry, m_glyphSize - 2*GLYPH_OUTLINE_WIDTH, x, y);
             glyphNode->markDirty(QSGNode::DirtyGeometry);
         }
         if (m_shouldUpdateMaterials) {
