@@ -89,11 +89,16 @@ ApplicationWindow {
     }
 
     GridLayout {
-        anchors.fill: parent
+        Layout.margins: 10
         anchors.margins: 10
+        anchors.fill: parent
+        columnSpacing: 10
+        rowSpacing: 10
 
         // Main panel
         ColumnLayout {
+            spacing: 10
+
             Rectangle {
                 width: 512
                 height: 512
@@ -154,14 +159,16 @@ ApplicationWindow {
                 }
             }
 
-            Rectangle {
+            Rectangle { id: secret
                 Layout.minimumHeight: 80
+                Layout.fillHeight: true
                 width: mainView.width
                 color: "#ffffff"
 
                 Item {
                     id: bottomView
                     anchors.fill: parent
+
                     BarChart {
                         id: barChart
                         objectName: "barChart"
@@ -185,120 +192,153 @@ ApplicationWindow {
         }
 
         // Options panel
-        RowLayout {
-            Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
-            anchors.margins: parent.anchors.margins
+        ColumnLayout {
+            Layout.alignment: Qt.AlignTop | Qt.AlignLeft
 
-            // Left column
-            ColumnLayout {
-                GroupBox {
-                    title: "Scatterplot"
+            GroupBox {
+                Layout.fillWidth: true
+                title: "Projection metrics"
 
-                    ColumnLayout {
+                Column {
+                    ExclusiveGroup { id: wrtMetricsGroup }
+
+                    RadioButton {
+                        text: "Current"
+                        exclusiveGroup: wrtMetricsGroup
+                        checked: true
+                    }
+                    RadioButton {
+                        text: "Diff. to previous"
+                        exclusiveGroup: wrtMetricsGroup
+                    }
+                    RadioButton {
+                        text: "Diff. to original"
+                        exclusiveGroup: wrtMetricsGroup
+                    }
+                }
+            }
+
+            GroupBox {
+                title: "Scatterplot"
+                checkable: true
+                __checkbox.onClicked: {
+                    cpPlot.visible = this.checked;
+                    plot.visible = this.checked;
+                }
+
+                ColumnLayout {
+                    GroupBox {
+                        flat: true
+                        title: "Colors"
+
                         GridLayout {
                             columns: 2
 
-                            Label { text: "Display:" }
-                            CheckBox {
-                                checked: true
-                                onClicked: {
-                                    cpPlot.visible = this.checked
-                                    plot.visible = this.checked
-                                }
+                            Label { text: "Map to:" }
+                            ComboBox {
+                                id: plotMetricComboBox
+                                model: metricsModel
                             }
 
-                            Label { text: "Colors:" }
+                            Label { text: "Color map:" }
                             ComboBox {
-                                id: colormapCombo
+                                id: scatterplotColormapCombo
                                 model: [ "Categorical", "Continuous", "Divergent", "Rainbow" ]
                             }
                         }
-
-                        GroupBox {
-                            flat: true
-                            title: "Glyph size"
-
-                            GridLayout {
-                                columns: 2
-                                Label { text: "Control points:" }
-                                SpinBox {
-                                    id: cpGlyphSizeSpinBox
-                                    maximumValue: 100
-                                    minimumValue: 8
-                                    value: cpPlot.glyphSize()
-                                    decimals: 1
-                                    stepSize: 1
-                                    onValueChanged: cpPlot.setGlyphSize(this.value)
-                                }
-
-                                Label { text: "Regular points:" }
-                                SpinBox {
-                                    id: rpGlyphSizeSpinBox
-                                    maximumValue: 100
-                                    minimumValue: 8
-                                    value: plot.glyphSize()
-                                    decimals: 1
-                                    stepSize: 1
-                                    onValueChanged: plot.setGlyphSize(this.value)
-                                }
-                            }
-                        }
                     }
-                }
 
-                GroupBox {
-                    title: "Splat"
+                    GroupBox {
+                        flat: true
+                        title: "Glyph size"
 
-                    GridLayout {
-                        columns: 2
-
-                        Label { text: "Display:" }
-                        CheckBox {
-                            checked: true
-                            onClicked: {
-                                splatOpacitySpinBox.enabled = this.checked
-                                splat.visible = this.checked
+                        GridLayout {
+                            columns: 2
+                            Label { text: "Control points:" }
+                            SpinBox {
+                                id: cpGlyphSizeSpinBox
+                                maximumValue: 100
+                                minimumValue: 8
+                                value: cpPlot.glyphSize()
+                                decimals: 1
+                                stepSize: 1
+                                onValueChanged: cpPlot.setGlyphSize(this.value)
                             }
-                        }
 
-                        Label { text: "Alpha:" }
-                        SpinBox {
-                            id: alphaSpinBox
-                            maximumValue: 100
-                            minimumValue: 1
-                            value: splat.alpha()
-                            decimals: 2
-                            stepSize: 1
-                            onValueChanged: splat.setAlpha(this.value)
-                        }
-
-                        Label { text: "Beta:" }
-                        SpinBox {
-                            id: betaSpinBox
-                            maximumValue: 100
-                            minimumValue: 1
-                            value: splat.beta()
-                            decimals: 2
-                            stepSize: 1
-                            onValueChanged: splat.setBeta(this.value)
-                        }
-
-                        Label { text: "Opacity (%):" }
-                        SpinBox {
-                            id: splatOpacitySpinBox
-                            maximumValue: 100
-                            minimumValue: 0
-                            value: 100 * splat.opacity
-                            decimals: 0
-                            stepSize: 1
-                            onValueChanged: splat.opacity = this.value / 100
+                            Label { text: "Regular points:" }
+                            SpinBox {
+                                id: rpGlyphSizeSpinBox
+                                maximumValue: 100
+                                minimumValue: 8
+                                value: plot.glyphSize()
+                                decimals: 1
+                                stepSize: 1
+                                onValueChanged: plot.setGlyphSize(this.value)
+                            }
                         }
                     }
                 }
             }
 
-            // Right column
-            ColumnLayout {
+            GroupBox {
+                title: "Splat"
+                checkable: true
+                __checkbox.onClicked: {
+                    splat.visible = this.checked
+                }
+
+                GridLayout {
+                    columns: 2
+
+                    Label { text: "Alpha:" }
+                    SpinBox {
+                        id: alphaSpinBox
+                        maximumValue: 100
+                        minimumValue: 1
+                        value: splat.alpha()
+                        decimals: 2
+                        stepSize: 1
+                        onValueChanged: splat.setAlpha(this.value)
+                    }
+
+                    Label { text: "Beta:" }
+                    SpinBox {
+                        id: betaSpinBox
+                        maximumValue: 100
+                        minimumValue: 1
+                        value: splat.beta()
+                        decimals: 2
+                        stepSize: 1
+                        onValueChanged: splat.setBeta(this.value)
+                    }
+
+                    Label { text: "Opacity:" }
+                    Slider {
+                        id: splatOpacitySlider
+                        maximumValue: 1
+                        minimumValue: 0
+                        value: splat.opacity
+                        onValueChanged: splat.opacity = this.value
+                    }
+                }
+            }
+
+            GroupBox {
+                title: "Bar chart"
+                checkable: true
+                __checkbox.onClicked: {
+                    bottomView.visible = this.checked
+                }
+
+                GridLayout {
+                    columns: 2
+
+                    Label { text: "Color map:" }
+                    ComboBox {
+                        id: barChartColormapCombo
+                        model: [ "Categorical", "Continuous", "Divergent", "Rainbow" ]
+                    }
+                }
             }
         }
     }
@@ -430,5 +470,13 @@ ApplicationWindow {
             checkable: true
             onTriggered: console.log("stub: Silhouette")
         }
+    }
+
+    ListModel {
+        id: metricsModel
+
+        ListElement { text: "Aggregate error" }
+        ListElement { text: "CP influence" }
+        ListElement { text: "Stress" }
     }
 }
