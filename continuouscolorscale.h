@@ -10,7 +10,8 @@ public:
 
     enum BuiltinContinuousColorScale {
         HEATED_OBJECTS,
-        RED_GRAY_BLUE
+        RED_GRAY_BLUE,
+        RAINBOW,
     };
 
     QColor color(qreal t) const;
