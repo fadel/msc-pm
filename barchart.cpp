@@ -58,16 +58,16 @@ QSGNode *BarChart::newBarNode() const
     // A bar node is:
     // opacityNode [outlineGeomNode barGeomNode]
 
-    QSGGeometryNode *outlineGeomNode = new QSGGeometryNode;
-    QSGGeometry *outlineGeometry =
-        new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 4);
-    outlineGeometry->setDrawingMode(GL_LINE_LOOP);
-    outlineGeomNode->setGeometry(outlineGeometry);
-    outlineGeomNode->setFlag(QSGNode::OwnsGeometry);
-    QSGFlatColorMaterial *material = new QSGFlatColorMaterial;
-    material->setColor(OUTLINE_COLOR);
-    outlineGeomNode->setMaterial(material);
-    outlineGeomNode->setFlag(QSGNode::OwnsMaterial);
+    //QSGGeometryNode *outlineGeomNode = new QSGGeometryNode;
+    //QSGGeometry *outlineGeometry =
+    //    new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 4);
+    //outlineGeometry->setDrawingMode(GL_LINE_LOOP);
+    //outlineGeomNode->setGeometry(outlineGeometry);
+    //outlineGeomNode->setFlag(QSGNode::OwnsGeometry);
+    //QSGFlatColorMaterial *material = new QSGFlatColorMaterial;
+    //material->setColor(OUTLINE_COLOR);
+    //outlineGeomNode->setMaterial(material);
+    //outlineGeomNode->setFlag(QSGNode::OwnsMaterial);
 
     QSGGeometryNode *barGeomNode = new QSGGeometryNode;
     QSGGeometry *barGeometry =
@@ -75,7 +75,7 @@ QSGNode *BarChart::newBarNode() const
     barGeometry->setDrawingMode(GL_POLYGON);
     barGeomNode->setGeometry(barGeometry);
     barGeomNode->setFlag(QSGNode::OwnsGeometry);
-    material = new QSGFlatColorMaterial;
+    QSGFlatColorMaterial *material = new QSGFlatColorMaterial;
     material->setColor(BAR_COLOR);
     barGeomNode->setMaterial(material);
     barGeomNode->setFlag(QSGNode::OwnsMaterial);
