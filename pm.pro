@@ -15,11 +15,7 @@ HEADERS += main.h \
     historygraph.h \
     barchart.h \
     interactionhandler.h \
-    selectionhandler.h \
-    effectivenessobserver.h \
-    distortionobserver.h \
-    distortionmeasure.h \
-    npdistortion.h \
+    projectionobserver.h \
     skelft.h \
     skelftkernel.h \
     mp.h
@@ -33,16 +29,12 @@ SOURCES += main.cpp \
     historygraph.cpp \
     barchart.cpp \
     interactionhandler.cpp \
-    selectionhandler.cpp \
-    effectivenessobserver.cpp \
-    distortionobserver.cpp \
-    npdistortion.cpp \
+    projectionobserver.cpp \
     skelft_core.cpp \
     lamp.cpp \
     plmp.cpp \
     knn.cpp \
     forceScheme.cpp \
-    tsne.cpp \
     measures.cpp \
     dist.cpp
 

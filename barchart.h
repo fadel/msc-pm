@@ -20,16 +20,17 @@ public:
 
 signals:
     void valuesChanged(const arma::vec &values) const;
-    void colorScaleChanged(const ColorScale *scale) const;
+    void colorScaleChanged(const ColorScale &scale) const;
 
 public slots:
     void setValues(const arma::vec &values);
-    void setColorScale(const ColorScale *scale);
+    void setColorScale(const ColorScale &scale);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
     void hoverMoveEvent(QHoverEvent *event);
     void mousePressEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
 
 private:
     QSGNode *newSceneGraph() const;
@@ -42,7 +43,7 @@ private:
     bool m_shouldUpdateBars;
 
     arma::vec m_values;
-    const ColorScale *m_colorScale;
+    ColorScale m_colorScale;
     std::vector<int> m_originalIndices;
     LinearScale<float> m_scale;
 };

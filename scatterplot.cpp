@@ -1,7 +1,12 @@
 #include "scatterplot.h"
 
-#include "geometry.h"
 #include <cmath>
+
+#include <QSGGeometryNode>
+#include <QSGSimpleRectNode>
+
+#include "continuouscolorscale.h"
+#include "geometry.h"
 
 static const qreal GLYPH_OPACITY = 1.0;
 static const qreal GLYPH_OPACITY_SELECTED = 1.0;
@@ -16,6 +21,7 @@ static const float GLYPH_OUTLINE_WIDTH = 2.0f;
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
     , m_glyphSize(DEFAULT_GLYPH_SIZE)
+    , m_colorScale(ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS))
     , m_autoScale(true)
     , m_sx(0, 1, 0, 1)
     , m_sy(0, 1, 0, 1)
@@ -27,14 +33,11 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     setFlag(QQuickItem::ItemHasContents);
 }
 
-void Scatterplot::setColorScale(const ColorScale *colorScale)
+void Scatterplot::setColorScale(const ColorScale &colorScale)
 {
-    if (!colorScale) {
-        return;
-    }
-
     m_colorScale = colorScale;
     if (m_colorData.n_elem > 0) {
+        m_colorScale.setExtents(m_colorData.min(), m_colorData.max());
         m_shouldUpdateMaterials = true;
     }
 }
@@ -96,6 +99,7 @@ void Scatterplot::setColorData(const arma::vec &colorData, bool updateView)
     m_colorData = colorData;
     emit colorDataChanged(m_colorData);
 
+    m_colorScale.setExtents(m_colorData.min(), m_colorData.max());
     m_shouldUpdateMaterials = true;
     if (updateView) {
         update();
@@ -320,7 +324,7 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
             glyphOutlineNode->markDirty(QSGNode::DirtyMaterial);
 
             material = static_cast<QSGFlatColorMaterial *>(glyphNode->material());
-            material->setColor(m_colorScale->color(m_colorData[i]));
+            material->setColor(m_colorScale.color(m_colorData[i]));
             glyphNode->markDirty(QSGNode::DirtyMaterial);
         }
 

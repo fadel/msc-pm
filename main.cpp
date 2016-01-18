@@ -17,7 +17,7 @@
 #include "barchart.h"
 #include "colormap.h"
 #include "interactionhandler.h"
-#include "selectionhandler.h"
+#include "projectionobserver.h"
 #include "skelft.h"
 
 static QObject *mainProvider(QQmlEngine *engine, QJSEngine *scriptEngine)
@@ -130,14 +130,12 @@ int main(int argc, char **argv)
     //};
     //colorScale.setExtents(labels.min(), labels.max());
 
-    ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::RAINBOW);
-    colorScale.setExtents(labels.min(), labels.max());
+    ContinuousColorScale colorScale = ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS);
 
     Scatterplot *cpPlot = engine.rootObjects()[0]->findChild<Scatterplot *>("cpPlot");
+    Scatterplot *rpPlot = engine.rootObjects()[0]->findChild<Scatterplot *>("rpPlot");
     cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
     // cpPlot->setColorData(arma::zeros<arma::vec>(cpSize));
-    cpPlot->setColorScale(&colorScale);
-    Scatterplot *plot = engine.rootObjects()[0]->findChild<Scatterplot *>("plot");
     VoronoiSplat *splat = engine.rootObjects()[0]->findChild<VoronoiSplat *>("splat");
     skelft2DInitialization(splat->width());
     Colormap *colormap = engine.rootObjects()[0]->findChild<Colormap *>("colormap");
@@ -151,17 +149,17 @@ int main(int argc, char **argv)
     // Update projection as the cp are modified
     InteractionHandler interactionHandler(X, cpIndices);
     m->setInteractionHandler(&interactionHandler);
+    m->setTechnique(InteractionHandler::TECHNIQUE_LAMP);
     QObject::connect(cpPlot, SIGNAL(xyChanged(const arma::mat &)),
             &interactionHandler, SLOT(setCP(const arma::mat &)));
     QObject::connect(cpPlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
             &interactionHandler, SLOT(setCP(const arma::mat &)));
     QObject::connect(&interactionHandler, SIGNAL(cpChanged(const arma::mat &)),
-            plot, SLOT(setXY(const arma::mat &)));
+            rpPlot, SLOT(setXY(const arma::mat &)));
     QObject::connect(&interactionHandler, SIGNAL(cpChanged(const arma::mat &)),
             splat, SLOT(setSites(const arma::mat &)));
-    m->setTechnique(InteractionHandler::TECHNIQUE_LAMP);
 
-    // Linking between selections in cp plot and full dataset plot
+    // Linking between selections in cp plot and rp plot
     //SelectionHandler selectionHandler(cpIndices);
     //QObject::connect(cpPlot, SIGNAL(selectionChanged(const QSet<int> &)),
     //        &selectionHandler, SLOT(setSelection(const QSet<int> &)));
@@ -175,29 +173,33 @@ int main(int argc, char **argv)
     //QObject::connect(history, SIGNAL(currentItemChanged(const arma::mat &)),
     //        cpPlot, SLOT(setXY(const arma::mat &)));
 
-    QObject::connect(plot, SIGNAL(scaleChanged(const LinearScale<float> &, const LinearScale<float> &)),
+    QObject::connect(rpPlot, SIGNAL(scaleChanged(const LinearScale<float> &, const LinearScale<float> &)),
             cpPlot, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
 
     BarChart *barChart = engine.rootObjects()[0]->findChild<BarChart *>("barChart");
-    barChart->setColorScale(&colorScale);
-    barChart->setValues(labels);
+    barChart->setAcceptedMouseButtons(Qt::LeftButton);
+    barChart->setColorScale(colorScale);
+
+    ProjectionObserver projectionObserver(X, cpIndices);
+    QObject::connect(&interactionHandler, SIGNAL(cpChanged(const arma::mat &)),
+            &projectionObserver, SLOT(setMap(const arma::mat &)));
+    QObject::connect(&projectionObserver, SIGNAL(mapChanged(const arma::vec &)),
+            rpPlot, SLOT(setColorData(const arma::vec &)));
+    QObject::connect(&projectionObserver, SIGNAL(mapChanged(const arma::vec &)),
+            splat, SLOT(setValues(const arma::vec &)));
+    QObject::connect(&projectionObserver, SIGNAL(mapChanged(const arma::vec &)),
+            barChart, SLOT(setValues(const arma::vec &)));
 
     //history->addHistoryItem(Ys);
     colormap->setColorScale(colorScale);
-    plot->setColorScale(&colorScale);
-    plot->setColorData(labels, false);
+    rpPlot->setColorScale(colorScale);
     splat->setColorScale(colorScale);
-    splat->setValues(labels);
 
+    cpPlot->setColorScale(colorScale);
     cpPlot->setAutoScale(false);
     cpPlot->setColorData(labels(cpIndices), false);
     cpPlot->setXY(Ys, false);
     cpPlot->update();
-
-    arma::vec plotOpacities(X.n_rows);
-    plotOpacities.fill(0.0f);
-    plotOpacities(cpIndices).fill(0.0f);
-    plot->setOpacityData(plotOpacities);
 
     auto ret = app.exec();
 

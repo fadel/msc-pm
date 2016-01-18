@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "continuouscolorscale.h"
 #include "geometry.h"
 
 static const QColor OUTLINE_COLOR(0, 0, 0);
@@ -11,12 +12,12 @@ static const float DEFAULT_OPACITY = 0.8f;
 BarChart::BarChart(QQuickItem *parent)
     : QQuickItem(parent)
     , m_shouldUpdateBars(false)
-    , m_colorScale(0)
+    , m_colorScale(ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS))
     , m_scale(0, 1, 0, 1)
 {
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
-    // setAcceptedMouseButtons(Qt::LeftButton);
+    //setAcceptedMouseButtons(Qt::LeftButton);
     // setAcceptHoverEvents(true);
 }
 
@@ -31,6 +32,7 @@ void BarChart::setValues(const arma::vec &values)
     m_originalIndices.resize(m_values.n_elem);
     if (m_values.n_elem > 0) {
         m_scale.setDomain(m_values.min(), m_values.max());
+        m_colorScale.setExtents(m_values.min(), m_values.max());
 
         for (int i = 0; i < m_originalIndices.size(); i++) {
             m_originalIndices[i] = i;
@@ -44,9 +46,12 @@ void BarChart::setValues(const arma::vec &values)
     m_shouldUpdateBars = true;
 }
 
-void BarChart::setColorScale(const ColorScale *scale)
+void BarChart::setColorScale(const ColorScale &scale)
 {
     m_colorScale = scale;
+    if (m_values.n_elem > 0) {
+        m_colorScale.setExtents(m_values.min(), m_values.max());
+    }
     emit colorScaleChanged(m_colorScale);
 
     m_shouldUpdateBars = true;
@@ -136,7 +141,7 @@ void BarChart::updateBars(QSGNode *root)
     float x = 0;
     for (auto it = m_originalIndices.cbegin(); it != m_originalIndices.cend(); it++) {
         updateBarNodeGeom(node, x, barWidth, m_scale(m_values[*it]));
-        updateBarNodeColor(node, m_colorScale->color(m_values[*it]));
+        updateBarNodeColor(node, m_colorScale.color(m_values[*it]));
         x += barWidth;
         node = node->nextSibling();
     }
@@ -175,5 +180,11 @@ void BarChart::hoverMoveEvent(QHoverEvent *event)
 
 void BarChart::mousePressEvent(QMouseEvent *event)
 {
-    // TODO
+    QCursor dragCursor(Qt::SizeHorCursor);
+    setCursor(dragCursor);
+}
+
+void BarChart::mouseReleaseEvent(QMouseEvent *event)
+{
+    unsetCursor();
 }

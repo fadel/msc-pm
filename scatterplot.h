@@ -17,7 +17,7 @@ public:
     Scatterplot(QQuickItem *parent = 0);
 
     arma::mat XY() const;
-    void setColorScale(const ColorScale *colorScale);
+    void setColorScale(const ColorScale &colorScale);
     void setXY(const arma::mat &xy, bool updateView);
     void setColorData(const arma::vec &colorData, bool updateView);
     void setOpacityData(const arma::vec &opacityData, bool updateView);
@@ -67,7 +67,7 @@ private:
 
     // Visuals
     float m_glyphSize;
-    const ColorScale *m_colorScale;
+    ColorScale m_colorScale;
 
     void autoScale();
     bool m_autoScale;
