@@ -9,6 +9,7 @@ static void aggregatedError(const arma::mat &distX, const arma::mat &distY, arma
     double maxX = distX.max();
     double maxY = distY.max();
 
+    #pragma omp parallel for shared(maxX, maxY, distX, distY, v)
     for (arma::uword i = 0; i < v.n_elem; i++) {
         v[i] = 0;
         for (arma::uword j = 0; j < v.n_elem; j++) {
