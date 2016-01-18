@@ -3,7 +3,8 @@
 
 #include "colorscale.h"
 
-class ContinuousColorScale : public ColorScale
+class ContinuousColorScale
+    : public ColorScale
 {
 public:
     ContinuousColorScale(std::initializer_list<QColor> colors);

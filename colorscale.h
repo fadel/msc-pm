@@ -2,6 +2,7 @@
 #define COLORSCALE_H
 
 #include <initializer_list>
+
 #include <QColor>
 #include <QList>
 
