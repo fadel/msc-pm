@@ -32,7 +32,10 @@ protected:
     void mousePressEvent(QMouseEvent *event);
 
 private:
+    QSGNode *newSceneGraph() const;
     QSGNode *newBarNode() const;
+
+    void updateViewport(QSGNode *root) const;
     void updateBarNodeGeom(QSGNode *barNode, float x, float width, float height);
     void updateBarNodeColor(QSGNode *barNode, const QColor &color);
     void updateBars(QSGNode *root);

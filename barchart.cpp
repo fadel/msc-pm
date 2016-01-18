@@ -53,6 +53,12 @@ void BarChart::setColorScale(const ColorScale *scale)
     update();
 }
 
+QSGNode *BarChart::newSceneGraph() const
+{
+    QSGTransformNode *root = new QSGTransformNode;
+    return root;
+}
+
 QSGNode *BarChart::newBarNode() const
 {
     // A bar node is:
@@ -88,9 +94,17 @@ QSGNode *BarChart::newBarNode() const
     return opacityNode;
 }
 
+void BarChart::updateViewport(QSGNode *root) const
+{
+    QSGTransformNode *viewportNode = static_cast<QSGTransformNode *>(root);
+    QMatrix4x4 viewport;
+    viewport.scale(width(), height());
+    viewportNode->setMatrix(viewport);
+}
+
 void BarChart::updateBarNodeGeom(QSGNode *barNode, float x, float barWidth, float barHeight)
 {
-    float y = height() - barHeight;
+    float y = 1.0f - barHeight;
 
     QSGGeometryNode *barGeomNode =
         static_cast<QSGGeometryNode *>(barNode->firstChild());
@@ -116,11 +130,10 @@ void BarChart::updateBarNodeColor(QSGNode *barNode, const QColor &color)
 
 void BarChart::updateBars(QSGNode *root)
 {
+    float barWidth = 1.0f / m_values.n_elem;
+
     QSGNode *node = root->firstChild();
     float x = 0;
-    float barWidth = width() / m_values.n_elem;
-
-    m_scale.setRange(0, height());
     for (auto it = m_originalIndices.cbegin(); it != m_originalIndices.cend(); it++) {
         updateBarNodeGeom(node, x, barWidth, m_scale(m_values[*it]));
         updateBarNodeColor(node, m_colorScale->color(m_values[*it]));
@@ -131,7 +144,9 @@ void BarChart::updateBars(QSGNode *root)
 
 QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
-    QSGNode *root = oldNode ? oldNode : new QSGNode;
+    QSGNode *root = oldNode ? oldNode : newSceneGraph();
+    updateViewport(root);
+
     if (m_shouldUpdateBars) {
         int numValues = (int) m_values.n_elem;
         // First, make sure we have the same number of values & bars
