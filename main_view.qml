@@ -10,11 +10,12 @@ ApplicationWindow {
     id: mainWindow
     title: "Projection"
     visible: true
-    contentItem.minimumWidth: 800
-    contentItem.minimumHeight: 622
     Component.onCompleted: {
         setX(Screen.width / 2 - width / 2);
         setY(Screen.height / 2 - height / 2);
+
+        this.minimumWidth = width;
+        this.minimumHeight = height;
     }
 
     menuBar: MenuBar {
@@ -116,11 +117,12 @@ ApplicationWindow {
                     }
 
                     Scatterplot {
-                        id: plot
-                        objectName: "plot"
+                        id: rpPlot
+                        objectName: "rpPlot"
                         x: parent.x
                         y: parent.y
                         anchors.fill: parent
+                        visible: false
                     }
 
                     Scatterplot {
@@ -219,15 +221,25 @@ ApplicationWindow {
             }
 
             GroupBox {
-                title: "Scatterplot"
+                title: "Control points"
                 checkable: true
                 __checkbox.onClicked: {
                     cpPlot.visible = this.checked;
-                    plot.visible = this.checked;
+
+                    if (this.checked) {
+                        cpPlot.z = 0;
+                        rpPlot.z = 0;
+                    } else {
+                        cpPlot.z = 0;
+                        rpPlot.z = 1;
+                    }
                 }
 
-                ColumnLayout {
+                GridLayout {
+                    columns: 2
+
                     GroupBox {
+                        Layout.columnSpan: 2
                         flat: true
                         title: "Colors"
 
@@ -236,46 +248,95 @@ ApplicationWindow {
 
                             Label { text: "Map to:" }
                             ComboBox {
-                                id: plotMetricComboBox
+                                id: cpPlotMetricComboBox
                                 model: metricsModel
                             }
 
                             Label { text: "Color map:" }
                             ComboBox {
-                                id: scatterplotColormapCombo
+                                id: cpPlotColormapCombo
                                 model: [ "Categorical", "Continuous", "Divergent", "Rainbow" ]
                             }
                         }
                     }
 
+                    Label { text: "Glyph size:" }
+                    SpinBox {
+                        id: cpGlyphSizeSpinBox
+                        maximumValue: 100
+                        minimumValue: 6
+                        value: cpPlot.glyphSize()
+                        decimals: 1
+                        stepSize: 1
+                        onValueChanged: cpPlot.setGlyphSize(this.value)
+                    }
+
+                    Label { text: "Opacity:" }
+                    Slider {
+                        id: cpPlotOpacitySlider
+                        tickmarksEnabled: true
+                        stepSize: 0.1
+                        maximumValue: 1
+                        minimumValue: 0
+                        value: cpPlot.opacity
+                        onValueChanged: cpPlot.opacity = this.value
+                    }
+                }
+            }
+
+            GroupBox {
+                title: "Regular points"
+                checked: false
+                checkable: true
+                __checkbox.onClicked: {
+                    rpPlot.visible = this.checked;
+                }
+
+                GridLayout {
+                    columns: 2
+
                     GroupBox {
+                        Layout.columnSpan: 2
                         flat: true
-                        title: "Glyph size"
+                        title: "Colors"
 
                         GridLayout {
                             columns: 2
-                            Label { text: "Control points:" }
-                            SpinBox {
-                                id: cpGlyphSizeSpinBox
-                                maximumValue: 100
-                                minimumValue: 8
-                                value: cpPlot.glyphSize()
-                                decimals: 1
-                                stepSize: 1
-                                onValueChanged: cpPlot.setGlyphSize(this.value)
+
+                            Label { text: "Map to:" }
+                            ComboBox {
+                                id: rpPlotMetricComboBox
+                                model: metricsModel
                             }
 
-                            Label { text: "Regular points:" }
-                            SpinBox {
-                                id: rpGlyphSizeSpinBox
-                                maximumValue: 100
-                                minimumValue: 8
-                                value: plot.glyphSize()
-                                decimals: 1
-                                stepSize: 1
-                                onValueChanged: plot.setGlyphSize(this.value)
+                            Label { text: "Color map:" }
+                            ComboBox {
+                                id: lotColormapCombo
+                                model: [ "Categorical", "Continuous", "Divergent", "Rainbow" ]
                             }
                         }
+                    }
+
+                    Label { text: "Glyph size:" }
+                    SpinBox {
+                        id: rpGlyphSizeSpinBox
+                        maximumValue: 100
+                        minimumValue: 6
+                        value: rpPlot.glyphSize()
+                        decimals: 1
+                        stepSize: 1
+                        onValueChanged: rpPlot.setGlyphSize(this.value)
+                    }
+
+                    Label { text: "Opacity:" }
+                    Slider {
+                        id: rpPlotOpacitySlider
+                        tickmarksEnabled: true
+                        stepSize: 0.1
+                        maximumValue: 1
+                        minimumValue: 0
+                        value: rpPlot.opacity
+                        onValueChanged: rpPlot.opacity = this.value
                     }
                 }
             }
@@ -315,6 +376,8 @@ ApplicationWindow {
                     Label { text: "Opacity:" }
                     Slider {
                         id: splatOpacitySlider
+                        tickmarksEnabled: true
+                        stepSize: 0.1
                         maximumValue: 1
                         minimumValue: 0
                         value: splat.opacity
