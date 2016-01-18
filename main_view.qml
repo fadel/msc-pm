@@ -88,7 +88,7 @@ ApplicationWindow {
                         y: parent.y + 5
                         z: 2
                         width: 128
-                        height: 10
+                        height: 5
 
                         Rectangle { // Adds a border around the colormap
                             x: parent.x - 1
