@@ -11,8 +11,8 @@
 static const qreal GLYPH_OPACITY = 1.0;
 static const qreal GLYPH_OPACITY_SELECTED = 1.0;
 
-static const QColor GLYPH_OUTLINE_COLOR(225, 225, 225);
-static const QColor GLYPH_OUTLINE_COLOR_SELECTED(0, 0, 0);
+static const QColor GLYPH_OUTLINE_COLOR(0, 0, 0);
+static const QColor GLYPH_OUTLINE_COLOR_SELECTED(20, 255, 225);
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
 static const float DEFAULT_GLYPH_SIZE = 8.0f;
@@ -194,6 +194,7 @@ QSGNode *Scatterplot::newGlyphTree()
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         QSGGeometry *glyphOutlineGeometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
         glyphOutlineGeometry->setDrawingMode(GL_POLYGON);
+        glyphOutlineGeometry->setVertexDataPattern(QSGGeometry::DynamicPattern);
         QSGGeometryNode *glyphOutlineNode = new QSGGeometryNode;
         glyphOutlineNode->setGeometry(glyphOutlineGeometry);
         glyphOutlineNode->setFlag(QSGNode::OwnsGeometry);
@@ -205,6 +206,7 @@ QSGNode *Scatterplot::newGlyphTree()
 
         QSGGeometry *glyphGeometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), vertexCount);
         glyphGeometry->setDrawingMode(GL_POLYGON);
+        glyphGeometry->setVertexDataPattern(QSGGeometry::DynamicPattern);
         QSGGeometryNode *glyphNode = new QSGGeometryNode;
         glyphNode->setGeometry(glyphGeometry);
         glyphNode->setFlag(QSGNode::OwnsGeometry);

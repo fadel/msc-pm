@@ -28,8 +28,9 @@ public slots:
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
-    void hoverMoveEvent(QHoverEvent *event);
+    // void hoverMoveEvent(QHoverEvent *event);
     void mousePressEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
 
 private:

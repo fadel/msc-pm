@@ -73,6 +73,7 @@ QSGNode *BarChart::newBarNode() const
     //QSGGeometry *outlineGeometry =
     //    new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 4);
     //outlineGeometry->setDrawingMode(GL_LINE_LOOP);
+    //outlineGeometry->setVertexDataPattern(QSGGeometry::DynamicPattern);
     //outlineGeomNode->setGeometry(outlineGeometry);
     //outlineGeomNode->setFlag(QSGNode::OwnsGeometry);
     //QSGFlatColorMaterial *material = new QSGFlatColorMaterial;
@@ -84,6 +85,7 @@ QSGNode *BarChart::newBarNode() const
     QSGGeometry *barGeometry =
         new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 4);
     barGeometry->setDrawingMode(GL_POLYGON);
+    barGeometry->setVertexDataPattern(QSGGeometry::DynamicPattern);
     barGeomNode->setGeometry(barGeometry);
     barGeomNode->setFlag(QSGNode::OwnsGeometry);
     QSGFlatColorMaterial *material = new QSGFlatColorMaterial;
@@ -173,15 +175,19 @@ QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     return root;
 }
 
-void BarChart::hoverMoveEvent(QHoverEvent *event)
-{
-    // TODO
-}
+// TODO
+//void BarChart::hoverMoveEvent(QHoverEvent *event)
+//{
+//}
 
 void BarChart::mousePressEvent(QMouseEvent *event)
 {
     QCursor dragCursor(Qt::SizeHorCursor);
     setCursor(dragCursor);
+}
+
+void BarChart::mouseMoveEvent(QMouseEvent *event)
+{
 }
 
 void BarChart::mouseReleaseEvent(QMouseEvent *event)
