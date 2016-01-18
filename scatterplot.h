@@ -28,7 +28,7 @@ public:
 
     Q_INVOKABLE float glyphSize() const { return m_glyphSize; }
 
-    static const int PADDING = 10;
+    static const int PADDING = 20;
 
 signals:
     void xyChanged(const arma::mat &XY) const;
