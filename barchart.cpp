@@ -2,23 +2,28 @@
 
 #include <algorithm>
 
+#include <QSGGeometryNode>
+#include <QSGFlatColorMaterial>
+
 #include "continuouscolorscale.h"
 #include "geometry.h"
 
 static const QColor OUTLINE_COLOR(0, 0, 0);
+static const QColor HINTS_COLOR(0, 0, 0);
 static const QColor BAR_COLOR(128, 128, 128);
 static const float DEFAULT_OPACITY = 0.8f;
 
 BarChart::BarChart(QQuickItem *parent)
     : QQuickItem(parent)
     , m_shouldUpdateBars(false)
+    , m_hoverPos(-1.0f)
     , m_colorScale(ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS))
-    , m_scale(0, 1, 0, 1)
+    , m_scale(0.0f, 1.0f, 0.0f, 1.0f)
 {
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
     //setAcceptedMouseButtons(Qt::LeftButton);
-    // setAcceptHoverEvents(true);
+    setAcceptHoverEvents(true);
 }
 
 BarChart::~BarChart()
@@ -44,6 +49,7 @@ void BarChart::setValues(const arma::vec &values)
     emit valuesChanged(values);
 
     m_shouldUpdateBars = true;
+    update();
 }
 
 void BarChart::setColorScale(const ColorScale &scale)
@@ -60,7 +66,26 @@ void BarChart::setColorScale(const ColorScale &scale)
 
 QSGNode *BarChart::newSceneGraph() const
 {
+    // NOTE: scene graph structure is as follows:
+    // root [ barsNode [ ... ] hoverHintsNode ]
     QSGTransformNode *root = new QSGTransformNode;
+
+    // The node that has all bars as children
+    root->appendChildNode(new QSGNode);
+
+    // The node for drawing the hover hints
+    QSGGeometryNode *hintsGeomNode = new QSGGeometryNode;
+    QSGGeometry *hintsGeom = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 2);
+    hintsGeom->setDrawingMode(GL_LINES);
+    hintsGeom->setVertexDataPattern(QSGGeometry::DynamicPattern);
+    hintsGeom->setLineWidth(1.0f);
+    QSGFlatColorMaterial *hintsMaterial = new QSGFlatColorMaterial;
+    hintsMaterial->setColor(HINTS_COLOR);
+    hintsGeomNode->setGeometry(hintsGeom);
+    hintsGeomNode->setMaterial(hintsMaterial);
+    hintsGeomNode->setFlags(QSGNode::OwnsGeometry | QSGNode::OwnsMaterial);
+    root->appendChildNode(hintsGeomNode);
+
     return root;
 }
 
@@ -149,36 +174,65 @@ void BarChart::updateBars(QSGNode *root)
     }
 }
 
+void BarChart::updateHoverHints(QSGNode *node)
+{
+    QSGGeometryNode *hintsGeomNode = static_cast<QSGGeometryNode *>(node);
+    QSGGeometry *hintsGeom = hintsGeomNode->geometry();
+
+    QSGGeometry::Point2D *vertexData = hintsGeom->vertexDataAsPoint2D();
+    vertexData[0].set(m_hoverPos, 0.0f);
+    vertexData[1].set(m_hoverPos, 1.0f);
+
+    hintsGeomNode->markDirty(QSGNode::DirtyGeometry);
+}
+
 QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
     QSGNode *root = oldNode ? oldNode : newSceneGraph();
     updateViewport(root);
 
+    QSGNode *node = root->firstChild();
     if (m_shouldUpdateBars) {
         int numValues = (int) m_values.n_elem;
         // First, make sure we have the same number of values & bars
-        while (numValues > root->childCount()) {
+        while (numValues > node->childCount()) {
             QSGNode *barNode = newBarNode();
-            root->appendChildNode(barNode);
+            node->prependChildNode(barNode);
         }
         while (numValues < root->childCount()) {
             // NOTE: as stated in docs, QSGNode's children are stored in a
             // linked list. Hence, this operation should be as fast as expected
-            root->removeChildNode(root->firstChild());
+            node->removeChildNode(node->firstChild());
         }
 
         // Then, update the bars to reflect the values
-        updateBars(root);
+        updateBars(node);
         m_shouldUpdateBars = false;
     }
+    node = node->nextSibling();
+
+    updateHoverHints(node);
 
     return root;
 }
 
-// TODO
-//void BarChart::hoverMoveEvent(QHoverEvent *event)
-//{
-//}
+void BarChart::hoverEnterEvent(QHoverEvent *event)
+{
+    m_hoverPos = float(event->pos().x()) / width();
+    update();
+}
+
+void BarChart::hoverMoveEvent(QHoverEvent *event)
+{
+    m_hoverPos = float(event->pos().x()) / width();
+    update();
+}
+
+void BarChart::hoverLeaveEvent(QHoverEvent *event)
+{
+    m_hoverPos = -1.0f;
+    update();
+}
 
 void BarChart::mousePressEvent(QMouseEvent *event)
 {

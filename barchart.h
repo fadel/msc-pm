@@ -28,7 +28,11 @@ public slots:
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
-    // void hoverMoveEvent(QHoverEvent *event);
+
+    void hoverEnterEvent(QHoverEvent *event);
+    void hoverMoveEvent(QHoverEvent *event);
+    void hoverLeaveEvent(QHoverEvent *event);
+
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
@@ -40,8 +44,10 @@ private:
     void updateViewport(QSGNode *root) const;
     void updateBarNodeGeom(QSGNode *barNode, float x, float width, float height);
     void updateBarNodeColor(QSGNode *barNode, const QColor &color);
-    void updateBars(QSGNode *root);
+    void updateBars(QSGNode *node);
+    void updateHoverHints(QSGNode *node);
     bool m_shouldUpdateBars;
+    float m_hoverPos;
 
     arma::vec m_values;
     ColorScale m_colorScale;
