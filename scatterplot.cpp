@@ -39,6 +39,7 @@ void Scatterplot::setColorScale(const ColorScale &colorScale)
     if (m_colorData.n_elem > 0) {
         m_colorScale.setExtents(m_colorData.min(), m_colorData.max());
         m_shouldUpdateMaterials = true;
+        update();
     }
 }
 
