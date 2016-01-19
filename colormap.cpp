@@ -52,8 +52,11 @@ void ColormapTexture::bind()
 
 bool ColormapTexture::updateTexture()
 {
-    gl.glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_size.width(), m_size.height(),
-            GL_RGB, GL_FLOAT, m_cmap->data());
+    m_size.setWidth(m_cmap->size() / 3);
+
+    gl.glBindTexture(GL_TEXTURE_2D, m_texture);
+    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_size.width(), m_size.height(),
+            0, GL_RGB, GL_FLOAT, m_cmap->data());
     return true;
 }
 
