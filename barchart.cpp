@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include <QOpenGLPaintDevice>
+#include <QPainter>
 #include <QSGGeometryNode>
 #include <QSGFlatColorMaterial>
 
@@ -160,11 +162,24 @@ void BarChart::updateBarNodeColor(QSGNode *barNode, const QColor &color)
     barGeomNode->markDirty(QSGNode::DirtyMaterial);
 }
 
-void BarChart::updateBars(QSGNode *root)
+void BarChart::updateBars(QSGNode *node)
 {
-    float barWidth = 1.0f / m_values.n_elem;
+    int numValues = (int) m_values.n_elem;
+    float barWidth = 1.0f / numValues;
 
-    QSGNode *node = root->firstChild();
+    // First, make sure we have the same number of values & bars
+    while (numValues > node->childCount()) {
+        QSGNode *barNode = newBarNode();
+        node->prependChildNode(barNode);
+    }
+    while (numValues < root->childCount()) {
+        // NOTE: as stated in docs, QSGNode's children are stored in a
+        // linked list. Hence, this operation should be as fast as expected
+        node->removeChildNode(node->firstChild());
+    }
+
+    // Then, update each bar to reflect the values
+    node = node->firstChild();
     float x = 0;
     for (auto it = m_originalIndices.cbegin(); it != m_originalIndices.cend(); it++) {
         updateBarNodeGeom(node, x, barWidth, m_scale(m_values[*it]));
@@ -193,25 +208,13 @@ QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
     QSGNode *node = root->firstChild();
     if (m_shouldUpdateBars) {
-        int numValues = (int) m_values.n_elem;
-        // First, make sure we have the same number of values & bars
-        while (numValues > node->childCount()) {
-            QSGNode *barNode = newBarNode();
-            node->prependChildNode(barNode);
-        }
-        while (numValues < root->childCount()) {
-            // NOTE: as stated in docs, QSGNode's children are stored in a
-            // linked list. Hence, this operation should be as fast as expected
-            node->removeChildNode(node->firstChild());
-        }
-
-        // Then, update the bars to reflect the values
         updateBars(node);
         m_shouldUpdateBars = false;
     }
     node = node->nextSibling();
 
     updateHoverHints(node);
+    node = node->nextSibling();
 
     return root;
 }
