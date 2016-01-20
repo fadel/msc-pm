@@ -311,7 +311,6 @@ ApplicationWindow {
                                     id: splatColormapCombo
                                     model: colormapModel
                                     onActivated: {
-                                        Main.setColormapColorScale(model.get(index).value);
                                         Main.setSplatColorScale(model.get(index).value);
                                     }
                                 }
@@ -382,17 +381,33 @@ ApplicationWindow {
                         ExclusiveGroup { id: wrtMetricsGroup }
 
                         RadioButton {
+                            id: currentMetricRadioButton
                             text: "Current"
                             exclusiveGroup: wrtMetricsGroup
                             checked: true
+                            onClicked: Main.setObserverType(Main.ObserverCurrent)
                         }
                         RadioButton {
+                            id: diffPreviousMetricRadioButton
                             text: "Diff. to previous"
                             exclusiveGroup: wrtMetricsGroup
+                            onClicked: {
+                                if (!Main.setObserverType(Main.ObserverDiffPrevious)) {
+                                    this.checked = false;
+                                    currentMetricRadioButton.checked = true;
+                                }
+                            }
                         }
                         RadioButton {
+                            id: diffOriginalMetricRadioButton
                             text: "Diff. to original"
                             exclusiveGroup: wrtMetricsGroup
+                            onClicked: {
+                                if (!Main.setObserverType(Main.ObserverDiffOriginal)) {
+                                    this.checked = false;
+                                    currentMetricRadioButton.checked = true;
+                                }
+                            }
                         }
                     }
                 }
