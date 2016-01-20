@@ -75,6 +75,7 @@ public:
         ColorScaleRainbow
     };
 
+    // No need to be static: this class is a singleton
     ColorScale COLOR_SCALE_CATEGORICAL;
     ColorScale COLOR_SCALE_CONTINUOUS;
     ColorScale COLOR_SCALE_DIVERGENT;
@@ -100,6 +101,8 @@ public:
         splat->setColorScale(getColorScale(colorScaleType));
     }
 
+    // Pointer to visual components whose values are set in the main() function
+    // after components are instantiated by the QtQuick engine
     BarChart *barChart;
     Colormap *colormap;
     Scatterplot *cpPlot, *rpPlot;
