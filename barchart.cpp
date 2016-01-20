@@ -172,7 +172,7 @@ void BarChart::updateBars(QSGNode *node)
         QSGNode *barNode = newBarNode();
         node->prependChildNode(barNode);
     }
-    while (numValues < root->childCount()) {
+    while (numValues < node->childCount()) {
         // NOTE: as stated in docs, QSGNode's children are stored in a
         // linked list. Hence, this operation should be as fast as expected
         node->removeChildNode(node->firstChild());
