@@ -58,7 +58,7 @@ bool ProjectionObserver::setType(int type)
 void ProjectionObserver::setMap(const arma::mat &Y)
 {
     // update previous map
-    if (m_prevY.n_elem == 0 && m_Y.n_elem > 0) {
+    if (m_Y.n_elem > 0) {
         m_prevY = m_Y;
         m_prevDistY = m_distY;
         m_prevValues = m_values;
