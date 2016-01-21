@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <QtQuick>
+#include <QSet>
 
 #include <armadillo>
 
@@ -21,6 +22,7 @@ public:
 signals:
     void valuesChanged(const arma::vec &values) const;
     void colorScaleChanged(const ColorScale &scale) const;
+    void selectionChanged(const QSet<int> &selection) const;
 
 public slots:
     void setValues(const arma::vec &values);
@@ -48,6 +50,12 @@ private:
     void updateHoverHints(QSGNode *node);
     bool m_shouldUpdateBars;
     float m_hoverPos;
+
+    void updateSelectionRect(QSGNode *node);
+    bool m_shouldUpdateSelectionRect;
+    void selectBarsInRange(float start, float end);
+    float m_dragStartPos, m_dragLastPos;
+    QSet<int> m_selection;
 
     arma::vec m_values;
     ColorScale m_colorScale;

@@ -13,12 +13,23 @@
 static const QColor OUTLINE_COLOR(0, 0, 0);
 static const QColor HINTS_COLOR(0, 0, 0);
 static const QColor BAR_COLOR(128, 128, 128);
+static const QColor SELECTION_COLOR(128, 128, 128, 96);
+
 static const float DEFAULT_OPACITY = 0.8f;
+
+template<typename T>
+static inline T clamp(T value, T min, T max)
+{
+    return std::min(std::max(min, value), max);
+}
 
 BarChart::BarChart(QQuickItem *parent)
     : QQuickItem(parent)
     , m_shouldUpdateBars(false)
     , m_hoverPos(-1.0f)
+    , m_shouldUpdateSelectionRect(false)
+    , m_dragStartPos(-1.0f)
+    , m_dragLastPos(-1.0f)
     , m_colorScale(ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS))
     , m_scale(0.0f, 1.0f, 0.0f, 1.0f)
 {
@@ -69,7 +80,7 @@ void BarChart::setColorScale(const ColorScale &scale)
 QSGNode *BarChart::newSceneGraph() const
 {
     // NOTE: scene graph structure is as follows:
-    // root [ barsNode [ ... ] hoverHintsNode ]
+    // root [ barsNode [ ... ] hoverHintsNode selectionNode ]
     QSGTransformNode *root = new QSGTransformNode;
 
     // The node that has all bars as children
@@ -87,6 +98,11 @@ QSGNode *BarChart::newSceneGraph() const
     hintsGeomNode->setMaterial(hintsMaterial);
     hintsGeomNode->setFlags(QSGNode::OwnsGeometry | QSGNode::OwnsMaterial);
     root->appendChildNode(hintsGeomNode);
+
+    // The node for drawing the selectionRect
+    QSGSimpleRectNode *selectionRectNode = new QSGSimpleRectNode;
+    selectionRectNode->setColor(SELECTION_COLOR);
+    root->appendChildNode(selectionRectNode);
 
     return root;
 }
@@ -136,7 +152,10 @@ void BarChart::updateViewport(QSGNode *root) const
     viewportNode->setMatrix(viewport);
 }
 
-void BarChart::updateBarNodeGeom(QSGNode *barNode, float x, float barWidth, float barHeight)
+void BarChart::updateBarNodeGeom(QSGNode *barNode,
+                                 float x,
+                                 float barWidth,
+                                 float barHeight)
 {
     float y = 1.0f - barHeight;
 
@@ -201,6 +220,18 @@ void BarChart::updateHoverHints(QSGNode *node)
     hintsGeomNode->markDirty(QSGNode::DirtyGeometry);
 }
 
+void BarChart::updateSelectionRect(QSGNode *node)
+{
+    QSGSimpleRectNode *selectionGeomNode =
+        static_cast<QSGSimpleRectNode *>(node);
+
+    float x      = m_dragStartPos,
+          y      = 0.0f,
+          width  = m_dragLastPos - m_dragStartPos,
+          height = 1.0f;
+    selectionGeomNode->setRect(x, y, width, height);
+}
+
 QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
     QSGNode *root = oldNode ? oldNode : newSceneGraph();
@@ -216,7 +247,38 @@ QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     updateHoverHints(node);
     node = node->nextSibling();
 
+    if (m_shouldUpdateSelectionRect) {
+        updateSelectionRect(node);
+        m_shouldUpdateSelectionRect = false;
+    }
+    node = node->nextSibling();
+
     return root;
+}
+
+void BarChart::selectBarsInRange(float start, float end)
+{
+    if (start > end) {
+        std::swap(start, end);
+    }
+
+    m_selection.clear();
+    if (start > 0 && end > 0) {
+        // Bars are located in ranges:
+        // [0..barWidth] + barIndex / barWidth
+        int numValues = m_values.n_elem;
+        float barWidth = 1.0f / numValues;
+        float selectorWidth = 1.0f / width();
+        int firstIndex = int(start / barWidth);
+        int lastIndex  = std::min(numValues - 1, int((end + selectorWidth) / barWidth));
+
+        for (int i = firstIndex; i <= lastIndex; i++) {
+            m_selection.insert(m_originalIndices[i]);
+        }
+    }
+    emit selectionChanged(m_selection);
+
+    update();
 }
 
 void BarChart::hoverEnterEvent(QHoverEvent *event)
@@ -241,13 +303,32 @@ void BarChart::mousePressEvent(QMouseEvent *event)
 {
     QCursor dragCursor(Qt::SizeHorCursor);
     setCursor(dragCursor);
+
+    float pos = float(event->pos().x()) / width();
+    m_dragStartPos = pos;
+    m_dragLastPos  = pos;
+    m_hoverPos     = pos;
+    m_shouldUpdateSelectionRect = true;
+    update();
 }
 
 void BarChart::mouseMoveEvent(QMouseEvent *event)
 {
+    float pos = float(event->pos().x()) / width();
+    m_dragLastPos = clamp(pos, 0.0f, 1.0f);
+    m_hoverPos    = pos;
+    m_shouldUpdateSelectionRect = true;
+    update();
 }
 
 void BarChart::mouseReleaseEvent(QMouseEvent *event)
 {
     unsetCursor();
+
+    float pos = float(event->pos().x()) / width();
+    m_dragLastPos = clamp(pos, 0.0f, 1.0f);
+    m_hoverPos    = pos;
+    selectBarsInRange(m_dragStartPos, m_dragLastPos);
+    m_shouldUpdateSelectionRect = true;
+    update();
 }
