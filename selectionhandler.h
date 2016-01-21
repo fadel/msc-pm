@@ -1,24 +1,28 @@
 #ifndef SELECTIONHANDLER_H
 #define SELECTIONHANDLER_H
 
-#include <QObject>
-#include <QSet>
-#include <armadillo>
+#include <set>
+#include <vector>
 
-class SelectionHandler : public QObject
+#include <QObject>
+
+class SelectionHandler
+    : public QObject
 {
     Q_OBJECT
 public:
-    SelectionHandler(const arma::uvec &sampleIndices);
+    SelectionHandler(int numItems);
 
 signals:
-    void selectionChanged(const QSet<int> &selection);
+    void selectionChanged(const std::vector<bool> &selection);
 
 public slots:
-    void setSelection(const QSet<int> &selection);
+    void setSelection(const std::vector<bool> &selection);
+    void setSelected(int item, bool selected = true);
+    void setSelected(const std::set<int> &items, bool selected = true);
 
 private:
-    arma::uvec m_sampleIndices;
+    std::vector<bool> m_selection;
 };
 
 #endif // SELECTIONHANDLER_H

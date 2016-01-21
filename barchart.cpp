@@ -48,11 +48,18 @@ void BarChart::setValues(const arma::vec &values)
     m_values = values;
 
     m_originalIndices.resize(m_values.n_elem);
+
+    if (m_selection.size() != m_values.n_elem) {
+        m_selection.resize(m_values.n_elem);
+        m_selection.assign(m_selection.size(), false);
+    }
+
     if (m_values.n_elem > 0) {
         m_scale.setDomain(m_values.min(), m_values.max());
         m_colorScale.setExtents(m_values.min(), m_values.max());
 
-        for (int i = 0; i < m_originalIndices.size(); i++) {
+        for (std::vector<int>::size_type i = 0;
+                i < m_originalIndices.size(); i++) {
             m_originalIndices[i] = i;
         }
 
@@ -74,6 +81,19 @@ void BarChart::setColorScale(const ColorScale &scale)
     emit colorScaleChanged(m_colorScale);
 
     m_shouldUpdateBars = true;
+    update();
+}
+
+void BarChart::setSelection(const std::vector<bool> &selection)
+{
+    if (m_selection.size() != selection.size()) {
+        return;
+    }
+
+    m_selection = selection;
+    emit selectionChanged(m_selection);
+
+    m_shouldUpdateSelectionRect = true;
     update();
 }
 
@@ -256,29 +276,37 @@ QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     return root;
 }
 
-void BarChart::selectBarsInRange(float start, float end)
+int BarChart::itemAt(float x, bool includeSelectorWidth) const
+{
+    int numValues = m_values.n_elem;
+    float barWidth = 1.0f / numValues;
+    if (includeSelectorWidth) {
+        x += 1.0f / width();
+    }
+
+    return clamp(int(x / barWidth), 0, numValues - 1);
+}
+
+void BarChart::interactiveSelection(float start, float end)
 {
     if (start > end) {
         std::swap(start, end);
     }
 
-    m_selection.clear();
-    if (start > 0 && end > 0) {
-        // Bars are located in ranges:
-        // [0..barWidth] + barIndex / barWidth
-        int numValues = m_values.n_elem;
-        float barWidth = 1.0f / numValues;
-        float selectorWidth = 1.0f / width();
-        int firstIndex = int(start / barWidth);
-        int lastIndex  = std::min(numValues - 1, int((end + selectorWidth) / barWidth));
-
-        for (int i = firstIndex; i <= lastIndex; i++) {
-            m_selection.insert(m_originalIndices[i]);
-        }
+    m_selection.assign(m_selection.size(), false);
+    if (start < 0.0f || end < 0.0f) {
+        return;
     }
-    emit selectionChanged(m_selection);
 
-    update();
+    // Bars are located in ranges:
+    // [0..barWidth] + barIndex / barWidth
+    int firstIndex = itemAt(start);
+    int lastIndex  = itemAt(end, true);
+    for (int i = firstIndex; i <= lastIndex; i++) {
+        m_selection[m_originalIndices[i]] = true;
+    }
+
+    emit selectionInteractivelyChanged(m_selection);
 }
 
 void BarChart::hoverEnterEvent(QHoverEvent *event)
@@ -328,7 +356,11 @@ void BarChart::mouseReleaseEvent(QMouseEvent *event)
     float pos = float(event->pos().x()) / width();
     m_dragLastPos = clamp(pos, 0.0f, 1.0f);
     m_hoverPos    = pos;
-    selectBarsInRange(m_dragStartPos, m_dragLastPos);
+
+    if (m_values.n_elem > 0) {
+        interactiveSelection(m_dragStartPos, m_dragLastPos);
+    }
+
     m_shouldUpdateSelectionRect = true;
     update();
 }

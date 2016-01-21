@@ -1,19 +1,33 @@
 #include "selectionhandler.h"
 
-SelectionHandler::SelectionHandler(const arma::uvec &sampleIndices)
-    : m_sampleIndices(sampleIndices)
+#include <QDebug>
+
+SelectionHandler::SelectionHandler(int numItems)
+    : m_selection(numItems, false)
 {
 }
 
-void SelectionHandler::setSelection(const QSet<int> &selection)
+void SelectionHandler::setSelection(const std::vector<bool> &selection)
 {
-    QSet<int> newSelection;
-
-    // The selecion happens over the sample indices. We use the original dataset
-    // indices in sampleIndices to translate indices.
-    for (auto it = selection.begin(); it != selection.end(); it++) {
-        newSelection.insert(m_sampleIndices[*it]);
+    if (m_selection.size() != selection.size()) {
+        return;
     }
 
-    emit selectionChanged(newSelection);
+    m_selection = selection;
+    emit selectionChanged(m_selection);
+}
+
+void SelectionHandler::setSelected(int item, bool selected)
+{
+    m_selection[item] = selected;
+    emit selectionChanged(m_selection);
+}
+
+void SelectionHandler::setSelected(const std::set<int> &items, bool selected)
+{
+    for (auto it = items.cbegin(); it != items.cend(); it++) {
+        m_selection[*it] = selected;
+    }
+
+    emit selectionChanged(m_selection);
 }

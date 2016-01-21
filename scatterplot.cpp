@@ -1,5 +1,6 @@
 #include "scatterplot.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include <QSGGeometryNode>
@@ -63,15 +64,16 @@ void Scatterplot::setXY(const arma::mat &xy, bool updateView)
         return;
     }
 
-    if (m_xy.n_elem != xy.n_elem) {
-        m_selectedGlyphs.clear();
-    }
-
     m_xy = xy;
     emit xyChanged(m_xy);
 
     if (m_autoScale) {
         autoScale();
+    }
+
+    if (m_selection.size() != m_xy.n_rows) {
+        m_selection.resize(m_xy.n_rows);
+        m_selection.assign(m_selection.size(), false);
     }
 
     if (m_opacityData.n_elem != m_xy.n_rows) {
@@ -301,7 +303,7 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
     QSGNode *node = glyphsNode->firstChild();
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         const arma::rowvec &row = m_xy.row(i);
-        bool isSelected = m_selectedGlyphs.contains(i);
+        bool isSelected = m_selection[i];
 
         QSGOpacityNode *glyphOpacityNode = static_cast<QSGOpacityNode *>(node);
         glyphOpacityNode->setOpacity(m_opacityData[i]);
@@ -359,9 +361,6 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
 void Scatterplot::mouseMoveEvent(QMouseEvent *event)
 {
     switch (m_currentInteractionState) {
-    case INTERACTION_NONE:
-        // event->localPos()
-        break;
     case INTERACTION_SELECTING:
         m_dragCurrentPos = event->localPos();
         update();
@@ -373,6 +372,7 @@ void Scatterplot::mouseMoveEvent(QMouseEvent *event)
         m_shouldUpdateGeometry = true;
         update();
         break;
+    case INTERACTION_NONE:
     case INTERACTION_SELECTED:
         event->ignore();
         return;
@@ -385,9 +385,11 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
     case INTERACTION_SELECTING:
         {
             bool mergeSelection = (event->modifiers() == Qt::ControlModifier);
-            m_currentInteractionState =
-                updateSelection(mergeSelection) ? INTERACTION_SELECTED
-                                                : INTERACTION_NONE;
+            bool anySelected = interactiveSelection(mergeSelection);
+            m_currentInteractionState = anySelected ? INTERACTION_SELECTED
+                                                    : INTERACTION_NONE;
+            m_shouldUpdateMaterials = true;
+            update();
         }
         break;
     case INTERACTION_BEGIN_MOVING:
@@ -402,53 +404,50 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
         break;
     case INTERACTION_NONE:
     case INTERACTION_SELECTED:
-        return; // should not be reached
+        break; // should not be reached
     }
 }
 
-bool Scatterplot::updateSelection(bool mergeSelection)
+bool Scatterplot::interactiveSelection(bool mergeSelection)
 {
-    QSet<int> selection;
-    if (mergeSelection) {
-        selection.unite(m_selectedGlyphs);
+    if (!mergeSelection) {
+        m_selection.assign(m_selection.size(), false);
     }
 
     m_sx.inverse();
     m_sy.inverse();
-
-    float originX  = m_sx(m_dragOriginPos.x());
-    float originY  = m_sy(m_dragOriginPos.y());
-    float currentX = m_sx(m_dragCurrentPos.x());
-    float currentY = m_sy(m_dragCurrentPos.y());
-
+    QRectF selectionRect(QPointF(m_sx(m_dragOriginPos.x()),
+                                 m_sy(m_dragOriginPos.y())),
+                         QPointF(m_sx(m_dragCurrentPos.x()),
+                                 m_sy(m_dragCurrentPos.y())));
     m_sy.inverse();
     m_sx.inverse();
 
-    QRectF selectionRect(QPointF(originX, originY), QPointF(currentX, currentY));
-
+    bool anySelected = false;
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         const arma::rowvec &row = m_xy.row(i);
 
         if (selectionRect.contains(row[0], row[1])) {
-            selection.insert(i);
+            m_selection[i] = true;
+            anySelected = true;
         }
     }
 
-    setSelection(selection);
-    return !selection.isEmpty();
+    emit selectionInteractivelyChanged(m_selection);
+    return anySelected;
 }
 
-void Scatterplot::setSelection(const QSet<int> &selection)
+void Scatterplot::setSelection(const std::vector<bool> &selection)
 {
-    m_selectedGlyphs = selection;
-    for (auto it = m_selectedGlyphs.cbegin();
-            it != m_selectedGlyphs.cend(); it++) {
-        m_opacityData[*it] = GLYPH_OPACITY_SELECTED;
+    if (m_selection.size() != selection.size()) {
+        return;
     }
+
+    m_selection = selection;
+    emit selectionChanged(m_selection);
+
     m_shouldUpdateMaterials = true;
     update();
-
-    emit selectionChanged(selection);
 }
 
 void Scatterplot::applyManipulation()
@@ -463,11 +462,13 @@ void Scatterplot::applyManipulation()
     float tx = m_dragCurrentPos.x() - m_dragOriginPos.x();
     float ty = m_dragCurrentPos.y() - m_dragOriginPos.y();
 
-    for (auto it = m_selectedGlyphs.cbegin(); it != m_selectedGlyphs.cend(); it++) {
-        arma::rowvec row = m_xy.row(*it);
-        row[0] = rx(m_sx(row[0]) + tx);
-        row[1] = ry(m_sy(row[1]) + ty);
-        m_xy.row(*it) = row;
+    for (std::vector<bool>::size_type i = 0; i < m_selection.size(); i++) {
+        if (m_selection[i]) {
+            arma::rowvec row = m_xy.row(i);
+            row[0] = rx(m_sx(row[0]) + tx);
+            row[1] = ry(m_sy(row[1]) + ty);
+            m_xy.row(i) = row;
+        }
     }
 
     emit xyInteractivelyChanged(m_xy);

@@ -4,7 +4,6 @@
 #include <vector>
 
 #include <QtQuick>
-#include <QSet>
 
 #include <armadillo>
 
@@ -22,11 +21,13 @@ public:
 signals:
     void valuesChanged(const arma::vec &values) const;
     void colorScaleChanged(const ColorScale &scale) const;
-    void selectionChanged(const QSet<int> &selection) const;
+    void selectionChanged(const std::vector<bool> &selection) const;
+    void selectionInteractivelyChanged(const std::vector<bool> &selection) const;
 
 public slots:
     void setValues(const arma::vec &values);
     void setColorScale(const ColorScale &scale);
+    void setSelection(const std::vector<bool> &selection);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
@@ -53,9 +54,11 @@ private:
 
     void updateSelectionRect(QSGNode *node);
     bool m_shouldUpdateSelectionRect;
-    void selectBarsInRange(float start, float end);
+    void interactiveSelection(float start, float end);
     float m_dragStartPos, m_dragLastPos;
-    QSet<int> m_selection;
+    std::vector<bool> m_selection;
+
+    int itemAt(float x, bool includeSelectorWidth = false) const;
 
     arma::vec m_values;
     ColorScale m_colorScale;

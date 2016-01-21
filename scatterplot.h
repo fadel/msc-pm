@@ -1,8 +1,9 @@
 #ifndef SCATTERPLOT_H
 #define SCATTERPLOT_H
 
+#include <vector>
+
 #include <QtQuick>
-#include <QSet>
 
 #include <armadillo>
 
@@ -35,7 +36,8 @@ signals:
     void xyInteractivelyChanged(const arma::mat &XY) const;
     void colorDataChanged(const arma::vec &colorData) const;
     void opacityDataChanged(const arma::vec &opacityData) const;
-    void selectionChanged(const QSet<int> &selection) const;
+    void selectionChanged(const std::vector<bool> &selection) const;
+    void selectionInteractivelyChanged(const std::vector<bool> &selection) const;
     void scaleChanged(const LinearScale<float> &sx, const LinearScale<float> &sy) const;
     void glyphSizeChanged(float glyphSize) const;
 
@@ -43,7 +45,7 @@ public slots:
     void setXY(const arma::mat &xy);
     void setColorData(const arma::vec &colorData);
     void setOpacityData(const arma::vec &opacityData);
-    void setSelection(const QSet<int> &selection);
+    void setSelection(const std::vector<bool> &selection);
     void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
     Q_INVOKABLE void setGlyphSize(float glyphSize);
 
@@ -74,8 +76,8 @@ private:
     LinearScale<float> m_sx, m_sy;
 
     // Internal state
-    bool updateSelection(bool mergeSelection);
-    QSet<int> m_selectedGlyphs;
+    bool interactiveSelection(bool mergeSelection);
+    std::vector<bool> m_selection;
 
     enum InteractionState {
         INTERACTION_NONE,

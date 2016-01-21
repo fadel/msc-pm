@@ -1,5 +1,6 @@
 #include "projectionobserver.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include <QDebug>
@@ -36,9 +37,18 @@ ProjectionObserver::ProjectionObserver(const arma::mat &X,
     : m_type(OBSERVER_CURRENT)
     , m_X(X)
     , m_cpIndices(cpIndices)
+    , m_rpIndices(X.n_rows - cpIndices.n_elem)
 {
     m_distX = mp::dist(m_X);
     m_values.set_size(m_X.n_rows);
+
+    arma::uvec indices(m_X.n_rows);
+    for (arma::uword i = 0; i < indices.n_elem; i++) {
+        indices[i] = i;
+    }
+    std::set_difference(indices.cbegin(), indices.cend(),
+                        m_cpIndices.cbegin(), m_cpIndices.cend(),
+                        m_rpIndices.begin());
 }
 
 bool ProjectionObserver::setType(int type)
@@ -82,17 +92,25 @@ bool ProjectionObserver::emitValuesChanged() const
 {
     switch (m_type) {
     case OBSERVER_CURRENT:
+        emit cpValuesChanged(m_values(m_cpIndices));
+        emit rpValuesChanged(m_values(m_rpIndices));
         emit valuesChanged(m_values);
         return true;
     case OBSERVER_DIFF_PREVIOUS:
         if (m_prevValues.n_elem > 0) {
-            emit valuesChanged(m_values - m_prevValues);
+            arma::vec diff = m_values - m_prevValues;
+            emit cpValuesChanged(diff(m_cpIndices));
+            emit rpValuesChanged(diff(m_rpIndices));
+            emit valuesChanged(diff);
             return true;
         }
         return false;
     case OBSERVER_DIFF_ORIGINAL:
         if (m_origValues.n_elem > 0) {
-            emit valuesChanged(m_values - m_origValues);
+            arma::vec diff = m_values - m_origValues;
+            emit cpValuesChanged(diff(m_cpIndices));
+            emit rpValuesChanged(diff(m_rpIndices));
+            emit valuesChanged(diff);
             return true;
         }
         return false;

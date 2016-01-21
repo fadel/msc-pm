@@ -4,9 +4,8 @@
 #include <QObject>
 #include <armadillo>
 
-#include "distortionmeasure.h"
-
-class ProjectionObserver : public QObject
+class ProjectionObserver
+    : public QObject
 {
     Q_OBJECT
 public:
@@ -18,6 +17,8 @@ public:
 
 signals:
     void valuesChanged(const arma::vec &values) const;
+    void cpValuesChanged(const arma::vec &values) const;
+    void rpValuesChanged(const arma::vec &values) const;
 
 public slots:
     void setMap(const arma::mat &Y);
@@ -29,7 +30,7 @@ private:
     int m_type;
     arma::mat m_X, m_Y, m_origY, m_prevY;
     arma::mat m_distX, m_distY, m_origDistY, m_prevDistY;
-    arma::uvec m_cpIndices;
+    arma::uvec m_cpIndices, m_rpIndices;
 
     // TODO: one per implemented measure
     arma::vec m_values, m_prevValues, m_origValues;

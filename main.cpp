@@ -17,6 +17,7 @@
 #include "barchart.h"
 #include "colormap.h"
 #include "interactionhandler.h"
+#include "selectionhandler.h"
 #include "projectionobserver.h"
 #include "skelft.h"
 
@@ -153,13 +154,6 @@ int main(int argc, char **argv)
     QObject::connect(&interactionHandler, SIGNAL(cpChanged(const arma::mat &)),
             m->splat, SLOT(setSites(const arma::mat &)));
 
-    // Linking between selections in cp plot and rp plot
-    //SelectionHandler selectionHandler(cpIndices);
-    //QObject::connect(cpPlot, SIGNAL(selectionChanged(const QSet<int> &)),
-    //        &selectionHandler, SLOT(setSelection(const QSet<int> &)));
-    //QObject::connect(&selectionHandler, SIGNAL(selectionChanged(const QSet<int> &)),
-    //        plot, SLOT(setSelection(const QSet<int> &)));
-
     // Connections between history graph and cp plot
     //HistoryGraph *history = engine.rootObjects()[0]->findChild<HistoryGraph *>("history");
     //QObject::connect(cpPlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
@@ -181,26 +175,36 @@ int main(int argc, char **argv)
     m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
     m->setRPBarChartColorScale(Main::ColorScaleContinuous);
 
-    QObject::connect(m->cpBarChart, SIGNAL(selectionChanged(const QSet<int> &)),
-            m->cpPlot, SLOT(setSelection(const QSet<int> &)));
+    // Linking between selections
+    SelectionHandler cpSelectionHandler(cpIndices.n_elem);
+    QObject::connect(m->cpPlot, SIGNAL(selectionInteractivelyChanged(const std::vector<bool> &)),
+            &cpSelectionHandler, SLOT(setSelection(const std::vector<bool> &)));
+    QObject::connect(m->cpBarChart, SIGNAL(selectionInteractivelyChanged(const std::vector<bool> &)),
+            &cpSelectionHandler, SLOT(setSelection(const std::vector<bool> &)));
+    QObject::connect(&cpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
+            m->cpPlot, SLOT(setSelection(const std::vector<bool> &)));
 
-    QObject::connect(m->rpBarChart, SIGNAL(selectionChanged(const QSet<int> &)),
-            m->rpPlot, SLOT(setSelection(const QSet<int> &)));
+    //SelectionHandler rpSelectionHandler(X.n_rows - cpIndices.n_elem);
+    //QObject::connect(m->rpPlot, SIGNAL(selectionInteractivelyChanged(const std::vector<bool> &)),
+    //        &rpSelectionHandler, SLOT(setSelection(const std::vector<bool> &)));
+    //QObject::connect(m->rpBarChart, SIGNAL(selectionInteractivelyChanged(const std::vector<bool> &)),
+    //        &rpSelectionHandler, SLOT(setSelection(const std::vector<bool> &)));
+    //QObject::connect(&rpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
+    //        m->rpPlot, SLOT(setSelection(const std::vector<bool> &)));
 
     ProjectionObserver projectionObserver(X, cpIndices);
     m->projectionObserver = &projectionObserver;
     QObject::connect(&interactionHandler, SIGNAL(cpChanged(const arma::mat &)),
             m->projectionObserver, SLOT(setMap(const arma::mat &)));
-    QObject::connect(m->projectionObserver, SIGNAL(valuesChanged(const arma::vec &)),
-            m->rpPlot, SLOT(setColorData(const arma::vec &)));
+    //QObject::connect(m->projectionObserver, SIGNAL(valuesChanged(const arma::vec &)),
+    //        m->rpPlot, SLOT(setColorData(const arma::vec &)));
     QObject::connect(m->projectionObserver, SIGNAL(valuesChanged(const arma::vec &)),
             m->splat, SLOT(setValues(const arma::vec &)));
-    QObject::connect(m->projectionObserver, SIGNAL(valuesChanged(const arma::vec &)),
+    QObject::connect(m->projectionObserver, SIGNAL(cpValuesChanged(const arma::vec &)),
             m->cpBarChart, SLOT(setValues(const arma::vec &)));
-    QObject::connect(m->projectionObserver, SIGNAL(valuesChanged(const arma::vec &)),
-            m->rpBarChart, SLOT(setValues(const arma::vec &)));
+    //QObject::connect(m->projectionObserver, SIGNAL(rpValuesChanged(const arma::vec &)),
+    //        m->rpBarChart, SLOT(setValues(const arma::vec &)));
 
-    //history->addHistoryItem(Ys);
     m->setColormapColorScale(Main::ColorScaleContinuous);
     m->setCPPlotColorScale(Main::ColorScaleContinuous);
     m->setRPPlotColorScale(Main::ColorScaleContinuous);

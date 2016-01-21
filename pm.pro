@@ -15,6 +15,7 @@ HEADERS += main.h \
     historygraph.h \
     barchart.h \
     interactionhandler.h \
+    selectionhandler.h \
     projectionobserver.h \
     skelft.h \
     skelftkernel.h \
@@ -29,6 +30,7 @@ SOURCES += main.cpp \
     historygraph.cpp \
     barchart.cpp \
     interactionhandler.cpp \
+    selectionhandler.cpp \
     projectionobserver.cpp \
     skelft_core.cpp \
     lamp.cpp \
