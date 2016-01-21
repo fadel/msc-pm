@@ -111,19 +111,50 @@ ApplicationWindow {
                 }
             }
 
-            Rectangle { id: secret
-                Layout.minimumHeight: 80
+            Rectangle {
+                Layout.minimumHeight: 60
                 Layout.fillHeight: true
                 width: mainView.width
                 color: "#ffffff"
 
                 Item {
-                    id: bottomView
+                    id: bottomViewCP
                     anchors.fill: parent
 
                     BarChart {
-                        id: barChart
-                        objectName: "barChart"
+                        id: cpBarChart
+                        objectName: "cpBarChart"
+                        anchors.fill: parent
+                    }
+
+                    //HistoryGraph {
+                    //    id: history
+                    //    objectName: "history"
+                    //    anchors.fill: parent
+                    //}
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    border.width: 1
+                    border.color: "#cccccc"
+                    color: "transparent"
+                }
+            }
+
+            Rectangle {
+                Layout.minimumHeight: 60
+                Layout.fillHeight: true
+                width: mainView.width
+                color: "#ffffff"
+
+                Item {
+                    id: bottomViewRP
+                    anchors.fill: parent
+
+                    BarChart {
+                        id: rpBarChart
+                        objectName: "rpBarChart"
                         anchors.fill: parent
                     }
 
@@ -257,7 +288,7 @@ ApplicationWindow {
                         SpinBox {
                             id: rpGlyphSizeSpinBox
                             maximumValue: 100
-                            minimumValue: 6
+                            minimumValue: 2
                             value: rpPlot.glyphSize()
                             decimals: 1
                             stepSize: 1
@@ -367,7 +398,8 @@ ApplicationWindow {
                             id: barChartColormapCombo
                             model: colormapModel
                             onActivated: {
-                                Main.setBarChartColorScale(model.get(index).value);
+                                Main.setCPBarChartColorScale(model.get(index).value);
+                                Main.setRPBarChartColorScale(model.get(index).value);
                             }
                         }
                     }

@@ -173,9 +173,19 @@ int main(int argc, char **argv)
     QObject::connect(m->splat, SIGNAL(colorScaleChanged(const ColorScale &)),
             m->colormap, SLOT(setColorScale(const ColorScale &)));
 
-    m->barChart = engine.rootObjects()[0]->findChild<BarChart *>("barChart");
-    m->barChart->setAcceptedMouseButtons(Qt::LeftButton);
-    m->setBarChartColorScale(Main::ColorScaleContinuous);
+    m->cpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("cpBarChart");
+    m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
+    m->setCPBarChartColorScale(Main::ColorScaleContinuous);
+
+    m->rpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("rpBarChart");
+    m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
+    m->setRPBarChartColorScale(Main::ColorScaleContinuous);
+
+    QObject::connect(m->cpBarChart, SIGNAL(selectionChanged(const QSet<int> &)),
+            m->cpPlot, SLOT(setSelection(const QSet<int> &)));
+
+    QObject::connect(m->rpBarChart, SIGNAL(selectionChanged(const QSet<int> &)),
+            m->rpPlot, SLOT(setSelection(const QSet<int> &)));
 
     ProjectionObserver projectionObserver(X, cpIndices);
     m->projectionObserver = &projectionObserver;
@@ -186,7 +196,9 @@ int main(int argc, char **argv)
     QObject::connect(m->projectionObserver, SIGNAL(valuesChanged(const arma::vec &)),
             m->splat, SLOT(setValues(const arma::vec &)));
     QObject::connect(m->projectionObserver, SIGNAL(valuesChanged(const arma::vec &)),
-            m->barChart, SLOT(setValues(const arma::vec &)));
+            m->cpBarChart, SLOT(setValues(const arma::vec &)));
+    QObject::connect(m->projectionObserver, SIGNAL(valuesChanged(const arma::vec &)),
+            m->rpBarChart, SLOT(setValues(const arma::vec &)));
 
     //history->addHistoryItem(Ys);
     m->setColormapColorScale(Main::ColorScaleContinuous);

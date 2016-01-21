@@ -93,8 +93,12 @@ public:
         colormap->setColorScale(getColorScale(colorScaleType));
     }
 
-    Q_INVOKABLE void setBarChartColorScale(ColorScaleType colorScaleType) {
-        barChart->setColorScale(getColorScale(colorScaleType));
+    Q_INVOKABLE void setCPBarChartColorScale(ColorScaleType colorScaleType) {
+        cpBarChart->setColorScale(getColorScale(colorScaleType));
+    }
+
+    Q_INVOKABLE void setRPBarChartColorScale(ColorScaleType colorScaleType) {
+        rpBarChart->setColorScale(getColorScale(colorScaleType));
     }
 
     Q_INVOKABLE void setSplatColorScale(ColorScaleType colorScaleType) {
@@ -103,7 +107,7 @@ public:
 
     // Pointer to visual components whose values are set in the main() function
     // after components are instantiated by the QtQuick engine
-    BarChart *barChart;
+    BarChart *cpBarChart, *rpBarChart;
     Colormap *colormap;
     Scatterplot *cpPlot, *rpPlot;
     VoronoiSplat *splat;
@@ -132,7 +136,8 @@ private:
         , COLOR_SCALE_CONTINUOUS{ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS)}
         , COLOR_SCALE_DIVERGENT{ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE)}
         , COLOR_SCALE_RAINBOW{ContinuousColorScale::builtin(ContinuousColorScale::RAINBOW)}
-        , barChart(0)
+        , cpBarChart(0)
+        , rpBarChart(0)
         , cpPlot(0)
         , rpPlot(0)
         , splat(0)
