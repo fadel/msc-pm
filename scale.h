@@ -18,6 +18,11 @@ public:
 
     virtual ~Scale() {}
 
+    T rangeMin() const  { return m_rangeMin; }
+    T rangeMax() const  { return m_rangeMax; }
+    T domainMin() const { return m_domainMin; }
+    T domainMax() const { return m_domainMax; }
+
     void setRangeMin(T rangeMin)   { m_rangeMin  = rangeMin; valuesUpdated(); }
     void setRangeMax(T rangeMax)   { m_rangeMax  = rangeMax; valuesUpdated(); }
     void setDomainMin(T domainMin) { m_domainMin = domainMin; valuesUpdated(); }
@@ -30,11 +35,21 @@ public:
         valuesUpdated();
     }
 
+    void setRange(const Scale<T> &other)
+    {
+        setRange(other.m_rangeMin, other.m_rangeMax);
+    }
+
     void setDomain(const T &domainMin, const T &domainMax)
     {
         m_domainMin = domainMin;
         m_domainMax = domainMax;
         valuesUpdated();
+    }
+
+    void setDomain(const Scale<T> &other)
+    {
+        setDomain(other.m_domainMin, other.m_domainMax);
     }
 
     void inverse()
@@ -68,6 +83,13 @@ public:
     virtual T operator()(const T &value) const
     {
         return (value - Scale<T>::m_domainMin) * m_transformSlope + Scale<T>::m_rangeMin;
+    }
+
+    T slope() const { return m_transformSlope; }
+
+    T offset() const
+    {
+        return Scale<T>::m_rangeMin - Scale<T>::m_domainMin * m_transformSlope;
     }
 
 protected:
