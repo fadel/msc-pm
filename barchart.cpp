@@ -1,6 +1,7 @@
 #include "barchart.h"
 
 #include <algorithm>
+#include <numeric>
 
 #include <QOpenGLPaintDevice>
 #include <QPainter>
@@ -58,11 +59,7 @@ void BarChart::setValues(const arma::vec &values)
         m_scale.setDomain(m_values.min(), m_values.max());
         m_colorScale.setExtents(m_values.min(), m_values.max());
 
-        for (std::vector<int>::size_type i = 0;
-                i < m_originalIndices.size(); i++) {
-            m_originalIndices[i] = i;
-        }
-
+        std::iota(m_originalIndices.begin(), m_originalIndices.end(), 0);
         std::sort(m_originalIndices.begin(), m_originalIndices.end(),
             [this](int i, int j) { return m_values[i] > m_values[j]; });
     }
