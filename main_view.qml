@@ -125,6 +125,12 @@ ApplicationWindow {
                         id: cpBarChart
                         objectName: "cpBarChart"
                         anchors.fill: parent
+
+                        Label {
+                            width: parent.width
+                            horizontalAlignment: Text.AlignRight
+                            text: "Control points"
+                        }
                     }
 
                     //HistoryGraph {
@@ -156,6 +162,13 @@ ApplicationWindow {
                         id: rpBarChart
                         objectName: "rpBarChart"
                         anchors.fill: parent
+
+                        Label {
+                            anchors.margins: 5
+                            width: parent.width
+                            horizontalAlignment: Text.AlignRight
+                            text: "Regular points"
+                        }
                     }
 
                     //HistoryGraph {

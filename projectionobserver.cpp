@@ -2,10 +2,10 @@
 
 #include <algorithm>
 #include <cmath>
-
-#include <QDebug>
+#include <numeric>
 
 #include "mp.h"
+#include "numericrange.h"
 
 static const float EPSILON = 1e-6f;
 
@@ -42,13 +42,9 @@ ProjectionObserver::ProjectionObserver(const arma::mat &X,
     m_distX = mp::dist(m_X);
     m_values.set_size(m_X.n_rows);
 
-    arma::uvec indices(m_X.n_rows);
-    for (arma::uword i = 0; i < indices.n_elem; i++) {
-        indices[i] = i;
-    }
-    std::set_difference(indices.cbegin(), indices.cend(),
-                        m_cpIndices.cbegin(), m_cpIndices.cend(),
-                        m_rpIndices.begin());
+    NumericRange<unsigned long long> range(0, m_X.n_rows);
+    std::set_symmetric_difference(range.cbegin(), range.cend(),
+            m_cpIndices.cbegin(), m_cpIndices.cend(), m_rpIndices.begin());
 }
 
 bool ProjectionObserver::setType(int type)

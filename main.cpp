@@ -1,6 +1,6 @@
 #include <cmath>
 #include <iostream>
-#include <memory>
+#include <numeric>
 #include <string>
 
 #include <QApplication>
@@ -16,7 +16,8 @@
 #include "historygraph.h"
 #include "barchart.h"
 #include "colormap.h"
-#include "interactionhandler.h"
+#include "manipulationhandler.h"
+#include "mapscalehandler.h"
 #include "selectionhandler.h"
 #include "projectionobserver.h"
 #include "skelft.h"
@@ -71,6 +72,7 @@ int main(int argc, char **argv)
     arma::uvec cpIndices;
     arma::mat Ys;
 
+    // Load/generate indices
     QString indicesFilename;
     if (parser.isSet(indicesFileOutputOption)) {
         indicesFilename = parser.value(indicesFileOutputOption);
@@ -83,8 +85,7 @@ int main(int argc, char **argv)
         cpIndices = extractCPs(X);
     }
 
-    arma::sort(cpIndices);
-
+    // Load/generate CPs
     QString cpFilename;
     if (parser.isSet(cpFileOutputOption)) {
         cpFilename = parser.value(cpFileOutputOption);
@@ -97,10 +98,16 @@ int main(int argc, char **argv)
         Ys.set_size(cpIndices.n_elem, 2);
         mp::forceScheme(mp::dist(X.rows(cpIndices)), Ys);
     }
+
     if (cpIndices.n_elem != Ys.n_rows) {
         std::cerr << "The number of CP indices and the CP map do not match." << std::endl;
         return 1;
     }
+
+    // Sort indices so some operations become easier later
+    arma::uvec cpSortedIndices = arma::sort_index(cpIndices);
+    cpIndices = cpIndices(cpSortedIndices);
+    Ys = Ys.rows(cpSortedIndices);
 
     m->setCPIndices(cpIndices);
     m->setCP(Ys);
@@ -110,7 +117,6 @@ int main(int argc, char **argv)
     qmlRegisterType<BarChart>("PM", 1, 0, "BarChart");
     qmlRegisterType<VoronoiSplat>("PM", 1, 0, "VoronoiSplat");
     qmlRegisterType<Colormap>("PM", 1, 0, "Colormap");
-    qmlRegisterType<InteractionHandler>("PM", 1, 0, "InteractionHandler");
     qmlRegisterSingletonType<Main>("PM", 1, 0, "Main", mainProvider);
 
     // Set up multisampling
@@ -126,15 +132,13 @@ int main(int argc, char **argv)
 
     QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
 
+    // Initialize pointers to visual components
     m->cpPlot = engine.rootObjects()[0]->findChild<Scatterplot *>("cpPlot");
-    m->cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
-
     m->rpPlot = engine.rootObjects()[0]->findChild<Scatterplot *>("rpPlot");
-
-    m->splat = engine.rootObjects()[0]->findChild<VoronoiSplat *>("splat");
-    skelft2DInitialization(m->splat->width());
-
     m->colormap = engine.rootObjects()[0]->findChild<Colormap *>("colormap");
+    m->splat = engine.rootObjects()[0]->findChild<VoronoiSplat *>("splat");
+    m->cpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("cpBarChart");
+    m->rpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("rpBarChart");
 
     // Keep track of the current cp (in order to save them later, if requested)
     QObject::connect(m->cpPlot, SIGNAL(xyChanged(const arma::mat &)),
@@ -143,15 +147,16 @@ int main(int argc, char **argv)
             m, SLOT(setCP(const arma::mat &)));
 
     // Update projection as the cp are modified
-    InteractionHandler interactionHandler(X, cpIndices);
-    interactionHandler.setTechnique(InteractionHandler::TECHNIQUE_LAMP);
-    QObject::connect(m->cpPlot, SIGNAL(xyChanged(const arma::mat &)),
-            &interactionHandler, SLOT(setCP(const arma::mat &)));
+    ManipulationHandler manipulationHandler(X, cpIndices);
+    //QObject::connect(m->cpPlot, SIGNAL(xyChanged(const arma::mat &)),
+    //        &manipulationHandler, SLOT(setCP(const arma::mat &)));
     QObject::connect(m->cpPlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
-            &interactionHandler, SLOT(setCP(const arma::mat &)));
-    QObject::connect(&interactionHandler, SIGNAL(cpChanged(const arma::mat &)),
+            &manipulationHandler, SLOT(setCP(const arma::mat &)));
+    QObject::connect(&manipulationHandler, SIGNAL(cpChanged(const arma::mat &)),
+            m->cpPlot, SLOT(setXY(const arma::mat &)));
+    QObject::connect(&manipulationHandler, SIGNAL(rpChanged(const arma::mat &)),
             m->rpPlot, SLOT(setXY(const arma::mat &)));
-    QObject::connect(&interactionHandler, SIGNAL(cpChanged(const arma::mat &)),
+    QObject::connect(&manipulationHandler, SIGNAL(rpChanged(const arma::mat &)),
             m->splat, SLOT(setSites(const arma::mat &)));
 
     // Connections between history graph and cp plot
@@ -161,19 +166,19 @@ int main(int argc, char **argv)
     //QObject::connect(history, SIGNAL(currentItemChanged(const arma::mat &)),
     //        cpPlot, SLOT(setXY(const arma::mat &)));
 
-    QObject::connect(m->rpPlot, SIGNAL(scaleChanged(const LinearScale<float> &, const LinearScale<float> &)),
+    // Keep both scatterplots scaled equally and to the full plot
+    MapScaleHandler mapScaleHandler;
+    QObject::connect(&mapScaleHandler, SIGNAL(scaleChanged(const LinearScale<float> &, const LinearScale<float> &)),
             m->cpPlot, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
+    QObject::connect(&mapScaleHandler, SIGNAL(scaleChanged(const LinearScale<float> &, const LinearScale<float> &)),
+            m->rpPlot, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
+    QObject::connect(&mapScaleHandler, SIGNAL(scaleChanged(const LinearScale<float> &, const LinearScale<float> &)),
+            m->splat, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
+    QObject::connect(&manipulationHandler, SIGNAL(mapChanged(const arma::mat &)),
+            &mapScaleHandler, SLOT(scaleToMap(const arma::mat &)));
 
     QObject::connect(m->splat, SIGNAL(colorScaleChanged(const ColorScale &)),
             m->colormap, SLOT(setColorScale(const ColorScale &)));
-
-    m->cpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("cpBarChart");
-    m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
-    m->setCPBarChartColorScale(Main::ColorScaleContinuous);
-
-    m->rpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("rpBarChart");
-    m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
-    m->setRPBarChartColorScale(Main::ColorScaleContinuous);
 
     // Linking between selections
     SelectionHandler cpSelectionHandler(cpIndices.n_elem);
@@ -184,36 +189,46 @@ int main(int argc, char **argv)
     QObject::connect(&cpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
             m->cpPlot, SLOT(setSelection(const std::vector<bool> &)));
 
-    //SelectionHandler rpSelectionHandler(X.n_rows - cpIndices.n_elem);
-    //QObject::connect(m->rpPlot, SIGNAL(selectionInteractivelyChanged(const std::vector<bool> &)),
-    //        &rpSelectionHandler, SLOT(setSelection(const std::vector<bool> &)));
-    //QObject::connect(m->rpBarChart, SIGNAL(selectionInteractivelyChanged(const std::vector<bool> &)),
-    //        &rpSelectionHandler, SLOT(setSelection(const std::vector<bool> &)));
-    //QObject::connect(&rpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
-    //        m->rpPlot, SLOT(setSelection(const std::vector<bool> &)));
+    SelectionHandler rpSelectionHandler(X.n_rows - cpIndices.n_elem);
+    QObject::connect(m->rpPlot, SIGNAL(selectionInteractivelyChanged(const std::vector<bool> &)),
+            &rpSelectionHandler, SLOT(setSelection(const std::vector<bool> &)));
+    QObject::connect(m->rpBarChart, SIGNAL(selectionInteractivelyChanged(const std::vector<bool> &)),
+            &rpSelectionHandler, SLOT(setSelection(const std::vector<bool> &)));
+    QObject::connect(&rpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
+            m->rpPlot, SLOT(setSelection(const std::vector<bool> &)));
 
+    // Recompute values whenever projection changes
     ProjectionObserver projectionObserver(X, cpIndices);
     m->projectionObserver = &projectionObserver;
-    QObject::connect(&interactionHandler, SIGNAL(cpChanged(const arma::mat &)),
+    QObject::connect(&manipulationHandler, SIGNAL(mapChanged(const arma::mat &)),
             m->projectionObserver, SLOT(setMap(const arma::mat &)));
-    //QObject::connect(m->projectionObserver, SIGNAL(valuesChanged(const arma::vec &)),
-    //        m->rpPlot, SLOT(setColorData(const arma::vec &)));
-    QObject::connect(m->projectionObserver, SIGNAL(valuesChanged(const arma::vec &)),
+    QObject::connect(m->projectionObserver, SIGNAL(rpValuesChanged(const arma::vec &)),
+            m->rpPlot, SLOT(setColorData(const arma::vec &)));
+    QObject::connect(m->projectionObserver, SIGNAL(rpValuesChanged(const arma::vec &)),
             m->splat, SLOT(setValues(const arma::vec &)));
     QObject::connect(m->projectionObserver, SIGNAL(cpValuesChanged(const arma::vec &)),
             m->cpBarChart, SLOT(setValues(const arma::vec &)));
-    //QObject::connect(m->projectionObserver, SIGNAL(rpValuesChanged(const arma::vec &)),
-    //        m->rpBarChart, SLOT(setValues(const arma::vec &)));
+    QObject::connect(m->projectionObserver, SIGNAL(rpValuesChanged(const arma::vec &)),
+            m->rpBarChart, SLOT(setValues(const arma::vec &)));
+
+    skelft2DInitialization(m->splat->width());
+
+    m->cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
+    m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
+    m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
 
     m->setColormapColorScale(Main::ColorScaleContinuous);
     m->setCPPlotColorScale(Main::ColorScaleContinuous);
     m->setRPPlotColorScale(Main::ColorScaleContinuous);
     m->setSplatColorScale(Main::ColorScaleContinuous);
+    m->setCPBarChartColorScale(Main::ColorScaleContinuous);
+    m->setRPBarChartColorScale(Main::ColorScaleContinuous);
 
     m->cpPlot->setAutoScale(false);
+    m->rpPlot->setAutoScale(false);
     m->cpPlot->setColorData(labels(cpIndices), false);
-    m->cpPlot->setXY(Ys, false);
-    m->cpPlot->update();
+
+    manipulationHandler.setCP(Ys);
 
     auto ret = app.exec();
 

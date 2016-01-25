@@ -14,7 +14,9 @@ HEADERS += main.h \
     colormap.h \
     historygraph.h \
     barchart.h \
-    interactionhandler.h \
+    manipulationhandler.h \
+    mapscalehandler.h \
+    numericrange.h \
     selectionhandler.h \
     projectionobserver.h \
     skelft.h \
@@ -29,7 +31,8 @@ SOURCES += main.cpp \
     colormap.cpp \
     historygraph.cpp \
     barchart.cpp \
-    interactionhandler.cpp \
+    manipulationhandler.cpp \
+    mapscalehandler.cpp \
     selectionhandler.cpp \
     projectionobserver.cpp \
     skelft_core.cpp \
