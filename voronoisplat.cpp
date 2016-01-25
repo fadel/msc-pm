@@ -8,7 +8,6 @@
 #include <QOpenGLVertexArrayObject>
 
 #include "colormap.h"
-#include "scale.h"
 #include "scatterplot.h"
 #include "skelft.h"
 
@@ -27,6 +26,8 @@ static int nextPow2(int n)
 
 VoronoiSplat::VoronoiSplat(QQuickItem *parent)
     : QQuickFramebufferObject(parent)
+    , m_sx(0.0f, 1.0f, 0.0f, 1.0f)
+    , m_sy(0.0f, 1.0f, 0.0f, 1.0f)
     , m_alpha(DEFAULT_ALPHA)
     , m_beta(DEFAULT_BETA)
 {
@@ -46,23 +47,16 @@ void VoronoiSplat::setSites(const arma::mat &points)
     }
 
     // Copy 'points' to internal data structure(s)
-    double minX = points.col(0).min();
-    double maxX = points.col(0).max();
-    double minY = points.col(1).min();
-    double maxY = points.col(1).max();
-
     // Coords are packed into 'm_sites' as [ x1, y1, x2, y2, ... ]
     m_sites.resize(2*points.n_rows);
-    LinearScale<float> sx(minX, maxX, Scatterplot::PADDING, width() - Scatterplot::PADDING);
     const double *col = points.colptr(0);
     for (unsigned i = 0; i < points.n_rows; i++) {
-        m_sites[2*i] = sx(col[i]);
+        m_sites[2*i] = col[i];
     }
 
     col = points.colptr(1);
-    LinearScale<float> sy(minY, maxY, height() - Scatterplot::PADDING, Scatterplot::PADDING);
     for (unsigned i = 0; i < points.n_rows; i++) {
-        m_sites[2*i + 1] = sy(col[i]);
+        m_sites[2*i + 1] = col[i];
     }
 
     setSitesChanged(true);
@@ -95,15 +89,26 @@ void VoronoiSplat::setColorScale(const ColorScale &scale)
     update();
 }
 
+void VoronoiSplat::setScale(const LinearScale<float> &sx,
+                            const LinearScale<float> &sy)
+{
+    m_sx = sx;
+    m_sy = sy;
+    emit scaleChanged(m_sx, m_sy);
+    update();
+}
+
 void VoronoiSplat::setAlpha(float alpha)
 {
     m_alpha = alpha;
+    emit alphaChanged(m_alpha);
     update();
 }
 
 void VoronoiSplat::setBeta(float beta)
 {
     m_beta = beta;
+    emit betaChanged(m_beta);
     update();
 }
 
@@ -131,11 +136,14 @@ private:
     void updateSites();
     void updateValues();
     void updateColorScale();
+    void updateTransform();
     void computeDT();
 
     QSize m_size;
     const std::vector<float> *m_sites, *m_values, *m_cmap;
     float m_alpha, m_beta;
+    GLfloat m_transform[4][4];
+    LinearScale<float> m_sx, m_sy;
 
     QQuickWindow *m_window; // used to reset OpenGL state (as per docs)
     QOpenGLFunctions gl;
@@ -153,8 +161,18 @@ QQuickFramebufferObject::Renderer *VoronoiSplat::createRenderer() const
 }
 
 VoronoiSplatRenderer::VoronoiSplatRenderer()
-    : gl(QOpenGLContext::currentContext())
+    : m_transform{ 
+        { 0.0f,  0.0f,  0.0f,  0.0f },
+        { 0.0f,  0.0f,  0.0f,  0.0f },
+        { 0.0f,  0.0f,  0.0f,  0.0f },
+        { 0.0f,  0.0f,  0.0f,  1.0f },
+      }
+    , m_sx(0.0f, 1.0f, 0.0f, 1.0f)
+    , m_sy(0.0f, 1.0f, 0.0f, 1.0f)
+    , gl(QOpenGLContext::currentContext())
 {
+    m_transform[3][3] = 1.0f;
+
     gl.glGenFramebuffers(1, &m_FBO);
 
     setupShaders();
@@ -170,7 +188,7 @@ R"EOF(#version 440
 
 uniform float rad_blur;
 uniform float rad_max;
-uniform float fb_size;
+uniform mat4 transform;
 
 in vec2 vert;
 in float scalar;
@@ -178,8 +196,8 @@ in float scalar;
 out float value;
 
 void main() {
-  gl_PointSize = (rad_max + rad_blur) * 2.0;
-  gl_Position = vec4(2.0 * vert / fb_size - 1.0, 0, 1.0);
+  gl_PointSize = 2.0 * (rad_max + rad_blur);
+  gl_Position = transform * vec4(vert, 0.0, 1.0);
   value = scalar;
 }
 )EOF");
@@ -199,7 +217,7 @@ void main() {
   if (dt > rad_max)
     discard;
   else {
-    float r = distance(gl_PointCoord, vec2(0.5, 0.5)) * (rad_max + rad_blur) * 2.0;
+    float r = 2.0 * distance(gl_PointCoord, vec2(0.5, 0.5)) * (rad_max + rad_blur);
     float r2 = r * r;
     float rad = dt + rad_blur;
     float rad2 = rad * rad;
@@ -221,7 +239,7 @@ R"EOF(#version 440
 in vec2 vert;
 
 void main() {
-  gl_Position = vec4(vert, 0, 1);
+  gl_Position = vec4(vert, 0.0, 1.0);
 }
 )EOF");
     m_program2->addShaderFromSourceCode(QOpenGLShader::Fragment,
@@ -274,8 +292,8 @@ void VoronoiSplatRenderer::setupVAOs()
     // 2ndPassVAO: VBO 2 is a quad mapping the final texture to the framebuffer
     m_2ndPassVAO.create();
     m_2ndPassVAO.bind();
-    GLfloat verts[] = {-1.0f, -1.0f, -1.0f, 1.0f,
-                        1.0f, -1.0f,  1.0f, 1.0f};
+    GLfloat verts[] = { -1.0f, -1.0f, -1.0f,  1.0f,
+                         1.0f, -1.0f,  1.0f,  1.0f };
     gl.glBindBuffer(GL_ARRAY_BUFFER, m_VBOs[2]);
     gl.glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
     vertAttrib = m_program2->attributeLocation("vert");
@@ -357,7 +375,7 @@ void VoronoiSplatRenderer::render()
     m_program1->bind();
     m_program1->setUniformValue("rad_max", m_beta);
     m_program1->setUniformValue("rad_blur", m_alpha);
-    m_program1->setUniformValue("fb_size", float(m_size.width()));
+    m_program1->setUniformValue("transform", m_transform);
 
     gl.glActiveTexture(GL_TEXTURE0);
     gl.glBindTexture(GL_TEXTURE_2D, m_textures[0]);
@@ -429,12 +447,39 @@ void VoronoiSplatRenderer::synchronize(QQuickFramebufferObject *item)
     splat->setValuesChanged(false);
     splat->setColorScaleChanged(false);
 
-    m_alpha           = splat->alpha();
-    m_beta            = splat->beta();
-    m_sites           = &(splat->sites());
-    m_values          = &(splat->values());
-    m_cmap            = &(splat->colorScale());
-    m_window          = splat->window();
+    m_sites  = &(splat->sites());
+    m_values = &(splat->values());
+    m_cmap   = &(splat->colorScale());
+    m_sx     = splat->scaleX();
+    m_sy     = splat->scaleY();
+    m_alpha  = splat->alpha();
+    m_beta   = splat->beta();
+    m_window = splat->window();
+}
+
+void VoronoiSplatRenderer::updateTransform()
+{
+    GLfloat w = m_size.width(), h = m_size.height();
+
+    GLfloat rangeOffset = Scatterplot::PADDING / w;
+    m_sx.setRange(rangeOffset, 1.0f - rangeOffset);
+    GLfloat sx = 2.0f * m_sx.slope();
+    GLfloat tx = 2.0f * m_sx.offset() - 1.0f;
+
+    rangeOffset = Scatterplot::PADDING / h;
+    m_sy.setRange(1.0f - rangeOffset, rangeOffset);
+    GLfloat sy = 2.0f * m_sy.slope();
+    GLfloat ty = 2.0f * m_sy.offset() - 1.0f;
+
+    // The transform matrix should be this (but transposed -- column major):
+    // [   sx  0.0f  0.0f   -tx ]
+    // [ 0.0f    sy  0.0f   -ty ]
+    // [ 0.0f  0.0f  0.0f  0.0f ]
+    // [ 0.0f  0.0f  0.0f  1.0f ]
+    m_transform[0][0] = sx;
+    m_transform[1][1] = sy;
+    m_transform[3][0] = tx;
+    m_transform[3][1] = ty;
 }
 
 void VoronoiSplatRenderer::updateSites()
@@ -445,6 +490,9 @@ void VoronoiSplatRenderer::updateSites()
 
     // Compute DT values for the new positions
     computeDT();
+
+    // Update transform used when drawing sites
+    updateTransform();
 
     m_sitesChanged = false;
 }
@@ -472,10 +520,12 @@ void VoronoiSplatRenderer::computeDT()
     int w = m_size.width(), h = m_size.height();
 
     // Compute FT of the sites
-    std::vector<float> buf(w*h);
+    m_sx.setRange(Scatterplot::PADDING, w - Scatterplot::PADDING);
+    m_sy.setRange(h - Scatterplot::PADDING, Scatterplot::PADDING);
     const std::vector<float> &sites = *m_sites;
+    std::vector<float> buf(w*h);
     for (unsigned i = 0; i < sites.size(); i += 2) {
-        buf[int(sites[i + 1])*h + int(sites[i])] = i/2.0f + 1.0f;
+        buf[int(m_sy(sites[i + 1]))*h + int(m_sx(sites[i]))] = i/2.0f + 1.0f;
     }
     skelft2DFT(0, buf.data(), 0, 0, w, h, w);
 

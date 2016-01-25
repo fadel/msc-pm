@@ -6,6 +6,7 @@
 #include <armadillo>
 
 #include "colorscale.h"
+#include "scale.h"
 
 class VoronoiSplat
     : public QQuickFramebufferObject
@@ -19,8 +20,10 @@ public:
     const std::vector<float> &sites() const      { return m_sites; }
     const std::vector<float> &values() const     { return m_values; }
     const std::vector<float> &colorScale() const { return m_cmap; }
-    Q_INVOKABLE float alpha() const { return m_alpha; }
-    Q_INVOKABLE float beta() const  { return m_beta; }
+    LinearScale<float> scaleX() const            { return m_sx; }
+    LinearScale<float> scaleY() const            { return m_sy; }
+    Q_INVOKABLE float alpha() const              { return m_alpha; }
+    Q_INVOKABLE float beta() const               { return m_beta; }
 
     bool sitesChanged() const      { return m_sitesChanged; }
     bool valuesChanged() const     { return m_valuesChanged; }
@@ -40,7 +43,9 @@ signals:
     void sitesChanged(const arma::mat &sites) const;
     void valuesChanged(const arma::vec &values) const;
     void colorScaleChanged(const ColorScale &scale) const;
+    void scaleChanged(const LinearScale<float> &sx, const LinearScale<float> &sy) const;
     void alphaChanged(float alpha) const;
+    void betaChanged(float alpha) const;
 
 public slots:
     // 'points' should be a 2D points matrix (each point in a row)
@@ -52,6 +57,8 @@ public slots:
     // Set colorScale data based on the given color scale
     void setColorScale(const ColorScale &scale);
 
+    void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
+
     // Shepard blur radius
     Q_INVOKABLE void setAlpha(float alpha);
 
@@ -60,6 +67,7 @@ public slots:
 
 private:
     std::vector<float> m_sites, m_values, m_cmap;
+    LinearScale<float> m_sx, m_sy;
     float m_alpha, m_beta;
     bool m_sitesChanged, m_valuesChanged, m_colorScaleChanged;
 };
