@@ -20,7 +20,6 @@
 #include "mapscalehandler.h"
 #include "selectionhandler.h"
 #include "projectionobserver.h"
-#include "skelft.h"
 
 static QObject *mainProvider(QQmlEngine *engine, QJSEngine *scriptEngine)
 {
@@ -146,10 +145,9 @@ int main(int argc, char **argv)
     QObject::connect(m->cpPlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
             m, SLOT(setCP(const arma::mat &)));
 
-    // Update projection as the cp are modified
+    // Update projection as the cp are modified (either directly in the
+    // manipulationHandler object or interactively in cpPlot
     ManipulationHandler manipulationHandler(X, cpIndices);
-    //QObject::connect(m->cpPlot, SIGNAL(xyChanged(const arma::mat &)),
-    //        &manipulationHandler, SLOT(setCP(const arma::mat &)));
     QObject::connect(m->cpPlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
             &manipulationHandler, SLOT(setCP(const arma::mat &)));
     QObject::connect(&manipulationHandler, SIGNAL(cpChanged(const arma::mat &)),
@@ -166,7 +164,8 @@ int main(int argc, char **argv)
     //QObject::connect(history, SIGNAL(currentItemChanged(const arma::mat &)),
     //        cpPlot, SLOT(setXY(const arma::mat &)));
 
-    // Keep both scatterplots scaled equally and to the full plot
+    // Keep both scatterplots and the splat scaled equally and relative to the
+    // full plot
     MapScaleHandler mapScaleHandler;
     QObject::connect(&mapScaleHandler, SIGNAL(scaleChanged(const LinearScale<float> &, const LinearScale<float> &)),
             m->cpPlot, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
@@ -211,8 +210,6 @@ int main(int argc, char **argv)
     QObject::connect(m->projectionObserver, SIGNAL(rpValuesChanged(const arma::vec &)),
             m->rpBarChart, SLOT(setValues(const arma::vec &)));
 
-    skelft2DInitialization(m->splat->width());
-
     m->cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
     m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
     m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
@@ -230,8 +227,5 @@ int main(int argc, char **argv)
 
     manipulationHandler.setCP(Ys);
 
-    auto ret = app.exec();
-
-    skelft2DDeinitialization();
-    return ret;
+    return app.exec();
 }

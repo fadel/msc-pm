@@ -324,6 +324,8 @@ VoronoiSplatRenderer::~VoronoiSplatRenderer()
 
     delete m_program1;
     delete m_program2;
+
+    skelft2DDeinitialization();
 }
 
 void VoronoiSplatRenderer::resizeTextures()
@@ -349,6 +351,8 @@ QOpenGLFramebufferObject *VoronoiSplatRenderer::createFramebufferObject(const QS
     m_size.setWidth(baseSize);
     m_size.setHeight(baseSize);
     resizeTextures();
+
+    skelft2DInitialization(m_size.width());
 
     return QQuickFramebufferObject::Renderer::createFramebufferObject(m_size);
 }
