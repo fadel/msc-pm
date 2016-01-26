@@ -37,3 +37,28 @@ void updateRectGeometry(QSGGeometry *geometry, float x, float y, float w, float 
     vertexData[2].set(x + w, y + h);
     vertexData[3].set(x, y + h);
 }
+
+void updateCrossHairGeometry(QSGGeometry *geometry,
+                             float x,
+                             float y,
+                             float thickness,
+                             float length)
+{
+    QSGGeometry::Point2D *vertexData = geometry->vertexDataAsPoint2D();
+    if (geometry->vertexCount() != 12) {
+        return;
+    }
+
+    vertexData[ 0].set(x + thickness, y - thickness);
+    vertexData[ 1].set(x + length,    y - thickness);
+    vertexData[ 2].set(x + length,    y + thickness);
+    vertexData[ 3].set(x + thickness, y + thickness);
+    vertexData[ 4].set(x + thickness, y + length);
+    vertexData[ 5].set(x - thickness, y + length);
+    vertexData[ 6].set(x - thickness, y + thickness);
+    vertexData[ 7].set(x - length,    y + thickness);
+    vertexData[ 8].set(x - length,    y - thickness);
+    vertexData[ 9].set(x - thickness, y - thickness);
+    vertexData[10].set(x - thickness, y - length);
+    vertexData[11].set(x + thickness, y - length);
+}

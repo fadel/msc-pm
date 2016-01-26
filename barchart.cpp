@@ -12,7 +12,7 @@
 #include "geometry.h"
 
 static const QColor OUTLINE_COLOR(0, 0, 0);
-static const QColor HINTS_COLOR(0, 0, 0);
+static const QColor BRUSH_COLOR(0, 0, 0);
 static const QColor BAR_COLOR(128, 128, 128);
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
@@ -27,7 +27,7 @@ static inline T clamp(T value, T min, T max)
 BarChart::BarChart(QQuickItem *parent)
     : QQuickItem(parent)
     , m_shouldUpdateBars(false)
-    , m_hoverPos(-1.0f)
+    , m_brushedItem(-1)
     , m_shouldUpdateSelectionRect(false)
     , m_dragStartPos(-1.0f)
     , m_dragLastPos(-1.0f)
@@ -48,13 +48,13 @@ void BarChart::setValues(const arma::vec &values)
 {
     m_values = values;
 
-    m_originalIndices.resize(m_values.n_elem);
-
     if (m_selection.size() != m_values.n_elem) {
         m_selection.resize(m_values.n_elem);
         m_selection.assign(m_selection.size(), false);
     }
 
+    m_originalIndices.resize(m_values.n_elem);
+    m_currentIndices.resize(m_values.n_elem);
     if (m_values.n_elem > 0) {
         m_scale.setDomain(m_values.min(), m_values.max());
         m_colorScale.setExtents(m_values.min(), m_values.max());
@@ -62,6 +62,11 @@ void BarChart::setValues(const arma::vec &values)
         std::iota(m_originalIndices.begin(), m_originalIndices.end(), 0);
         std::sort(m_originalIndices.begin(), m_originalIndices.end(),
             [this](int i, int j) { return m_values[i] > m_values[j]; });
+
+        int k = 0;
+        for (auto i: m_originalIndices) {
+            m_currentIndices[i] = k++;
+        }
     }
     emit valuesChanged(values);
 
@@ -94,32 +99,43 @@ void BarChart::setSelection(const std::vector<bool> &selection)
     update();
 }
 
+void BarChart::brushItem(int item)
+{
+    if (item < 0) {
+        m_brushedItem = item;
+        emit itemBrushed(m_brushedItem);
+    } else {
+        m_brushedItem = m_currentIndices[item];
+        emit itemBrushed(m_originalIndices[m_brushedItem]);
+    }
+}
+
 QSGNode *BarChart::newSceneGraph() const
 {
     // NOTE: scene graph structure is as follows:
-    // root [ barsNode [ ... ] hoverHintsNode selectionNode ]
+    // root [ barsNode [ ... ] selectionNode brushNode ]
     QSGTransformNode *root = new QSGTransformNode;
 
     // The node that has all bars as children
     root->appendChildNode(new QSGNode);
 
-    // The node for drawing the hover hints
-    QSGGeometryNode *hintsGeomNode = new QSGGeometryNode;
-    QSGGeometry *hintsGeom = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 2);
-    hintsGeom->setDrawingMode(GL_LINES);
-    hintsGeom->setVertexDataPattern(QSGGeometry::DynamicPattern);
-    hintsGeom->setLineWidth(1.0f);
-    QSGFlatColorMaterial *hintsMaterial = new QSGFlatColorMaterial;
-    hintsMaterial->setColor(HINTS_COLOR);
-    hintsGeomNode->setGeometry(hintsGeom);
-    hintsGeomNode->setMaterial(hintsMaterial);
-    hintsGeomNode->setFlags(QSGNode::OwnsGeometry | QSGNode::OwnsMaterial);
-    root->appendChildNode(hintsGeomNode);
-
-    // The node for drawing the selectionRect
+    // The node for drawing the selection rect
     QSGSimpleRectNode *selectionRectNode = new QSGSimpleRectNode;
     selectionRectNode->setColor(SELECTION_COLOR);
     root->appendChildNode(selectionRectNode);
+
+    // The node for drawing the brush
+    QSGGeometryNode *brushGeomNode = new QSGGeometryNode;
+    QSGGeometry *brushGeom = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 4);
+    brushGeom->setDrawingMode(GL_POLYGON);
+    brushGeom->setVertexDataPattern(QSGGeometry::DynamicPattern);
+    brushGeom->setLineWidth(1.0f);
+    QSGFlatColorMaterial *brushMaterial = new QSGFlatColorMaterial;
+    brushMaterial->setColor(BRUSH_COLOR);
+    brushGeomNode->setGeometry(brushGeom);
+    brushGeomNode->setMaterial(brushMaterial);
+    brushGeomNode->setFlags(QSGNode::OwnsGeometry | QSGNode::OwnsMaterial);
+    root->appendChildNode(brushGeomNode);
 
     return root;
 }
@@ -225,16 +241,16 @@ void BarChart::updateBars(QSGNode *node)
     }
 }
 
-void BarChart::updateHoverHints(QSGNode *node)
+void BarChart::updateBrush(QSGNode *node)
 {
-    QSGGeometryNode *hintsGeomNode = static_cast<QSGGeometryNode *>(node);
-    QSGGeometry *hintsGeom = hintsGeomNode->geometry();
-
-    QSGGeometry::Point2D *vertexData = hintsGeom->vertexDataAsPoint2D();
-    vertexData[0].set(m_hoverPos, 0.0f);
-    vertexData[1].set(m_hoverPos, 1.0f);
-
-    hintsGeomNode->markDirty(QSGNode::DirtyGeometry);
+    float barWidth = 1.0f / m_values.n_elem;
+    QSGGeometryNode *brushGeomNode = static_cast<QSGGeometryNode *>(node);
+    updateRectGeometry(brushGeomNode->geometry(),
+                       barWidth * m_brushedItem,
+                       0.0f,
+                       barWidth,
+                       1.0f);
+    brushGeomNode->markDirty(QSGNode::DirtyGeometry);
 }
 
 void BarChart::updateSelectionRect(QSGNode *node)
@@ -261,13 +277,13 @@ QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     }
     node = node->nextSibling();
 
-    updateHoverHints(node);
-    node = node->nextSibling();
-
     if (m_shouldUpdateSelectionRect) {
         updateSelectionRect(node);
         m_shouldUpdateSelectionRect = false;
     }
+    node = node->nextSibling();
+
+    updateBrush(node);
     node = node->nextSibling();
 
     return root;
@@ -308,19 +324,25 @@ void BarChart::interactiveSelection(float start, float end)
 
 void BarChart::hoverEnterEvent(QHoverEvent *event)
 {
-    m_hoverPos = float(event->pos().x()) / width();
+    m_brushedItem = itemAt(float(event->pos().x()) / width());
+    emit itemInteractivelyBrushed(m_originalIndices[m_brushedItem]);
+
     update();
 }
 
 void BarChart::hoverMoveEvent(QHoverEvent *event)
 {
-    m_hoverPos = float(event->pos().x()) / width();
+    m_brushedItem  = itemAt(float(event->pos().x()) / width());
+    emit itemInteractivelyBrushed(m_originalIndices[m_brushedItem]);
+
     update();
 }
 
 void BarChart::hoverLeaveEvent(QHoverEvent *event)
 {
-    m_hoverPos = -1.0f;
+    m_brushedItem = -1;
+    emit itemInteractivelyBrushed(m_brushedItem);
+
     update();
 }
 
@@ -332,7 +354,7 @@ void BarChart::mousePressEvent(QMouseEvent *event)
     float pos = float(event->pos().x()) / width();
     m_dragStartPos = pos;
     m_dragLastPos  = pos;
-    m_hoverPos     = pos;
+
     m_shouldUpdateSelectionRect = true;
     update();
 }
@@ -341,7 +363,7 @@ void BarChart::mouseMoveEvent(QMouseEvent *event)
 {
     float pos = float(event->pos().x()) / width();
     m_dragLastPos = clamp(pos, 0.0f, 1.0f);
-    m_hoverPos    = pos;
+
     m_shouldUpdateSelectionRect = true;
     update();
 }
@@ -352,7 +374,6 @@ void BarChart::mouseReleaseEvent(QMouseEvent *event)
 
     float pos = float(event->pos().x()) / width();
     m_dragLastPos = clamp(pos, 0.0f, 1.0f);
-    m_hoverPos    = pos;
 
     if (m_values.n_elem > 0) {
         interactiveSelection(m_dragStartPos, m_dragLastPos);

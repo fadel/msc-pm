@@ -13,12 +13,12 @@
 #include "continuouscolorscale.h"
 #include "scatterplot.h"
 #include "voronoisplat.h"
-#include "historygraph.h"
 #include "barchart.h"
 #include "colormap.h"
 #include "manipulationhandler.h"
 #include "mapscalehandler.h"
 #include "selectionhandler.h"
+#include "brushinghandler.h"
 #include "projectionobserver.h"
 
 static QObject *mainProvider(QQmlEngine *engine, QJSEngine *scriptEngine)
@@ -111,13 +111,6 @@ int main(int argc, char **argv)
     m->setCPIndices(cpIndices);
     m->setCP(Ys);
 
-    qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
-    qmlRegisterType<HistoryGraph>("PM", 1, 0, "HistoryGraph");
-    qmlRegisterType<BarChart>("PM", 1, 0, "BarChart");
-    qmlRegisterType<VoronoiSplat>("PM", 1, 0, "VoronoiSplat");
-    qmlRegisterType<Colormap>("PM", 1, 0, "Colormap");
-    qmlRegisterSingletonType<Main>("PM", 1, 0, "Main", mainProvider);
-
     // Set up multisampling
     QSurfaceFormat fmt;
     fmt.setRenderableType(QSurfaceFormat::OpenGL);
@@ -128,6 +121,12 @@ int main(int argc, char **argv)
     fmt.setAlphaBufferSize(8);
     fmt.setSamples(8);
     QSurfaceFormat::setDefaultFormat(fmt);
+
+    qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
+    qmlRegisterType<BarChart>("PM", 1, 0, "BarChart");
+    qmlRegisterType<VoronoiSplat>("PM", 1, 0, "VoronoiSplat");
+    qmlRegisterType<Colormap>("PM", 1, 0, "Colormap");
+    qmlRegisterSingletonType<Main>("PM", 1, 0, "Main", mainProvider);
 
     QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
 
@@ -156,13 +155,6 @@ int main(int argc, char **argv)
             m->rpPlot, SLOT(setXY(const arma::mat &)));
     QObject::connect(&manipulationHandler, SIGNAL(rpChanged(const arma::mat &)),
             m->splat, SLOT(setSites(const arma::mat &)));
-
-    // Connections between history graph and cp plot
-    //HistoryGraph *history = engine.rootObjects()[0]->findChild<HistoryGraph *>("history");
-    //QObject::connect(cpPlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
-    //        history, SLOT(addHistoryItem(const arma::mat &)));
-    //QObject::connect(history, SIGNAL(currentItemChanged(const arma::mat &)),
-    //        cpPlot, SLOT(setXY(const arma::mat &)));
 
     // Keep both scatterplots and the splat scaled equally and relative to the
     // full plot
@@ -196,6 +188,27 @@ int main(int argc, char **argv)
     QObject::connect(&rpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
             m->rpPlot, SLOT(setSelection(const std::vector<bool> &)));
 
+    // Brushing between bar chart and respective scatterplot
+    BrushingHandler cpBrushHandler;
+    QObject::connect(m->cpPlot, SIGNAL(itemInteractivelyBrushed(int)),
+            &cpBrushHandler, SLOT(brushItem(int)));
+    QObject::connect(m->cpBarChart, SIGNAL(itemInteractivelyBrushed(int)),
+            &cpBrushHandler, SLOT(brushItem(int)));
+    QObject::connect(&cpBrushHandler, SIGNAL(itemBrushed(int)),
+            m->cpPlot, SLOT(brushItem(int)));
+    QObject::connect(&cpBrushHandler, SIGNAL(itemBrushed(int)),
+            m->cpBarChart, SLOT(brushItem(int)));
+
+    BrushingHandler rpBrushHandler;
+    QObject::connect(m->rpPlot, SIGNAL(itemInteractivelyBrushed(int)),
+            &rpBrushHandler, SLOT(brushItem(int)));
+    QObject::connect(m->rpBarChart, SIGNAL(itemInteractivelyBrushed(int)),
+            &rpBrushHandler, SLOT(brushItem(int)));
+    QObject::connect(&rpBrushHandler, SIGNAL(itemBrushed(int)),
+            m->rpPlot, SLOT(brushItem(int)));
+    QObject::connect(&rpBrushHandler, SIGNAL(itemBrushed(int)),
+            m->rpBarChart, SLOT(brushItem(int)));
+
     // Recompute values whenever projection changes
     ProjectionObserver projectionObserver(X, cpIndices);
     m->projectionObserver = &projectionObserver;
@@ -210,6 +223,7 @@ int main(int argc, char **argv)
     QObject::connect(m->projectionObserver, SIGNAL(rpValuesChanged(const arma::vec &)),
             m->rpBarChart, SLOT(setValues(const arma::vec &)));
 
+    // General component set up
     m->cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
     m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
     m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
@@ -224,6 +238,7 @@ int main(int argc, char **argv)
     m->cpPlot->setAutoScale(false);
     m->rpPlot->setAutoScale(false);
     m->cpPlot->setColorData(labels(cpIndices), false);
+    //m->cpPlot->brushItem(0);
 
     manipulationHandler.setCP(Ys);
 

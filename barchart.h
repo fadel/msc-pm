@@ -23,11 +23,14 @@ signals:
     void colorScaleChanged(const ColorScale &scale) const;
     void selectionChanged(const std::vector<bool> &selection) const;
     void selectionInteractivelyChanged(const std::vector<bool> &selection) const;
+    void itemBrushed(int item) const;
+    void itemInteractivelyBrushed(int item) const;
 
 public slots:
     void setValues(const arma::vec &values);
     void setColorScale(const ColorScale &scale);
     void setSelection(const std::vector<bool> &selection);
+    void brushItem(int item);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
@@ -48,9 +51,9 @@ private:
     void updateBarNodeGeom(QSGNode *barNode, float x, float width, float height);
     void updateBarNodeColor(QSGNode *barNode, const QColor &color);
     void updateBars(QSGNode *node);
-    void updateHoverHints(QSGNode *node);
+    void updateBrush(QSGNode *node);
     bool m_shouldUpdateBars;
-    float m_hoverPos;
+    int m_brushedItem;
 
     void updateSelectionRect(QSGNode *node);
     bool m_shouldUpdateSelectionRect;
@@ -62,7 +65,7 @@ private:
 
     arma::vec m_values;
     ColorScale m_colorScale;
-    std::vector<int> m_originalIndices;
+    std::vector<int> m_originalIndices, m_currentIndices;
     LinearScale<float> m_scale;
 };
 

@@ -10,4 +10,10 @@ void updateCircleGeometry(QSGGeometry *geometry, float radius, float cx, float c
 // Rect
 void updateRectGeometry(QSGGeometry *geometry, float x, float y, float w, float h);
 
+// Crosshair
+void updateCrossHairGeometry(QSGGeometry *geometry,
+                             float x,
+                             float y,
+                             float thickness,
+                             float length);
 #endif // GEOMETRY_H

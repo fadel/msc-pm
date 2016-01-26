@@ -27,6 +27,7 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     , m_sx(0, 1, 0, 1)
     , m_sy(0, 1, 0, 1)
     , m_currentInteractionState(INTERACTION_NONE)
+    , m_brushedItem(-1)
     , m_shouldUpdateGeometry(false)
     , m_shouldUpdateMaterials(false)
 {
@@ -182,6 +183,52 @@ void Scatterplot::setGlyphSize(float glyphSize)
     setGlyphSize(glyphSize, true);
 }
 
+QSGNode *Scatterplot::newSceneGraph()
+{
+    // NOTE:
+    // The hierarchy in the scene graph is as follows:
+    // root [[splatNode] [glyphsRoot [glyph [...]]] [selectionNode]]
+    QSGNode *root = new QSGNode;
+    QSGNode *glyphTreeRoot = newGlyphTree();
+    if (glyphTreeRoot) {
+        root->appendChildNode(glyphTreeRoot);
+    }
+
+    QSGSimpleRectNode *selectionRectNode = new QSGSimpleRectNode;
+    selectionRectNode->setColor(SELECTION_COLOR);
+    root->appendChildNode(selectionRectNode);
+
+    QSGTransformNode *brushNode = new QSGTransformNode;
+
+    QSGGeometryNode *whiteCrossHairNode = new QSGGeometryNode;
+    QSGGeometry *whiteCrossHairGeom = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 12);
+    whiteCrossHairGeom->setDrawingMode(GL_POLYGON);
+    whiteCrossHairGeom->setVertexDataPattern(QSGGeometry::DynamicPattern);
+    updateCrossHairGeometry(whiteCrossHairGeom, 0, 0, 2, 8);
+    QSGFlatColorMaterial *whiteCrossHairMaterial = new QSGFlatColorMaterial;
+    whiteCrossHairMaterial->setColor(QColor(255, 255, 255));
+    whiteCrossHairNode->setGeometry(whiteCrossHairGeom);
+    whiteCrossHairNode->setMaterial(whiteCrossHairMaterial);
+    whiteCrossHairNode->setFlags(QSGNode::OwnsGeometry | QSGNode::OwnsMaterial);
+    brushNode->appendChildNode(whiteCrossHairNode);
+
+    QSGGeometryNode *blackCrossHairNode = new QSGGeometryNode;
+    QSGGeometry *blackCrossHairGeom = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 12);
+    blackCrossHairGeom->setDrawingMode(GL_POLYGON);
+    blackCrossHairGeom->setVertexDataPattern(QSGGeometry::DynamicPattern);
+    updateCrossHairGeometry(blackCrossHairGeom, 0, 0, 1, 8);
+    QSGFlatColorMaterial *blackCrossHairMaterial = new QSGFlatColorMaterial;
+    blackCrossHairMaterial->setColor(QColor(0, 0, 0));
+    blackCrossHairNode->setGeometry(blackCrossHairGeom);
+    blackCrossHairNode->setMaterial(blackCrossHairMaterial);
+    blackCrossHairNode->setFlags(QSGNode::OwnsGeometry | QSGNode::OwnsMaterial);
+    brushNode->appendChildNode(blackCrossHairNode);
+
+    root->appendChildNode(brushNode);
+
+    return root;
+}
+
 QSGNode *Scatterplot::newGlyphTree()
 {
     // NOTE:
@@ -229,24 +276,6 @@ QSGNode *Scatterplot::newGlyphTree()
     return node;
 }
 
-QSGNode *Scatterplot::newSceneGraph()
-{
-    // NOTE:
-    // The hierarchy in the scene graph is as follows:
-    // root [[splatNode] [glyphsRoot [glyph [...]]] [selectionNode]]
-    QSGNode *root = new QSGNode;
-    QSGNode *glyphTreeRoot = newGlyphTree();
-    if (glyphTreeRoot) {
-        root->appendChildNode(glyphTreeRoot);
-    }
-
-    QSGSimpleRectNode *selectionRectNode = new QSGSimpleRectNode;
-    selectionRectNode->setColor(SELECTION_COLOR);
-    root->appendChildNode(selectionRectNode);
-
-    return root;
-}
-
 QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
     QSGNode *root = oldNode ? oldNode : newSceneGraph();
@@ -277,6 +306,10 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         // Hide selection rect
         selectionNode->setRect(QRectF(-1, -1, 0, 0));
     }
+    node = node->nextSibling();
+
+    // Brushing
+    updateBrush(node);
     node = node->nextSibling();
 
     return root;
@@ -335,6 +368,20 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
 
         node = node->nextSibling();
     }
+}
+
+void Scatterplot::updateBrush(QSGNode *node)
+{
+    QMatrix4x4 transform;
+    if (m_brushedItem < 0) {
+        transform.translate(-width(), -height());
+    } else {
+        const arma::rowvec &row = m_xy.row(m_brushedItem);
+        transform.translate(m_sx(row[0]), m_sy(row[1]));
+    }
+
+    QSGTransformNode *brushNode = static_cast<QSGTransformNode *>(node);
+    brushNode->setMatrix(transform);
 }
 
 void Scatterplot::mousePressEvent(QMouseEvent *event)
@@ -447,6 +494,12 @@ void Scatterplot::setSelection(const std::vector<bool> &selection)
     emit selectionChanged(m_selection);
 
     m_shouldUpdateMaterials = true;
+    update();
+}
+
+void Scatterplot::brushItem(int item)
+{
+    m_brushedItem = item;
     update();
 }
 

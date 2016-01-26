@@ -38,6 +38,8 @@ signals:
     void opacityDataChanged(const arma::vec &opacityData) const;
     void selectionChanged(const std::vector<bool> &selection) const;
     void selectionInteractivelyChanged(const std::vector<bool> &selection) const;
+    void itemBrushed(int item) const;
+    void itemInteractivelyBrushed(int item) const;
     void scaleChanged(const LinearScale<float> &sx, const LinearScale<float> &sy) const;
     void glyphSizeChanged(float glyphSize) const;
 
@@ -46,6 +48,7 @@ public slots:
     void setColorData(const arma::vec &colorData);
     void setOpacityData(const arma::vec &opacityData);
     void setSelection(const std::vector<bool> &selection);
+    void brushItem(int item);
     void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
     Q_INVOKABLE void setGlyphSize(float glyphSize);
 
@@ -61,6 +64,7 @@ private:
 
     void applyManipulation();
     void updateGlyphs(QSGNode *node);
+    void updateBrush(QSGNode *node);
 
     // Data
     arma::mat m_xy;
@@ -78,6 +82,7 @@ private:
     // Internal state
     bool interactiveSelection(bool mergeSelection);
     std::vector<bool> m_selection;
+    int m_brushedItem;
 
     enum InteractionState {
         INTERACTION_NONE,

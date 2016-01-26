@@ -18,6 +18,7 @@ HEADERS += main.h \
     mapscalehandler.h \
     numericrange.h \
     selectionhandler.h \
+    brushinghandler.h \
     projectionobserver.h \
     skelft.h \
     skelftkernel.h \
@@ -34,6 +35,7 @@ SOURCES += main.cpp \
     manipulationhandler.cpp \
     mapscalehandler.cpp \
     selectionhandler.cpp \
+    brushinghandler.cpp \
     projectionobserver.cpp \
     skelft_core.cpp \
     lamp.cpp \
