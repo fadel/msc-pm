@@ -10,6 +10,8 @@
 #include "colorscale.h"
 #include "scale.h"
 
+class QuadTree;
+
 class Scatterplot
     : public QQuickItem
 {
@@ -58,6 +60,10 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
 
+    void hoverEnterEvent(QHoverEvent *event);
+    void hoverMoveEvent(QHoverEvent *event);
+    void hoverLeaveEvent(QHoverEvent *event);
+
 private:
     QSGNode *newSceneGraph();
     QSGNode *newGlyphTree();
@@ -95,6 +101,9 @@ private:
     QPointF m_dragOriginPos, m_dragCurrentPos;
 
     bool m_shouldUpdateGeometry, m_shouldUpdateMaterials;
+
+    void updateQuadTree();
+    QuadTree *m_quadtree;
 };
 
 #endif // SCATTERPLOT_H

@@ -108,6 +108,8 @@ void BarChart::brushItem(int item)
         m_brushedItem = m_currentIndices[item];
         emit itemBrushed(m_originalIndices[m_brushedItem]);
     }
+
+    update();
 }
 
 QSGNode *BarChart::newSceneGraph() const

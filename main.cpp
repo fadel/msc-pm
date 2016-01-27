@@ -42,6 +42,7 @@ int main(int argc, char **argv)
     app.setApplicationVersion("1.0");
     // app.setAttribute(Qt::AA_ShareOpenGLContexts);
 
+    // Command line parser
     QCommandLineParser parser;
     parser.setApplicationDescription("Interactive multidimensional projections.");
     parser.addHelpOption();
@@ -63,6 +64,7 @@ int main(int argc, char **argv)
         parser.showHelp(1);
     }
 
+    // Load dataset
     Main *m = Main::instance();
     m->loadDataset(args[0].toStdString());
     arma::mat X = m->X();
@@ -224,6 +226,7 @@ int main(int argc, char **argv)
             m->rpBarChart, SLOT(setValues(const arma::vec &)));
 
     // General component set up
+    m->cpPlot->setAcceptHoverEvents(true);
     m->cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
     m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
     m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
@@ -238,8 +241,9 @@ int main(int argc, char **argv)
     m->cpPlot->setAutoScale(false);
     m->rpPlot->setAutoScale(false);
     m->cpPlot->setColorData(labels(cpIndices), false);
-    //m->cpPlot->brushItem(0);
 
+    // This sets the initial CP configuration, triggering all the necessary
+    // signals to set up the helper objects and visual components
     manipulationHandler.setCP(Ys);
 
     return app.exec();

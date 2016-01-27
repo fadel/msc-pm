@@ -9,15 +9,133 @@
 #include "continuouscolorscale.h"
 #include "geometry.h"
 
+// Glyphs settings
+static const float DEFAULT_GLYPH_SIZE = 8.0f;
 static const qreal GLYPH_OPACITY = 1.0;
 static const qreal GLYPH_OPACITY_SELECTED = 1.0;
 
+static const float GLYPH_OUTLINE_WIDTH = 2.0f;
 static const QColor GLYPH_OUTLINE_COLOR(0, 0, 0);
 static const QColor GLYPH_OUTLINE_COLOR_SELECTED(20, 255, 225);
+
+// Cosshair settings
+static const float CROSSHAIR_LENGTH = 8.0f;
+static const float CROSSHAIR_THICKNESS1 = 1.0f;
+static const float CROSSHAIR_THICKNESS2 = 0.5f;
+static const QColor CROSSHAIR_COLOR1(255, 255, 255);
+static const QColor CROSSHAIR_COLOR2(0, 0, 0);
+
+// Selection settings
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
-static const float DEFAULT_GLYPH_SIZE = 8.0f;
-static const float GLYPH_OUTLINE_WIDTH = 2.0f;
+class QuadTree
+{
+public:
+    QuadTree(const QRectF &bounds);
+    ~QuadTree();
+    bool insert(float x, float y, int value);
+    int query(float x, float y) const;
+
+    bool subdivide();
+
+    QRectF m_bounds;
+    float m_x, m_y;
+    int m_value;
+    QuadTree *m_nw, *m_ne, *m_sw, *m_se;
+};
+
+QuadTree::QuadTree(const QRectF &bounds)
+    : m_bounds(bounds)
+    , m_value(-1)
+    , m_nw(0), m_ne(0), m_sw(0), m_se(0)
+{
+}
+
+QuadTree::~QuadTree()
+{
+    if (m_nw) {
+        delete m_nw;
+        delete m_ne;
+        delete m_sw;
+        delete m_se;
+    }
+}
+
+bool QuadTree::subdivide()
+{
+    float halfWidth = m_bounds.width() / 2;
+    float halfHeight = m_bounds.height() / 2;
+
+    m_nw = new QuadTree(QRectF(m_bounds.x(),
+                               m_bounds.y(),
+                               halfWidth,
+                               halfHeight));
+    m_ne = new QuadTree(QRectF(m_bounds.x() + halfWidth,
+                               m_bounds.y(),
+                               halfWidth,
+                               halfHeight));
+    m_sw = new QuadTree(QRectF(m_bounds.x(),
+                               m_bounds.y() + halfHeight,
+                               halfWidth,
+                               halfHeight));
+    m_se = new QuadTree(QRectF(m_bounds.x() + halfWidth,
+                               m_bounds.y() + halfHeight,
+                               halfWidth,
+                               halfHeight));
+
+    int value = m_value;
+    m_value = -1;
+    return m_nw->insert(m_x, m_y, value)
+        || m_ne->insert(m_x, m_y, value)
+        || m_sw->insert(m_x, m_y, value)
+        || m_se->insert(m_x, m_y, value);
+}
+
+bool QuadTree::insert(float x, float y, int value)
+{
+    if (!m_bounds.contains(x, y)) {
+        return false;
+    }
+
+    if (m_nw) {
+        return m_nw->insert(x, y, value)
+            || m_ne->insert(x, y, value)
+            || m_sw->insert(x, y, value)
+            || m_se->insert(x, y, value);
+    }
+
+    if (m_value >= 0) {
+        subdivide();
+        return insert(x, y, value);
+    }
+
+    m_x = x;
+    m_y = y;
+    m_value = value;
+    return true;
+}
+
+int QuadTree::query(float x, float y) const
+{
+    if (!m_bounds.contains(x, y)) {
+        return -1;
+    }
+
+    if (m_nw) {
+        int q;
+
+        q = m_nw->query(x, y);
+        if (q >= 0) return q;
+        q = m_ne->query(x, y);
+        if (q >= 0) return q;
+        q = m_sw->query(x, y);
+        if (q >= 0) return q;
+        q = m_se->query(x, y);
+        if (q >= 0) return q;
+    }
+
+    return m_value;
+}
 
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
@@ -26,10 +144,11 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     , m_autoScale(true)
     , m_sx(0, 1, 0, 1)
     , m_sy(0, 1, 0, 1)
-    , m_currentInteractionState(INTERACTION_NONE)
     , m_brushedItem(-1)
+    , m_currentInteractionState(INTERACTION_NONE)
     , m_shouldUpdateGeometry(false)
     , m_shouldUpdateMaterials(false)
+    , m_quadtree(0)
 {
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
@@ -140,6 +259,8 @@ void Scatterplot::setScale(const LinearScale<float> &sx, const LinearScale<float
     m_sy = sy;
     emit scaleChanged(m_sx, m_sy);
 
+    updateQuadTree();
+
     m_shouldUpdateGeometry = true;
     if (updateView) {
         update();
@@ -204,9 +325,9 @@ QSGNode *Scatterplot::newSceneGraph()
     QSGGeometry *whiteCrossHairGeom = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 12);
     whiteCrossHairGeom->setDrawingMode(GL_POLYGON);
     whiteCrossHairGeom->setVertexDataPattern(QSGGeometry::DynamicPattern);
-    updateCrossHairGeometry(whiteCrossHairGeom, 0, 0, 2, 8);
+    updateCrossHairGeometry(whiteCrossHairGeom, 0, 0, CROSSHAIR_THICKNESS1, CROSSHAIR_LENGTH);
     QSGFlatColorMaterial *whiteCrossHairMaterial = new QSGFlatColorMaterial;
-    whiteCrossHairMaterial->setColor(QColor(255, 255, 255));
+    whiteCrossHairMaterial->setColor(CROSSHAIR_COLOR1);
     whiteCrossHairNode->setGeometry(whiteCrossHairGeom);
     whiteCrossHairNode->setMaterial(whiteCrossHairMaterial);
     whiteCrossHairNode->setFlags(QSGNode::OwnsGeometry | QSGNode::OwnsMaterial);
@@ -216,9 +337,9 @@ QSGNode *Scatterplot::newSceneGraph()
     QSGGeometry *blackCrossHairGeom = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 12);
     blackCrossHairGeom->setDrawingMode(GL_POLYGON);
     blackCrossHairGeom->setVertexDataPattern(QSGGeometry::DynamicPattern);
-    updateCrossHairGeometry(blackCrossHairGeom, 0, 0, 1, 8);
+    updateCrossHairGeometry(blackCrossHairGeom, 0, 0, CROSSHAIR_THICKNESS2, CROSSHAIR_LENGTH);
     QSGFlatColorMaterial *blackCrossHairMaterial = new QSGFlatColorMaterial;
-    blackCrossHairMaterial->setColor(QColor(0, 0, 0));
+    blackCrossHairMaterial->setColor(CROSSHAIR_COLOR2);
     blackCrossHairNode->setGeometry(blackCrossHairGeom);
     blackCrossHairNode->setMaterial(blackCrossHairMaterial);
     blackCrossHairNode->setFlags(QSGNode::OwnsGeometry | QSGNode::OwnsMaterial);
@@ -455,6 +576,32 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
     }
 }
 
+void Scatterplot::hoverEnterEvent(QHoverEvent *event)
+{
+    QPointF pos = event->posF();
+    m_brushedItem = m_quadtree->query(pos.x(), pos.y());
+    emit itemInteractivelyBrushed(m_brushedItem);
+
+    update();
+}
+
+void Scatterplot::hoverMoveEvent(QHoverEvent *event)
+{
+    QPointF pos = event->posF();
+    m_brushedItem = m_quadtree->query(pos.x(), pos.y());
+    emit itemInteractivelyBrushed(m_brushedItem);
+
+    update();
+}
+
+void Scatterplot::hoverLeaveEvent(QHoverEvent *event)
+{
+    m_brushedItem = -1;
+    emit itemInteractivelyBrushed(m_brushedItem);
+
+    update();
+}
+
 bool Scatterplot::interactiveSelection(bool mergeSelection)
 {
     if (!mergeSelection) {
@@ -524,5 +671,23 @@ void Scatterplot::applyManipulation()
         }
     }
 
+    updateQuadTree();
+
     emit xyInteractivelyChanged(m_xy);
+}
+
+void Scatterplot::updateQuadTree()
+{
+    m_sx.setRange(PADDING, width() - PADDING);
+    m_sy.setRange(height() - PADDING, PADDING);
+
+    if (m_quadtree) {
+        delete m_quadtree;
+    }
+
+    m_quadtree = new QuadTree(QRectF(x(), y(), width(), height()));
+    for (arma::uword i = 0; i < m_xy.n_rows; i++) {
+        const arma::rowvec &row = m_xy.row(i);
+        m_quadtree->insert(m_sx(row[0]), m_sy(row[1]), (int) i);
+    }
 }
