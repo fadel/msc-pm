@@ -240,6 +240,7 @@ int main(int argc, char **argv)
 
     m->cpPlot->setAutoScale(false);
     m->rpPlot->setAutoScale(false);
+    m->rpPlot->setGlyphSize(3.0f);
     m->cpPlot->setColorData(labels(cpIndices), false);
 
     // This sets the initial CP configuration, triggering all the necessary

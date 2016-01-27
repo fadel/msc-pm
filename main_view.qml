@@ -71,7 +71,6 @@ ApplicationWindow {
                         x: parent.x
                         y: parent.y
                         anchors.fill: parent
-                        visible: false
                     }
 
                     Scatterplot {
@@ -263,7 +262,7 @@ ApplicationWindow {
 
                 GroupBox {
                     title: "Regular points"
-                    checked: false
+                    checked: true
                     checkable: true
                     __checkbox.onClicked: {
                         rpPlot.visible = this.checked;
