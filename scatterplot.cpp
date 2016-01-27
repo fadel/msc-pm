@@ -121,19 +121,26 @@ bool QuadTree::insert(float x, float y, int value)
 
 int QuadTree::nearestTo(float x, float y) const
 {
-    if (!m_nw) {
-        return m_value;
+    if (!m_bounds.contains(x, y)) {
+        return -1;
     }
 
-    int nearest = -1;
-    float dist = 1.0f / 0.0f;
-    m_nw->nearestTo(x, y, nearest, dist);
-    m_ne->nearestTo(x, y, nearest, dist);
-    m_sw->nearestTo(x, y, nearest, dist);
-    m_se->nearestTo(x, y, nearest, dist);
-    if (dist < BRUSHING_MAX_DIST)
-        return nearest;
+    int q;
+    if (m_nw) {
+        q = m_nw->nearestTo(x, y);
+        if (q >= 0) return q;
+        q = m_ne->nearestTo(x, y);
+        if (q >= 0) return q;
+        q = m_sw->nearestTo(x, y);
+        if (q >= 0) return q;
+        q = m_se->nearestTo(x, y);
+        if (q >= 0) return q;
+    }
 
+    float dist = 1.0f / 0.0f;
+    nearestTo(x, y, q, dist);
+    if (dist < BRUSHING_MAX_DIST * BRUSHING_MAX_DIST)
+        return q;
     return -1;
 }
 
@@ -144,7 +151,7 @@ void QuadTree::nearestTo(float x, float y, int &nearest, float &dist) const
         m_ne->nearestTo(x, y, nearest, dist);
         m_sw->nearestTo(x, y, nearest, dist);
         m_se->nearestTo(x, y, nearest, dist);
-    } else {
+    } else if (m_value >= 0) {
         float d = (m_x - x)*(m_x - x) + (m_y - y)*(m_y - y);
         if (d < dist) {
             nearest = m_value;
@@ -617,10 +624,7 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
 void Scatterplot::hoverEnterEvent(QHoverEvent *event)
 {
     QPointF pos = event->posF();
-    int item = m_quadtree->query(pos.x(), pos.y());
-    m_brushedItem = item < 0
-                  ? m_quadtree->nearestTo(pos.x(), pos.y())
-                  : item;
+    m_brushedItem = m_quadtree->nearestTo(pos.x(), pos.y());
     emit itemInteractivelyBrushed(m_brushedItem);
 
     update();
@@ -629,10 +633,7 @@ void Scatterplot::hoverEnterEvent(QHoverEvent *event)
 void Scatterplot::hoverMoveEvent(QHoverEvent *event)
 {
     QPointF pos = event->posF();
-    int item = m_quadtree->query(pos.x(), pos.y());
-    m_brushedItem = item < 0
-                  ? m_quadtree->nearestTo(pos.x(), pos.y())
-                  : item;
+    m_brushedItem = m_quadtree->nearestTo(pos.x(), pos.y());
     emit itemInteractivelyBrushed(m_brushedItem);
 
     update();
