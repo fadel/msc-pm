@@ -18,7 +18,8 @@ static const float GLYPH_OUTLINE_WIDTH = 2.0f;
 static const QColor GLYPH_OUTLINE_COLOR(0, 0, 0);
 static const QColor GLYPH_OUTLINE_COLOR_SELECTED(20, 255, 225);
 
-// Cosshair settings
+// Brush settings
+static const float BRUSHING_MAX_DIST = 20.0f;
 static const float CROSSHAIR_LENGTH = 8.0f;
 static const float CROSSHAIR_THICKNESS1 = 1.0f;
 static const float CROSSHAIR_THICKNESS2 = 0.5f;
@@ -35,8 +36,11 @@ public:
     ~QuadTree();
     bool insert(float x, float y, int value);
     int query(float x, float y) const;
+    int nearestTo(float x, float y) const;
 
+private:
     bool subdivide();
+    void nearestTo(float x, float y, int &nearest, float &dist) const;
 
     QRectF m_bounds;
     float m_x, m_y;
@@ -115,15 +119,49 @@ bool QuadTree::insert(float x, float y, int value)
     return true;
 }
 
+int QuadTree::nearestTo(float x, float y) const
+{
+    if (!m_nw) {
+        return m_value;
+    }
+
+    int nearest = -1;
+    float dist = 1.0f / 0.0f;
+    m_nw->nearestTo(x, y, nearest, dist);
+    m_ne->nearestTo(x, y, nearest, dist);
+    m_sw->nearestTo(x, y, nearest, dist);
+    m_se->nearestTo(x, y, nearest, dist);
+    if (dist < BRUSHING_MAX_DIST)
+        return nearest;
+
+    return -1;
+}
+
+void QuadTree::nearestTo(float x, float y, int &nearest, float &dist) const
+{
+    if (m_nw) {
+        m_nw->nearestTo(x, y, nearest, dist);
+        m_ne->nearestTo(x, y, nearest, dist);
+        m_sw->nearestTo(x, y, nearest, dist);
+        m_se->nearestTo(x, y, nearest, dist);
+    } else {
+        float d = (m_x - x)*(m_x - x) + (m_y - y)*(m_y - y);
+        if (d < dist) {
+            nearest = m_value;
+            dist = d;
+        }
+    }
+}
+
 int QuadTree::query(float x, float y) const
 {
     if (!m_bounds.contains(x, y)) {
+        // There is no way we could find the point
         return -1;
     }
 
     if (m_nw) {
-        int q;
-
+        int q = -1;
         q = m_nw->query(x, y);
         if (q >= 0) return q;
         q = m_ne->query(x, y);
@@ -131,7 +169,7 @@ int QuadTree::query(float x, float y) const
         q = m_sw->query(x, y);
         if (q >= 0) return q;
         q = m_se->query(x, y);
-        if (q >= 0) return q;
+        return q;
     }
 
     return m_value;
@@ -579,7 +617,10 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
 void Scatterplot::hoverEnterEvent(QHoverEvent *event)
 {
     QPointF pos = event->posF();
-    m_brushedItem = m_quadtree->query(pos.x(), pos.y());
+    int item = m_quadtree->query(pos.x(), pos.y());
+    m_brushedItem = item < 0
+                  ? m_quadtree->nearestTo(pos.x(), pos.y())
+                  : item;
     emit itemInteractivelyBrushed(m_brushedItem);
 
     update();
@@ -588,7 +629,10 @@ void Scatterplot::hoverEnterEvent(QHoverEvent *event)
 void Scatterplot::hoverMoveEvent(QHoverEvent *event)
 {
     QPointF pos = event->posF();
-    m_brushedItem = m_quadtree->query(pos.x(), pos.y());
+    int item = m_quadtree->query(pos.x(), pos.y());
+    m_brushedItem = item < 0
+                  ? m_quadtree->nearestTo(pos.x(), pos.y())
+                  : item;
     emit itemInteractivelyBrushed(m_brushedItem);
 
     update();
