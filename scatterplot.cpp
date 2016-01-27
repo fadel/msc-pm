@@ -36,6 +36,7 @@ public:
     ~QuadTree();
     bool insert(float x, float y, int value);
     int query(float x, float y) const;
+    void query(const QRectF &rect, std::vector<int> &result) const;
     int nearestTo(float x, float y) const;
 
 private:
@@ -180,6 +181,22 @@ int QuadTree::query(float x, float y) const
     }
 
     return m_value;
+}
+
+void QuadTree::query(const QRectF &rect, std::vector<int> &result) const
+{
+    if (!m_bounds.intersects(rect)) {
+        return;
+    }
+
+    if (m_nw) {
+        m_nw->query(rect, result);
+        m_ne->query(rect, result);
+        m_sw->query(rect, result);
+        m_se->query(rect, result);
+    } else if (rect.contains(m_x, m_y)) {
+        result.push_back(m_value);
+    }
 }
 
 Scatterplot::Scatterplot(QQuickItem *parent)
@@ -680,22 +697,16 @@ bool Scatterplot::interactiveSelection(bool mergeSelection)
         m_selection.assign(m_selection.size(), false);
     }
 
-    m_sx.inverse();
-    m_sy.inverse();
-    QRectF selectionRect(QPointF(m_sx(m_dragOriginPos.x()),
-                                 m_sy(m_dragOriginPos.y())),
-                         QPointF(m_sx(m_dragCurrentPos.x()),
-                                 m_sy(m_dragCurrentPos.y())));
-    m_sy.inverse();
-    m_sx.inverse();
-
     bool anySelected = false;
-    for (arma::uword i = 0; i < m_xy.n_rows; i++) {
-        const arma::rowvec &row = m_xy.row(i);
-
-        if (selectionRect.contains(row[0], row[1])) {
-            m_selection[i] = true;
+    std::vector<int> selected;
+    m_quadtree->query(QRectF(m_dragOriginPos, m_dragCurrentPos), selected);
+    for (auto i: selected) {
+        m_selection[i] = true;
+    }
+    for (auto isSelected: m_selection) {
+        if (isSelected) {
             anySelected = true;
+            break;
         }
     }
 
