@@ -23,6 +23,8 @@ signals:
 public slots:
     void setMap(const arma::mat &Y);
     bool setType(int type);
+    void setCPSelection(const std::vector<bool> &cpSelection);
+    void setRPSelection(const std::vector<bool> &rpSelection);
 
 private:
     bool emitValuesChanged() const;
@@ -31,6 +33,13 @@ private:
     arma::mat m_X, m_Y, m_origY, m_prevY;
     arma::mat m_distX, m_distY, m_origDistY, m_prevDistY;
     arma::uvec m_cpIndices, m_rpIndices;
+
+    bool m_cpSelectionEmpty, m_rpSelectionEmpty;
+    std::vector<int> m_cpSelection, m_rpSelection;
+
+    // alpha(i, j): the influence CP j has on RP i 
+    void computeAlphas();
+    arma::mat m_alphas, m_influences;
 
     // TODO: one per implemented measure
     arma::vec m_values, m_prevValues, m_origValues;

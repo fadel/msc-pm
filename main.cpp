@@ -216,8 +216,8 @@ int main(int argc, char **argv)
     m->projectionObserver = &projectionObserver;
     QObject::connect(&manipulationHandler, SIGNAL(mapChanged(const arma::mat &)),
             m->projectionObserver, SLOT(setMap(const arma::mat &)));
-    QObject::connect(m->projectionObserver, SIGNAL(rpValuesChanged(const arma::vec &)),
-            m->rpPlot, SLOT(setColorData(const arma::vec &)));
+    QObject::connect(m->projectionObserver, SIGNAL(cpValuesChanged(const arma::vec &)),
+            m->cpPlot, SLOT(setColorData(const arma::vec &)));
     QObject::connect(m->projectionObserver, SIGNAL(rpValuesChanged(const arma::vec &)),
             m->splat, SLOT(setValues(const arma::vec &)));
     QObject::connect(m->projectionObserver, SIGNAL(cpValuesChanged(const arma::vec &)),
@@ -225,11 +225,17 @@ int main(int argc, char **argv)
     QObject::connect(m->projectionObserver, SIGNAL(rpValuesChanged(const arma::vec &)),
             m->rpBarChart, SLOT(setValues(const arma::vec &)));
 
+    // Recompute values whenever selection changes
+    QObject::connect(&cpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
+            &projectionObserver, SLOT(setCPSelection(const std::vector<bool> &)));
+    QObject::connect(&rpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
+            &projectionObserver, SLOT(setRPSelection(const std::vector<bool> &)));
+
     // General component set up
     m->cpPlot->setAcceptHoverEvents(true);
     m->cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
-    m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
-    m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton);
+    m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);
+    m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);
 
     m->setColormapColorScale(Main::ColorScaleContinuous);
     m->setCPPlotColorScale(Main::ColorScaleContinuous);
@@ -241,7 +247,6 @@ int main(int argc, char **argv)
     m->cpPlot->setAutoScale(false);
     m->rpPlot->setAutoScale(false);
     m->rpPlot->setGlyphSize(3.0f);
-    m->cpPlot->setColorData(labels(cpIndices), false);
 
     // This sets the initial CP configuration, triggering all the necessary
     // signals to set up the helper objects and visual components

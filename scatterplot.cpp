@@ -195,7 +195,7 @@ void QuadTree::query(const QRectF &rect, std::vector<int> &result) const
         m_ne->query(rect, result);
         m_sw->query(rect, result);
         m_se->query(rect, result);
-    } else if (rect.contains(m_x, m_y)) {
+    } else if (rect.contains(m_x, m_y) && m_value != -1) {
         result.push_back(m_value);
     }
 }
@@ -278,14 +278,18 @@ void Scatterplot::setXY(const arma::mat &xy)
 
 void Scatterplot::setColorData(const arma::vec &colorData, bool updateView)
 {
-    if (m_xy.n_rows > 0 && colorData.n_elem != m_xy.n_rows) {
+    if (m_xy.n_rows > 0
+        && (colorData.n_elem > 0 && colorData.n_elem != m_xy.n_rows)) {
         return;
     }
 
     m_colorData = colorData;
     emit colorDataChanged(m_colorData);
 
-    m_colorScale.setExtents(m_colorData.min(), m_colorData.max());
+    if (m_colorData.n_elem > 0) {
+        m_colorScale.setExtents(m_colorData.min(), m_colorData.max());
+    }
+
     m_shouldUpdateMaterials = true;
     if (updateView) {
         update();
@@ -623,8 +627,6 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
         if (m_brushedItem < 0 || event->button() == Qt::RightButton) {
             // Mouse clicked with no brush target; clear selection, if any
             m_selection.assign(m_selection.size(), false);
-            m_shouldUpdateMaterials = true;
-            update();
         } else {
             // Mouse clicked with brush target; set new selection or append to
             // current
@@ -633,11 +635,11 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
                 m_selection.assign(m_selection.size(), false);
             }
             m_selection[m_brushedItem] = true;
-            emit selectionInteractivelyChanged(m_selection);
-
-            m_shouldUpdateMaterials = true;
-            update();
         }
+        emit selectionInteractivelyChanged(m_selection);
+
+        m_shouldUpdateMaterials = true;
+        update();
         break;
     case INTERACTION_SELECTING:
         {
