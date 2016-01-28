@@ -187,270 +187,219 @@ ApplicationWindow {
         }
 
         // Options panel
-        RowLayout {
+        ColumnLayout {
             Layout.alignment: Qt.AlignTop | Qt.AlignLeft
 
-            ColumnLayout {
-                Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+            GroupBox {
+                title: "Control points"
+                checkable: true
+                __checkbox.onClicked: {
+                    cpPlot.visible = this.checked;
 
-                GroupBox {
-                    title: "Control points"
-                    checkable: true
-                    __checkbox.onClicked: {
-                        cpPlot.visible = this.checked;
-
-                        if (this.checked) {
-                            cpPlot.z = 0;
-                            rpPlot.z = 0;
-                        } else {
-                            cpPlot.z = 0;
-                            rpPlot.z = 1;
-                        }
-                    }
-
-                    GridLayout {
-                        columns: 2
-
-                        GroupBox {
-                            Layout.columnSpan: 2
-                            flat: true
-                            title: "Colors"
-
-                            GridLayout {
-                                columns: 2
-
-                                Label { text: "Map to:" }
-                                ComboBox {
-                                    id: cpPlotMetricComboBox
-                                    model: metricsModel
-                                }
-
-                                Label { text: "Color map:" }
-                                ComboBox {
-                                    id: cpPlotColormapCombo
-                                    model: colormapModel
-                                    onActivated: {
-                                        Main.setCPPlotColorScale(model.get(index).value);
-                                    }
-                                }
-                            }
-                        }
-
-                        Label { text: "Glyph size:" }
-                        SpinBox {
-                            id: cpGlyphSizeSpinBox
-                            maximumValue: 100
-                            minimumValue: 6
-                            value: cpPlot.glyphSize()
-                            decimals: 1
-                            stepSize: 1
-                            onValueChanged: cpPlot.setGlyphSize(this.value)
-                        }
-
-                        Label { text: "Opacity:" }
-                        Slider {
-                            id: cpPlotOpacitySlider
-                            tickmarksEnabled: true
-                            stepSize: 0.1
-                            maximumValue: 1
-                            minimumValue: 0
-                            value: cpPlot.opacity
-                            onValueChanged: cpPlot.opacity = this.value
-                        }
+                    if (this.checked) {
+                        cpPlot.z = 0;
+                        rpPlot.z = 0;
+                    } else {
+                        cpPlot.z = 0;
+                        rpPlot.z = 1;
                     }
                 }
 
-                GroupBox {
-                    title: "Regular points"
-                    checked: true
-                    checkable: true
-                    __checkbox.onClicked: {
-                        rpPlot.visible = this.checked;
-                    }
+                GridLayout {
+                    columns: 2
 
-                    GridLayout {
-                        columns: 2
+                    GroupBox {
+                        Layout.columnSpan: 2
+                        flat: true
+                        title: "Colors"
 
-                        GroupBox {
-                            Layout.columnSpan: 2
-                            flat: true
-                            title: "Colors"
+                        GridLayout {
+                            columns: 2
 
-                            GridLayout {
-                                columns: 2
+                            Label { text: "Map to:" }
+                            ComboBox {
+                                id: cpPlotMetricComboBox
+                                model: metricsModel
+                            }
 
-                                Label { text: "Map to:" }
-                                ComboBox {
-                                    id: rpPlotMetricComboBox
-                                    model: metricsModel
-                                }
-
-                                Label { text: "Color map:" }
-                                ComboBox {
-                                    id: rpPlotColormapCombo
-                                    model: colormapModel
-                                    onActivated: {
-                                        Main.setRPPlotColorScale(model.get(index).value);
-                                    }
+                            Label { text: "Color map:" }
+                            ComboBox {
+                                id: cpPlotColormapCombo
+                                model: colormapModel
+                                onActivated: {
+                                    Main.setCPPlotColorScale(model.get(index).value);
+                                    Main.setCPBarChartColorScale(model.get(index).value);
                                 }
                             }
                         }
+                    }
 
-                        Label { text: "Glyph size:" }
-                        SpinBox {
-                            id: rpGlyphSizeSpinBox
-                            maximumValue: 100
-                            minimumValue: 2
-                            value: rpPlot.glyphSize()
-                            decimals: 1
-                            stepSize: 1
-                            onValueChanged: rpPlot.setGlyphSize(this.value)
-                        }
+                    Label { text: "Glyph size:" }
+                    SpinBox {
+                        id: cpGlyphSizeSpinBox
+                        maximumValue: 100
+                        minimumValue: 6
+                        value: cpPlot.glyphSize()
+                        decimals: 1
+                        stepSize: 1
+                        onValueChanged: cpPlot.setGlyphSize(this.value)
+                    }
 
-                        Label { text: "Opacity:" }
-                        Slider {
-                            id: rpPlotOpacitySlider
-                            tickmarksEnabled: true
-                            stepSize: 0.1
-                            maximumValue: 1
-                            minimumValue: 0
-                            value: rpPlot.opacity
-                            onValueChanged: rpPlot.opacity = this.value
-                        }
+                    Label { text: "Opacity:" }
+                    Slider {
+                        id: cpPlotOpacitySlider
+                        tickmarksEnabled: true
+                        stepSize: 0.1
+                        maximumValue: 1
+                        minimumValue: 0
+                        value: cpPlot.opacity
+                        onValueChanged: cpPlot.opacity = this.value
                     }
                 }
             }
 
-            ColumnLayout {
-                Layout.alignment: Qt.AlignTop | Qt.AlignLeft
-
-                GroupBox {
-                    title: "Splat"
-                    checkable: true
-                    __checkbox.onClicked: {
-                        splat.visible = this.checked;
-                        colormap.visible = this.checked;
-                    }
-
-                    GridLayout {
-                        columns: 2
-
-                        GroupBox {
-                            Layout.columnSpan: 2
-                            flat: true
-                            title: "Colors"
-
-                            GridLayout {
-                                columns: 2
-
-                                Label { text: "Map to:" }
-                                ComboBox {
-                                    id: splatMetricComboBox
-                                    model: metricsModel
-                                }
-
-                                Label { text: "Color map:" }
-                                ComboBox {
-                                    id: splatColormapCombo
-                                    model: colormapModel
-                                    onActivated: {
-                                        Main.setSplatColorScale(model.get(index).value);
-                                    }
-                                }
-                            }
-                        }
-
-                        Label { text: "Alpha:" }
-                        SpinBox {
-                            id: alphaSpinBox
-                            maximumValue: 100
-                            minimumValue: 1
-                            value: splat.alpha()
-                            decimals: 2
-                            stepSize: 1
-                            onValueChanged: splat.setAlpha(this.value)
-                        }
-
-                        Label { text: "Beta:" }
-                        SpinBox {
-                            id: betaSpinBox
-                            maximumValue: 100
-                            minimumValue: 1
-                            value: splat.beta()
-                            decimals: 2
-                            stepSize: 1
-                            onValueChanged: splat.setBeta(this.value)
-                        }
-
-                        Label { text: "Opacity:" }
-                        Slider {
-                            id: splatOpacitySlider
-                            tickmarksEnabled: true
-                            stepSize: 0.1
-                            maximumValue: 1
-                            minimumValue: 0
-                            value: splat.opacity
-                            onValueChanged: splat.opacity = this.value
-                        }
-                    }
+            GroupBox {
+                title: "Regular points"
+                checked: true
+                checkable: true
+                __checkbox.onClicked: {
+                    rpPlot.visible = this.checked;
                 }
 
-                GroupBox {
-                    title: "Bar chart"
-                    checkable: true
-                    __checkbox.onClicked: {
-                        bottomView.visible = this.checked
-                    }
+                GridLayout {
+                    columns: 2
 
-                    GridLayout {
-                        columns: 2
+                    GroupBox {
+                        Layout.columnSpan: 2
+                        flat: true
+                        title: "Colors"
 
-                        Label { text: "Color map:" }
-                        ComboBox {
-                            id: barChartColormapCombo
-                            model: colormapModel
-                            onActivated: {
-                                Main.setCPBarChartColorScale(model.get(index).value);
-                                Main.setRPBarChartColorScale(model.get(index).value);
+                        GridLayout {
+                            columns: 2
+
+                            Label { text: "Map to:" }
+                            ComboBox {
+                                id: rpPlotMetricComboBox
+                                model: metricsModel
+                            }
+
+                            Label { text: "Color map:" }
+                            ComboBox {
+                                id: rpPlotColormapCombo
+                                model: colormapModel
+                                onActivated: {
+                                    Main.setRPPlotColorScale(model.get(index).value);
+                                    Main.setSplatColorScale(model.get(index).value);
+                                    Main.setRPBarChartColorScale(model.get(index).value);
+                                }
                             }
                         }
+                    }
+
+                    GroupBox {
+                        Layout.columnSpan: 2
+                        title: "Splat"
+                        checkable: true
+                        __checkbox.onClicked: {
+                            splat.visible = this.checked;
+                            colormap.visible = this.checked;
+                        }
+
+                        GridLayout {
+                            columns: 2
+
+                            Label { text: "Alpha:" }
+                            SpinBox {
+                                id: alphaSpinBox
+                                maximumValue: 100
+                                minimumValue: 1
+                                value: splat.alpha()
+                                decimals: 2
+                                stepSize: 1
+                                onValueChanged: splat.setAlpha(this.value)
+                            }
+
+                            Label { text: "Beta:" }
+                            SpinBox {
+                                id: betaSpinBox
+                                maximumValue: 100
+                                minimumValue: 1
+                                value: splat.beta()
+                                decimals: 2
+                                stepSize: 1
+                                onValueChanged: splat.setBeta(this.value)
+                            }
+
+                            Label { text: "Opacity:" }
+                            Slider {
+                                id: splatOpacitySlider
+                                tickmarksEnabled: true
+                                stepSize: 0.1
+                                maximumValue: 1
+                                minimumValue: 0
+                                value: splat.opacity
+                                onValueChanged: splat.opacity = this.value
+                            }
+                        }
+                    }
+
+                    Label { text: "Glyph size:" }
+                    SpinBox {
+                        id: rpGlyphSizeSpinBox
+                        maximumValue: 100
+                        minimumValue: 2
+                        value: rpPlot.glyphSize()
+                        decimals: 1
+                        stepSize: 1
+                        onValueChanged: rpPlot.setGlyphSize(this.value)
+                    }
+
+                    Label { text: "Opacity:" }
+                    Slider {
+                        id: rpPlotOpacitySlider
+                        tickmarksEnabled: true
+                        stepSize: 0.1
+                        maximumValue: 1
+                        minimumValue: 0
+                        value: rpPlot.opacity
+                        onValueChanged: rpPlot.opacity = this.value
                     }
                 }
+            }
 
-                GroupBox {
-                    Layout.fillWidth: true
-                    title: "Projection metrics"
+            GroupBox {
+                Layout.fillWidth: true
+                title: "Projection metrics"
 
-                    Column {
-                        ExclusiveGroup { id: wrtMetricsGroup }
+                Column {
+                    ExclusiveGroup { id: wrtMetricsGroup }
 
-                        RadioButton {
-                            id: currentMetricRadioButton
-                            text: "Current"
-                            exclusiveGroup: wrtMetricsGroup
-                            checked: true
-                            onClicked: Main.setObserverType(Main.ObserverCurrent)
-                        }
-                        RadioButton {
-                            id: diffPreviousMetricRadioButton
-                            text: "Diff. to previous"
-                            exclusiveGroup: wrtMetricsGroup
-                            onClicked: {
-                                if (!Main.setObserverType(Main.ObserverDiffPrevious)) {
-                                    this.checked = false;
-                                    currentMetricRadioButton.checked = true;
-                                }
+                    RadioButton {
+                        id: currentMetricRadioButton
+                        text: "Current"
+                        exclusiveGroup: wrtMetricsGroup
+                        checked: true
+                        onClicked: Main.setObserverType(Main.ObserverCurrent)
+                    }
+                    RadioButton {
+                        id: diffPreviousMetricRadioButton
+                        text: "Diff. to previous"
+                        exclusiveGroup: wrtMetricsGroup
+                        onClicked: {
+                            if (!Main.setObserverType(Main.ObserverDiffPrevious)) {
+                                this.checked = false;
+                                currentMetricRadioButton.checked = true;
                             }
                         }
-                        RadioButton {
-                            id: diffOriginalMetricRadioButton
-                            text: "Diff. to original"
-                            exclusiveGroup: wrtMetricsGroup
-                            onClicked: {
-                                if (!Main.setObserverType(Main.ObserverDiffOriginal)) {
-                                    this.checked = false;
-                                    currentMetricRadioButton.checked = true;
-                                }
+                    }
+                    RadioButton {
+                        id: diffOriginalMetricRadioButton
+                        text: "Diff. to original"
+                        exclusiveGroup: wrtMetricsGroup
+                        onClicked: {
+                            if (!Main.setObserverType(Main.ObserverDiffOriginal)) {
+                                this.checked = false;
+                                currentMetricRadioButton.checked = true;
                             }
                         }
                     }
