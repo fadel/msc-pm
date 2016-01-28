@@ -545,7 +545,11 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
             glyphOutlineNode->markDirty(QSGNode::DirtyMaterial);
 
             material = static_cast<QSGFlatColorMaterial *>(glyphNode->material());
-            material->setColor(m_colorScale.color(m_colorData[i]));
+            if (m_colorData.n_elem > 0) {
+                material->setColor(m_colorScale.color(m_colorData[i]));
+            } else {
+                material->setColor(QColor());
+            }
             glyphNode->markDirty(QSGNode::DirtyMaterial);
         }
 
@@ -615,7 +619,7 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
     switch (m_currentInteractionState) {
     case INTERACTION_NONE:
     case INTERACTION_SELECTED:
-        if (m_brushedItem < 0) {
+        if (m_brushedItem < 0 || event->button() == Qt::RightButton) {
             // Mouse clicked with no brush target; clear selection, if any
             m_selection.assign(m_selection.size(), false);
             m_shouldUpdateMaterials = true;
