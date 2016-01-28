@@ -104,11 +104,10 @@ bool ProjectionObserver::setType(int type)
 
     if (type != OBSERVER_DIFF_PREVIOUS || m_prevValues.n_elem != 0) {
         m_type = type;
-        if (m_cpSelectionEmpty && m_rpSelectionEmpty) {
-            return emitValuesChanged();
+        if (!m_cpSelectionEmpty || !m_rpSelectionEmpty) {
+            return true;
         }
-
-        return true;
+        return emitValuesChanged();
     }
 
     return false;
