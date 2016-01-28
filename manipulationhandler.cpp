@@ -15,7 +15,7 @@ ManipulationHandler::ManipulationHandler(const arma::mat &X,
     , m_rpIndices(X.n_rows - cpIndices.n_elem)
     , m_technique(TECHNIQUE_LAMP)
 {
-    NumericRange<unsigned long long> range(0, m_X.n_rows);
+    NumericRange<arma::uword> range(0, m_X.n_rows);
     std::set_symmetric_difference(range.cbegin(), range.cend(),
             m_cpIndices.cbegin(), m_cpIndices.cend(), m_rpIndices.begin());
 }
