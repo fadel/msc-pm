@@ -354,12 +354,19 @@ void BarChart::hoverLeaveEvent(QHoverEvent *event)
 
 void BarChart::mousePressEvent(QMouseEvent *event)
 {
-    QCursor dragCursor(Qt::SizeHorCursor);
-    setCursor(dragCursor);
+    if (event->button() == Qt::RightButton) {
+        m_dragStartPos = -1.0f;
+        m_dragLastPos  = -1.0f;
+        m_selection.assign(m_selection.size(), false);
+        emit selectionInteractivelyChanged(m_selection);
+    } else {
+        QCursor dragCursor(Qt::SizeHorCursor);
+        setCursor(dragCursor);
 
-    float pos = float(event->pos().x()) / width();
-    m_dragStartPos = pos;
-    m_dragLastPos  = pos;
+        float pos = float(event->pos().x()) / width();
+        m_dragStartPos = pos;
+        m_dragLastPos  = pos;
+    }
 
     m_shouldUpdateSelectionRect = true;
     update();
@@ -367,6 +374,10 @@ void BarChart::mousePressEvent(QMouseEvent *event)
 
 void BarChart::mouseMoveEvent(QMouseEvent *event)
 {
+    if (m_dragStartPos < 0.0f) {
+        return;
+    }
+
     float pos = float(event->pos().x()) / width();
     m_dragLastPos = clamp(pos, 0.0f, 1.0f);
 
@@ -376,6 +387,10 @@ void BarChart::mouseMoveEvent(QMouseEvent *event)
 
 void BarChart::mouseReleaseEvent(QMouseEvent *event)
 {
+    if (m_dragStartPos < 0.0f) {
+        return;
+    }
+
     unsetCursor();
 
     float pos = float(event->pos().x()) / width();
