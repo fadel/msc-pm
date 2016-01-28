@@ -10,6 +10,7 @@
 #include "geometry.h"
 
 // Glyphs settings
+static const QColor DEFAULT_GLYPH_COLOR(255, 255, 255);
 static const float DEFAULT_GLYPH_SIZE = 8.0f;
 static const qreal GLYPH_OPACITY = 1.0;
 static const qreal GLYPH_OPACITY_SELECTED = 1.0;
@@ -445,7 +446,7 @@ QSGNode *Scatterplot::newGlyphTree()
         glyphNode->setFlag(QSGNode::OwnsGeometry);
 
         material = new QSGFlatColorMaterial;
-        material->setColor(QColor());
+        material->setColor(DEFAULT_GLYPH_COLOR);
         glyphNode->setMaterial(material);
         glyphNode->setFlag(QSGNode::OwnsMaterial);
 
@@ -548,7 +549,7 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
             if (m_colorData.n_elem > 0) {
                 material->setColor(m_colorScale.color(m_colorData[i]));
             } else {
-                material->setColor(QColor());
+                material->setColor(DEFAULT_GLYPH_COLOR);
             }
             glyphNode->markDirty(QSGNode::DirtyMaterial);
         }
