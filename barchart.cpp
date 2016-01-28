@@ -37,7 +37,6 @@ BarChart::BarChart(QQuickItem *parent)
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
     //setAcceptedMouseButtons(Qt::LeftButton);
-    setAcceptHoverEvents(true);
 }
 
 BarChart::~BarChart()
@@ -55,6 +54,7 @@ void BarChart::setValues(const arma::vec &values)
 
     m_originalIndices.resize(m_values.n_elem);
     m_currentIndices.resize(m_values.n_elem);
+    setAcceptHoverEvents(m_values.n_elem > 0);
     if (m_values.n_elem > 0) {
         m_scale.setDomain(m_values.min(), m_values.max());
         m_colorScale.setExtents(m_values.min(), m_values.max());
@@ -105,6 +105,10 @@ void BarChart::brushItem(int item)
         m_brushedItem = item;
         emit itemBrushed(m_brushedItem);
     } else {
+        if (m_values.n_elem == 0 || item > m_values.n_elem - 1) {
+            return;
+        }
+
         m_brushedItem = m_currentIndices[item];
         emit itemBrushed(m_originalIndices[m_brushedItem]);
     }
