@@ -264,6 +264,7 @@ ApplicationWindow {
                 checkable: true
                 __checkbox.onClicked: {
                     rpPlot.visible = this.checked;
+                    splat.visible  = this.checked;
                 }
 
                 GridLayout {
@@ -298,12 +299,8 @@ ApplicationWindow {
 
                     GroupBox {
                         Layout.columnSpan: 2
+                        flat: true
                         title: "Splat"
-                        checkable: true
-                        __checkbox.onClicked: {
-                            splat.visible = this.checked;
-                            colormap.visible = this.checked;
-                        }
 
                         GridLayout {
                             columns: 2
@@ -417,8 +414,12 @@ ApplicationWindow {
                 result.saveToFile("screenshot-main.png");
             });
 
-            bottomView.grabToImage(function(result) {
-                result.saveToFile("screenshot-bottom.png");
+            bottomViewCP.grabToImage(function(result) {
+                result.saveToFile("screenshot-bottom-cp.png");
+            });
+
+            bottomViewRP.grabToImage(function(result) {
+                result.saveToFile("screenshot-bottom-rp.png");
             });
         }
     }
