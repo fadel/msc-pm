@@ -41,7 +41,7 @@ SOURCES += main.cpp \
     lamp.cpp \
     plmp.cpp \
     knn.cpp \
-    forceScheme.cpp \
+    forcescheme.cpp \
     measures.cpp \
     dist.cpp
 
