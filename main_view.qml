@@ -126,7 +126,8 @@ ApplicationWindow {
                         anchors.fill: parent
 
                         Label {
-                            width: parent.width
+                            anchors.fill: parent
+                            anchors.margins: 5
                             horizontalAlignment: Text.AlignRight
                             text: "Control points"
                         }
@@ -163,8 +164,8 @@ ApplicationWindow {
                         anchors.fill: parent
 
                         Label {
+                            anchors.fill: parent
                             anchors.margins: 5
-                            width: parent.width
                             horizontalAlignment: Text.AlignRight
                             text: "Regular points"
                         }
@@ -429,7 +430,6 @@ ApplicationWindow {
         text: "&Save data"
         shortcut: "Ctrl+S"
         onTriggered: {
-            console.log("Saving control points' map...")
             Main.saveData()
         }
     }
@@ -454,6 +454,10 @@ ApplicationWindow {
 
         Component.onCompleted: {
             this.append({
+                "value": Main.ColorScaleRainbow,
+                "text": "Rainbow"
+            });
+            this.append({
                 "value": Main.ColorScaleContinuous,
                 "text": "Continuous"
             });
@@ -464,10 +468,6 @@ ApplicationWindow {
             this.append({
                 "value": Main.ColorScaleDivergent,
                 "text": "Divergent"
-            });
-            this.append({
-                "value": Main.ColorScaleRainbow,
-                "text": "Rainbow"
             });
         }
     }

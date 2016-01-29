@@ -245,12 +245,12 @@ int main(int argc, char **argv)
     m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);
     m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);
 
-    m->setColormapColorScale(Main::ColorScaleContinuous);
-    m->setCPPlotColorScale(Main::ColorScaleContinuous);
-    m->setRPPlotColorScale(Main::ColorScaleContinuous);
-    m->setSplatColorScale(Main::ColorScaleContinuous);
-    m->setCPBarChartColorScale(Main::ColorScaleContinuous);
-    m->setRPBarChartColorScale(Main::ColorScaleContinuous);
+    m->setColormapColorScale(Main::ColorScaleRainbow);
+    m->setCPPlotColorScale(Main::ColorScaleRainbow);
+    m->setRPPlotColorScale(Main::ColorScaleRainbow);
+    m->setSplatColorScale(Main::ColorScaleRainbow);
+    m->setCPBarChartColorScale(Main::ColorScaleRainbow);
+    m->setRPBarChartColorScale(Main::ColorScaleRainbow);
 
     m->cpPlot->setAutoScale(false);
     m->rpPlot->setAutoScale(false);
