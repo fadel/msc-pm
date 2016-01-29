@@ -113,7 +113,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // Sort indices so some operations become easier later
+    // Sort indices (some operations become easier later)
     arma::uvec cpSortedIndices = arma::sort_index(cpIndices);
     cpIndices = cpIndices(cpSortedIndices);
     Ys = Ys.rows(cpSortedIndices);

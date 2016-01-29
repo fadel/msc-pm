@@ -306,7 +306,7 @@ ApplicationWindow {
                         GridLayout {
                             columns: 2
 
-                            Label { text: "Alpha:" }
+                            Label { text: "Blur (α):" }
                             SpinBox {
                                 id: alphaSpinBox
                                 maximumValue: 100
@@ -317,7 +317,7 @@ ApplicationWindow {
                                 onValueChanged: splat.setAlpha(this.value)
                             }
 
-                            Label { text: "Beta:" }
+                            Label { text: "Radius (β):" }
                             SpinBox {
                                 id: betaSpinBox
                                 maximumValue: 100
