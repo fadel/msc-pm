@@ -1,6 +1,7 @@
 #include <cmath>
 #include <iostream>
 #include <numeric>
+#include <random>
 #include <string>
 
 #include <QApplication>
@@ -21,6 +22,8 @@
 #include "brushinghandler.h"
 #include "projectionobserver.h"
 
+static const int RNG_SEED = 1;
+
 static QObject *mainProvider(QQmlEngine *engine, QJSEngine *scriptEngine)
 {
     Q_UNUSED(engine)
@@ -32,7 +35,12 @@ static QObject *mainProvider(QQmlEngine *engine, QJSEngine *scriptEngine)
 arma::uvec extractCPs(const arma::mat &X)
 {
     int numCPs = (int) (3 * sqrt(X.n_rows));
-    return arma::randi<arma::uvec>(numCPs, arma::distr_param(0, X.n_rows - 1));
+    arma::uvec cpIndices(numCPs);
+    std::iota(cpIndices.begin(), cpIndices.end(), 0);
+    std::shuffle(cpIndices.begin(),
+                 cpIndices.end(),
+                 std::default_random_engine(RNG_SEED));
+    return cpIndices;
 }
 
 int main(int argc, char **argv)
