@@ -16,11 +16,11 @@ public:
         friend class NumericRange;
     public:
         typedef iterator self_type;
-	typedef T value_type;
-	typedef T& reference;
-	typedef T* pointer;
-	typedef std::bidirectional_iterator_tag iterator_category;
-	typedef int difference_type;
+        typedef T value_type;
+        typedef T& reference;
+        typedef T* pointer;
+        typedef std::bidirectional_iterator_tag iterator_category;
+        typedef int difference_type;
 
         iterator(const T &first): m_value(first) {}
 
