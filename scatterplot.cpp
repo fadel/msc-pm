@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 #include <QSGGeometryNode>
 #include <QSGSimpleRectNode>
@@ -139,7 +140,7 @@ int QuadTree::nearestTo(float x, float y) const
         if (q >= 0) return q;
     }
 
-    float dist = 1.0f / 0.0f;
+    float dist = std::numeric_limits<float>::infinity();
     nearestTo(x, y, q, dist);
     if (dist < BRUSHING_MAX_DIST * BRUSHING_MAX_DIST)
         return q;

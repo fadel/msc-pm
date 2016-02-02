@@ -1,6 +1,7 @@
 #include "mp.h"
 
 #include <algorithm>
+#include <limits>
 
 static const double EPSILON = 1e-3;
 
@@ -18,7 +19,7 @@ arma::mat mp::forceScheme(const arma::mat &D,
         i[k] = j[k] = k;
     }
 
-    double prevDeltaSum = 1. / 0.;
+    double prevDeltaSum = std::numeric_limits<double>::infinity();
     for (size_t iter = 0; iter < maxIter; iter++) {
         double deltaSum = 0;
 
