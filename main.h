@@ -128,11 +128,11 @@ public slots:
 private:
     Main(QObject *parent = 0)
         : QObject(parent)
-        , COLOR_SCALE_CATEGORICAL{
+        , COLOR_SCALE_CATEGORICAL{{
             QColor("#1f77b4"), QColor("#ff7f0e"), QColor("#2ca02c"),
             QColor("#d62728"), QColor("#9467bd"), QColor("#8c564b"),
             QColor("#e377c2"), QColor("#17becf"), QColor("#7f7f7f"),
-          }
+          }}
         , COLOR_SCALE_CONTINUOUS{ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS)}
         , COLOR_SCALE_DIVERGENT{ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE)}
         , COLOR_SCALE_RAINBOW{ContinuousColorScale::builtin(ContinuousColorScale::RAINBOW)}

@@ -161,16 +161,11 @@ QQuickFramebufferObject::Renderer *VoronoiSplat::createRenderer() const
 }
 
 VoronoiSplatRenderer::VoronoiSplatRenderer()
-    : m_transform{ 
-        { 0.0f,  0.0f,  0.0f,  0.0f },
-        { 0.0f,  0.0f,  0.0f,  0.0f },
-        { 0.0f,  0.0f,  0.0f,  0.0f },
-        { 0.0f,  0.0f,  0.0f,  1.0f },
-      }
-    , m_sx(0.0f, 1.0f, 0.0f, 1.0f)
+    : m_sx(0.0f, 1.0f, 0.0f, 1.0f)
     , m_sy(0.0f, 1.0f, 0.0f, 1.0f)
     , gl(QOpenGLContext::currentContext())
 {
+    std::fill(&m_transform[0][0], &m_transform[0][0] + 16, 0.0f);
     m_transform[3][3] = 1.0f;
 
     gl.glGenFramebuffers(1, &m_FBO);

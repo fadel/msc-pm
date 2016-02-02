@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdlib>
 #include <cmath>
 #include <cstring>
@@ -31,8 +32,8 @@ int skelft2DSize(int nx, int ny) {
         pow(2.0f, int(log(float(nx)) / log(2.0f) +
                       1))); // Find minimal pow of 2 which fits the input image
     int dy = (int) floor(pow(2.0f, int(log(float(ny)) / log(2.0f) + 1)));
-    int fboSize = max(dx, dy); // DT/FT/skeleton image size (pow of 2, should be
-                               // able to contain the input image)
+    int fboSize = std::max(dx, dy); // DT/FT/skeleton img size (pow of 2, should
+                                    // be able to contain the input image)
 
     return fboSize;
 }
@@ -184,7 +185,7 @@ void skelft2DSave(short *outputFT, int dx, int dy, const char *f) {
 
     int size = dx * dy;
     int bb = 0;
-    float range = max(dx, dy) / 255.0f;
+    float range = std::max(dx, dy) / 255.0f;
     for (short *v = outputFT, *vend = outputFT + size; v < vend; ++v) {
         short val = *v;
         buf[bb++] = (unsigned char) (val / range);

@@ -1,7 +1,7 @@
 #include "colorscale.h"
 
 ColorScale::ColorScale(const QColor &firstColor, const QColor &lastColor)
-    : m_colors{firstColor, lastColor}
+    : m_colors{{firstColor, lastColor}}
 {
     setExtents(0, 1);
 }
