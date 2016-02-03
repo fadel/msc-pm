@@ -2,8 +2,22 @@ QT += qml quick widgets
 
 CONFIG += qt debug
 
-QMAKE_CXXFLAGS += -std=c++11 -fopenmp
-QMAKE_LIBS += -larmadillo -fopenmp
+win32 {
+    ARMADILLO_DIR = "C:\Armadillo"
+
+    QMAKE_LIBDIR += "$$ARMADILLO_DIR\lib"
+    DEFINES += ARMA_USE_LAPACK ARMA_USE_BLAS
+    INCLUDEPATH += "$$ARMADILLO_DIR\include"
+    LIBS += -llapack_win64_MT -lblas_win64_MT
+}
+
+msvc:QMAKE_CXXFLAGS += /openmp
+
+g++ {
+    QMAKE_CXXFLAGS += -std=c++11 -fopenmp
+    LIBS += -larmadillo -fopenmp
+}
+
 HEADERS += main.h \
     colorscale.h \
     continuouscolorscale.h \
@@ -47,26 +61,57 @@ SOURCES += main.cpp \
 
 OTHER_FILES += skelft.cu
 
-# Cuda settings
+# CUDA settings
 CUDA_SOURCES += skelft.cu
-CUDA_DIR = "/opt/cuda"
+CUDA_LIBS = cuda cudart
 CUDA_ARCH = sm_30
+NVCC_LIBS = $$join(CUDA_LIBS, " -l", "-l", "")
 NVCC_OPTIONS += --use_fast_math
-SYSTEM_TYPE = 64  # Either 64 or empty
-INCLUDEPATH += $$CUDA_DIR/include
-QMAKE_LIBDIR += $$CUDA_DIR/lib$$SYSTEM_TYPE
-LIBS += -lcuda -lcudart
+
+win32 {
+    CUDA_DIR = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5"
+    CUDA_INCLUDEPATH += $$shell_quote($$CUDA_DIR\include)
+    NVCC = $$CUDA_DIR\bin\nvcc
+    QMAKE_LIBDIR += "$$CUDA_DIR\lib\x64"
+    LIBS += cuda.lib cudart.lib
+}
+
+unix {
+    CUDA_DIR = "/opt/cuda"
+    CUDA_INCLUDEPATH += $$CUDA_DIR/include
+    NVCC = $$CUDA_DIR/bin/nvcc
+    QMAKE_LIBDIR += $$CUDA_DIR/lib64
+    LIBS += $$NVCC_LIBS
+}
+
+#macx {
+#    CUDA_DIR = "/Developer/GPU Computing"
+#    CUDA_INCLUDEPATH += $$shell_quote($$CUDA_DIR/shared/inc)
+#    CUDA_INCLUDEPATH += $$shell_quote($$CUDA_DIR/C/common/inc)
+#    NVCC = /usr/local/cuda/bin/nvcc
+#    QMAKE_LIBDIR += $$CUDA_DIR/CUDALibraries/common/lib
+#    LIBS += $$NVCC_LIBS
+#}
+
+NVCC_INCS = $$join(CUDA_INCLUDEPATH, " -I", "-I", "")
+SYSTEM_TYPE = 64
 
 CONFIG(debug, debug|release) {
+    # msvc: use /MDd, just as Qt does
+    msvc:NVCC_OPTIONS += -Xcompiler "/MDd"
+
     cuda_dbg.input = CUDA_SOURCES
     cuda_dbg.output = ${QMAKE_FILE_BASE}_cuda.o
-    cuda_dbg.commands = $$CUDA_DIR/bin/nvcc -D_DEBUG -g $$NVCC_OPTIONS -I$$INCLUDEPATH $$LIBS --machine $$SYSTEM_TYPE -arch=$$CUDA_ARCH -c -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_NAME}
+    cuda_dbg.commands = $$NVCC -D_DEBUG -g $$NVCC_OPTIONS $$NVCC_INCS $$NVCC_LIBS --machine $$SYSTEM_TYPE -arch=$$CUDA_ARCH -c -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_NAME}
     cuda_dbg.dependency_type = TYPE_C
     QMAKE_EXTRA_COMPILERS += cuda_dbg
 } else {
+    # msvc: use /MD, just as Qt does
+    msvc:NVCC_OPTIONS += -Xcompiler "/MD"
+
     cuda.input = CUDA_SOURCES
     cuda.output = ${QMAKE_FILE_BASE}_cuda.o
-    cuda.commands = $$CUDA_DIR/bin/nvcc $$NVCC_OPTIONS -I$$INCLUDEPATH $$LIBS --machine $$SYSTEM_TYPE -arch=$$CUDA_ARCH -c -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_NAME}
+    cuda.commands = $NVCC $$NVCC_OPTIONS $$NVCC_INCS $$NVCC_LIBS --machine $$SYSTEM_TYPE -arch=$$CUDA_ARCH -c -o ${QMAKE_FILE_OUT} ${QMAKE_FILE_NAME}
     cuda.dependency_type = TYPE_C
     QMAKE_EXTRA_COMPILERS += cuda
 }
