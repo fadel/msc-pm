@@ -90,13 +90,13 @@ private:
     std::vector<bool> m_selection;
     int m_brushedItem;
 
-    enum InteractionState {
-        INTERACTION_NONE,
-        INTERACTION_SELECTING,
-        INTERACTION_SELECTED,
-        INTERACTION_BEGIN_MOVING,
-        INTERACTION_MOVING
-    } m_currentInteractionState;
+    enum State {
+        STATE_NONE,
+        STATE_SELECTING,
+        STATE_SELECTED,
+        STATE_BEGIN_MOVING,
+        STATE_MOVING
+    } m_interactionState;
 
     QPointF m_dragOriginPos, m_dragCurrentPos;
 
