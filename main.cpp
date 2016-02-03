@@ -124,7 +124,7 @@ int main(int argc, char **argv)
     // Set up multisampling
     QSurfaceFormat fmt;
     fmt.setRenderableType(QSurfaceFormat::OpenGL);
-    fmt.setVersion(4, 5);
+    //fmt.setVersion(4, 5);
     fmt.setRedBufferSize(8);
     fmt.setGreenBufferSize(8);
     fmt.setBlueBufferSize(8);
