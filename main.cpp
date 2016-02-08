@@ -74,7 +74,11 @@ int main(int argc, char **argv)
 
     // Load dataset
     Main *m = Main::instance();
-    m->loadDataset(args[0].toStdString());
+    if (!m->loadDataset(args[0].toStdString())) {
+        std::cerr << "Could not load dataset.\n";
+        return 1;
+    }
+
     arma::mat X = m->X();
     arma::vec labels = m->labels();
 
@@ -91,6 +95,7 @@ int main(int argc, char **argv)
         m->setIndicesSavePath(indicesFilename);
         cpIndices.load(indicesFilename.toStdString(), arma::raw_ascii);
     } else {
+        std::cerr << "No indices file, generating indices...\n";
         cpIndices = extractCPs(X);
     }
 
@@ -104,6 +109,7 @@ int main(int argc, char **argv)
         m->setCPSavePath(cpFilename);
         Ys.load(cpFilename.toStdString(), arma::raw_ascii);
     } else {
+        std::cerr << "No CP file, generating initial projection.\n";
         Ys.set_size(cpIndices.n_elem, 2);
         mp::forceScheme(mp::dist(X.rows(cpIndices)), Ys);
     }
@@ -240,8 +246,15 @@ int main(int argc, char **argv)
             &projectionObserver, SLOT(setRPSelection(const std::vector<bool> &)));
 
     // General component set up
+    m->cpPlot->setAutoScale(false);
     m->cpPlot->setAcceptHoverEvents(true);
     m->cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
+
+    m->rpPlot->setGlyphSize(3.0f);
+    m->rpPlot->setAutoScale(false);
+    m->rpPlot->setAcceptHoverEvents(true);
+    m->rpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
+
     m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);
     m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);
 
@@ -252,9 +265,6 @@ int main(int argc, char **argv)
     m->setCPBarChartColorScale(Main::ColorScaleRainbow);
     m->setRPBarChartColorScale(Main::ColorScaleRainbow);
 
-    m->cpPlot->setAutoScale(false);
-    m->rpPlot->setAutoScale(false);
-    m->rpPlot->setGlyphSize(3.0f);
 
     // This sets the initial CP configuration, triggering all the necessary
     // signals to set up the helper objects and visual components
