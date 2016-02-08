@@ -13,7 +13,7 @@ win32 {
 
 msvc:QMAKE_CXXFLAGS += /openmp
 
-g++ {
+unix {
     QMAKE_CXXFLAGS += -std=c++11 -fopenmp
     LIBS += -larmadillo -fopenmp
 }
@@ -63,9 +63,8 @@ OTHER_FILES += skelft.cu
 
 # CUDA settings
 CUDA_SOURCES += skelft.cu
-CUDA_LIBS = cuda cudart
 CUDA_ARCH = sm_30
-NVCC_LIBS = $$join(CUDA_LIBS, " -l", "-l", "")
+NVCC_LIBS = -lcuda -lcudart
 NVCC_OPTIONS += --use_fast_math
 
 win32 {
