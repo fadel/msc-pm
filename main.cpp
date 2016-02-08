@@ -246,14 +246,11 @@ int main(int argc, char **argv)
             &projectionObserver, SLOT(setRPSelection(const std::vector<bool> &)));
 
     // General component set up
+    m->cpPlot->setDragEnabled(true);
     m->cpPlot->setAutoScale(false);
-    m->cpPlot->setAcceptHoverEvents(true);
-    m->cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
-
     m->rpPlot->setGlyphSize(3.0f);
     m->rpPlot->setAutoScale(false);
-    m->rpPlot->setAcceptHoverEvents(true);
-    m->rpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
+    m->setSelectCPs();
 
     m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);
     m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);

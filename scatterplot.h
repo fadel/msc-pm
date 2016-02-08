@@ -17,6 +17,8 @@ class Scatterplot
 {
     Q_OBJECT
 public:
+    static const int PADDING = 20;
+
     Scatterplot(QQuickItem *parent = 0);
 
     arma::mat XY() const;
@@ -31,7 +33,8 @@ public:
 
     Q_INVOKABLE float glyphSize() const { return m_glyphSize; }
 
-    static const int PADDING = 20;
+    void setDragEnabled(bool enabled) { m_dragEnabled = enabled; }
+    bool isDragEnabled() const { return m_dragEnabled; }
 
 signals:
     void xyChanged(const arma::mat &XY) const;
@@ -97,6 +100,7 @@ private:
         STATE_BEGIN_MOVING,
         STATE_MOVING
     } m_interactionState;
+    bool m_dragEnabled;
 
     QPointF m_dragOriginPos, m_dragCurrentPos;
 

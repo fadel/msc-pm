@@ -58,6 +58,22 @@ public:
     arma::mat X() const { return m_dataset.cols(0, m_dataset.n_cols - 2); }
     arma::vec labels() const { return m_dataset.col(m_dataset.n_cols - 1); }
 
+    Q_INVOKABLE void setSelectRPs() {
+        cpPlot->setAcceptedMouseButtons(Qt::NoButton);
+        cpPlot->setAcceptHoverEvents(false);
+
+        rpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
+        rpPlot->setAcceptHoverEvents(true);
+    }
+
+    Q_INVOKABLE void setSelectCPs() {
+        rpPlot->setAcceptedMouseButtons(Qt::NoButton);
+        rpPlot->setAcceptHoverEvents(false);
+
+        cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
+        cpPlot->setAcceptHoverEvents(true);
+    }
+
     enum ObserverType {
         ObserverCurrent      = ProjectionObserver::OBSERVER_CURRENT,
         ObserverDiffPrevious = ProjectionObserver::OBSERVER_DIFF_PREVIOUS,

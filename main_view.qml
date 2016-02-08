@@ -26,6 +26,12 @@ ApplicationWindow {
             MenuItem { action: screenshotAction }
             MenuItem { action: quitAction }
         }
+
+        Menu {
+            title: "Select"
+            MenuItem { action: selectRPsAction }
+            MenuItem { action: selectCPsAction }
+        }
     }
 
     statusBar: StatusBar {
@@ -62,6 +68,7 @@ ApplicationWindow {
                         objectName: "splat"
                         x: parent.x
                         y: parent.y
+                        z: 0
                         anchors.fill: parent
                     }
 
@@ -70,6 +77,7 @@ ApplicationWindow {
                         objectName: "rpPlot"
                         x: parent.x
                         y: parent.y
+                        z: 1
                         anchors.fill: parent
                     }
 
@@ -78,6 +86,7 @@ ApplicationWindow {
                         objectName: "cpPlot"
                         x: parent.x
                         y: parent.y
+                        z: 2
                         anchors.fill: parent
                     }
 
@@ -441,6 +450,26 @@ ApplicationWindow {
         onTriggered: Qt.quit()
     }
 
+    Action {
+        id: selectRPsAction
+        text: "&Regular points"
+        shortcut: "R"
+        onTriggered: {
+            Main.setSelectRPs();
+            statusLabel.text = "Selecting regular points";
+        }
+    }
+
+    Action {
+        id: selectCPsAction
+        text: "&Control points"
+        shortcut: "C"
+        onTriggered: {
+            Main.setSelectCPs();
+            statusLabel.text = "Selecting control points";
+        }
+    }
+
     ListModel {
         id: metricsModel
 
@@ -453,6 +482,7 @@ ApplicationWindow {
         id: colormapModel
 
         Component.onCompleted: {
+            // Data has to be fed this way; otherwise "value" is not correct
             this.append({
                 "value": Main.ColorScaleRainbow,
                 "text": "Rainbow"

@@ -210,6 +210,7 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     , m_sy(0, 1, 0, 1)
     , m_brushedItem(-1)
     , m_interactionState(STATE_NONE)
+    , m_dragEnabled(false)
     , m_shouldUpdateGeometry(false)
     , m_shouldUpdateMaterials(false)
     , m_quadtree(0)
@@ -584,7 +585,7 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
     switch (m_interactionState) {
     case STATE_NONE:
     case STATE_SELECTED:
-        if (event->modifiers() == Qt::ShiftModifier) {
+        if (event->modifiers() == Qt::ShiftModifier && m_dragEnabled) {
             m_interactionState = STATE_BEGIN_MOVING;
         }
         m_dragOriginPos = event->localPos();
