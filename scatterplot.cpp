@@ -641,7 +641,7 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
     case STATE_BRUSHING:
         // Mouse clicked with brush target; set new selection or append to
         // current
-        if (m_brushedItem == -1 || !mergeSelection) {
+        if (!mergeSelection) {
             m_selection.assign(m_selection.size(), false);
         }
         if (m_brushedItem == -1) {
