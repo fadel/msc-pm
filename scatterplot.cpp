@@ -648,7 +648,7 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
             m_interactionState = STATE_NONE;
         } else {
             m_interactionState = STATE_SELECTED;
-            m_selection[m_brushedItem] = true;
+            m_selection[m_brushedItem] = !m_selection[m_brushedItem];
         }
 
         emit selectionInteractivelyChanged(m_selection);
