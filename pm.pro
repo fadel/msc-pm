@@ -28,6 +28,8 @@ HEADERS += main.h \
     colormap.h \
     historygraph.h \
     barchart.h \
+    transitioncontrol.h \
+    rewindworkerthread.h \
     manipulationhandler.h \
     mapscalehandler.h \
     numericrange.h \
@@ -37,6 +39,7 @@ HEADERS += main.h \
     skelft.h \
     skelftkernel.h \
     mp.h
+
 SOURCES += main.cpp \
     colorscale.cpp \
     continuouscolorscale.cpp \
@@ -46,6 +49,8 @@ SOURCES += main.cpp \
     colormap.cpp \
     historygraph.cpp \
     barchart.cpp \
+    transitioncontrol.cpp \
+    rewindworkerthread.cpp \
     manipulationhandler.cpp \
     mapscalehandler.cpp \
     selectionhandler.cpp \

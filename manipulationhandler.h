@@ -27,9 +27,10 @@ signals:
 
 public slots:
     void setCP(const arma::mat &Ys);
+    void setRewind(double t);
 
 private:
-    arma::mat m_X, m_Y;
+    arma::mat m_X, m_Y, m_prevY, m_firstY;
     arma::uvec m_cpIndices, m_rpIndices;
     Technique m_technique;
 };

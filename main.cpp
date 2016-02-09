@@ -16,6 +16,7 @@
 #include "voronoisplat.h"
 #include "barchart.h"
 #include "colormap.h"
+#include "transitioncontrol.h"
 #include "manipulationhandler.h"
 #include "mapscalehandler.h"
 #include "selectionhandler.h"
@@ -142,6 +143,7 @@ int main(int argc, char **argv)
     qmlRegisterType<BarChart>("PM", 1, 0, "BarChart");
     qmlRegisterType<VoronoiSplat>("PM", 1, 0, "VoronoiSplat");
     qmlRegisterType<Colormap>("PM", 1, 0, "Colormap");
+    qmlRegisterType<TransitionControl>("PM", 1, 0, "TransitionControl");
     qmlRegisterSingletonType<Main>("PM", 1, 0, "Main", mainProvider);
 
     QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
@@ -153,6 +155,7 @@ int main(int argc, char **argv)
     m->splat = engine.rootObjects()[0]->findChild<VoronoiSplat *>("splat");
     m->cpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("cpBarChart");
     m->rpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("rpBarChart");
+    TransitionControl *plotTC = engine.rootObjects()[0]->findChild<TransitionControl *>("plotTC");
 
     // Keep track of the current cp (in order to save them later, if requested)
     QObject::connect(m->cpPlot, SIGNAL(xyChanged(const arma::mat &)),
@@ -171,6 +174,8 @@ int main(int argc, char **argv)
             m->rpPlot, SLOT(setXY(const arma::mat &)));
     QObject::connect(&manipulationHandler, SIGNAL(rpChanged(const arma::mat &)),
             m->splat, SLOT(setSites(const arma::mat &)));
+    QObject::connect(plotTC, SIGNAL(tChanged(double)),
+            &manipulationHandler, SLOT(setRewind(double)));
 
     // Keep both scatterplots and the splat scaled equally and relative to the
     // full plot
@@ -246,10 +251,12 @@ int main(int argc, char **argv)
             &projectionObserver, SLOT(setRPSelection(const std::vector<bool> &)));
 
     // General component set up
+    plotTC->setAcceptedMouseButtons(Qt::MiddleButton);
     m->cpPlot->setDragEnabled(true);
     m->cpPlot->setAutoScale(false);
     m->rpPlot->setGlyphSize(3.0f);
     m->rpPlot->setAutoScale(false);
+    m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);
     m->setSelectCPs();
 
     m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);

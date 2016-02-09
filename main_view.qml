@@ -109,6 +109,15 @@ ApplicationWindow {
                             color: "transparent"
                         }
                     }
+
+                    TransitionControl {
+                        id: plotTC
+                        objectName: "plotTC"
+                        x: parent.x
+                        y: parent.y
+                        z: 3
+                        anchors.fill: parent
+                    }
                 }
 
                 Rectangle {
