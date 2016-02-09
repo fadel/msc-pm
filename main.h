@@ -62,7 +62,7 @@ public:
         cpPlot->setAcceptedMouseButtons(Qt::NoButton);
         cpPlot->setAcceptHoverEvents(false);
 
-        rpPlot->setAcceptedMouseButtons(Qt::LeftButton);
+        rpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
         rpPlot->setAcceptHoverEvents(true);
     }
 
@@ -70,7 +70,7 @@ public:
         rpPlot->setAcceptedMouseButtons(Qt::NoButton);
         rpPlot->setAcceptHoverEvents(false);
 
-        cpPlot->setAcceptedMouseButtons(Qt::LeftButton);
+        cpPlot->setAcceptedMouseButtons(Qt::LeftButton | Qt::MiddleButton | Qt::RightButton);
         cpPlot->setAcceptHoverEvents(true);
     }
 

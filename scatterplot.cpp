@@ -31,9 +31,6 @@ static const QColor CROSSHAIR_COLOR2(0, 0, 0);
 // Selection settings
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
-// The mouse button used for interaction
-static const Qt::MouseButton MOUSE_BUTTON = Qt::LeftButton;
-
 class QuadTree
 {
 public:
@@ -585,10 +582,6 @@ void Scatterplot::updateBrush(QSGNode *node)
 
 void Scatterplot::mousePressEvent(QMouseEvent *event)
 {
-    if (!(event->buttons() & MOUSE_BUTTON)) {
-        return;
-    }
-
     switch (m_interactionState) {
     case STATE_NONE:
     case STATE_SELECTED:
@@ -609,10 +602,6 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
 
 void Scatterplot::mouseMoveEvent(QMouseEvent *event)
 {
-    if (!(event->buttons() & MOUSE_BUTTON)) {
-        return;
-    }
-
     switch (m_interactionState) {
     case STATE_SELECTING:
         m_dragCurrentPos = event->localPos();
@@ -634,13 +623,6 @@ void Scatterplot::mouseMoveEvent(QMouseEvent *event)
 
 void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (event->buttons() & MOUSE_BUTTON) {
-        // From the docs: for mouse release events, buttons() excludes the
-        // button that caused the event. Therefore, we bail out if the button is
-        // included in buttons().
-        return;
-    }
-
     switch (m_interactionState) {
     case STATE_NONE:
     case STATE_SELECTED:
