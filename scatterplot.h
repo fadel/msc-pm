@@ -95,9 +95,9 @@ private:
 
     enum State {
         STATE_NONE,
+        STATE_BRUSHING,
         STATE_SELECTING,
         STATE_SELECTED,
-        STATE_BEGIN_MOVING,
         STATE_MOVING
     } m_interactionState;
     bool m_dragEnabled;
@@ -106,8 +106,8 @@ private:
 
     bool m_shouldUpdateGeometry, m_shouldUpdateMaterials;
 
-    void updateQuadTree();
     QuadTree *m_quadtree;
+    void updateQuadTree();
 };
 
 #endif // SCATTERPLOT_H
