@@ -24,6 +24,9 @@ signals:
     void cpChanged(const arma::mat &cpY) const;
     void rpChanged(const arma::mat &rpY) const;
     void mapChanged(const arma::mat &Y) const;
+    void cpRewound(const arma::mat &cpY) const;
+    void rpRewound(const arma::mat &rpY) const;
+    void mapRewound(const arma::mat &Y) const;
 
 public slots:
     void setCP(const arma::mat &Ys);

@@ -174,8 +174,6 @@ int main(int argc, char **argv)
             m->rpPlot, SLOT(setXY(const arma::mat &)));
     QObject::connect(&manipulationHandler, SIGNAL(rpChanged(const arma::mat &)),
             m->splat, SLOT(setSites(const arma::mat &)));
-    QObject::connect(plotTC, SIGNAL(tChanged(double)),
-            &manipulationHandler, SLOT(setRewind(double)));
 
     // Keep both scatterplots and the splat scaled equally and relative to the
     // full plot
@@ -249,6 +247,23 @@ int main(int argc, char **argv)
             &projectionObserver, SLOT(setCPSelection(const std::vector<bool> &)));
     QObject::connect(&rpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
             &projectionObserver, SLOT(setRPSelection(const std::vector<bool> &)));
+
+    // Connect visual components (but not barcharts) to rewinding mechanism
+    QObject::connect(plotTC, SIGNAL(tChanged(double)),
+            &manipulationHandler, SLOT(setRewind(double)));
+    QObject::connect(&manipulationHandler, SIGNAL(cpRewound(const arma::mat &)),
+            m->cpPlot, SLOT(setXY(const arma::mat &)));
+    QObject::connect(&manipulationHandler, SIGNAL(rpRewound(const arma::mat &)),
+            m->rpPlot, SLOT(setXY(const arma::mat &)));
+    QObject::connect(&manipulationHandler, SIGNAL(rpRewound(const arma::mat &)),
+            m->splat, SLOT(setSites(const arma::mat &)));
+
+    QObject::connect(plotTC, SIGNAL(tChanged(double)),
+            m->projectionObserver, SLOT(setRewind(double)));
+    QObject::connect(m->projectionObserver, SIGNAL(cpValuesRewound(const arma::vec &)),
+            m->cpPlot, SLOT(setColorData(const arma::vec &)));
+    QObject::connect(m->projectionObserver, SIGNAL(rpValuesRewound(const arma::vec &)),
+            m->splat, SLOT(setValues(const arma::vec &)));
 
     // General component set up
     plotTC->setAcceptedMouseButtons(Qt::MiddleButton);

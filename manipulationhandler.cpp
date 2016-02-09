@@ -68,11 +68,7 @@ void ManipulationHandler::setRewind(double t)
     }
 
     arma::mat Y = m_Y * t + m_prevY * (1.0 - t);
-    emit cpChanged(Y.rows(m_cpIndices));
-    emit rpChanged(Y.rows(m_rpIndices));
-
-    // NOTE: this signal was supposed to be emitted, but since we don't want
-    // anything besides graphical objects to know the projection is being
-    // rewound, this is (for now) left out.
-    // emit mapChanged(Y);
+    emit cpRewound(Y.rows(m_cpIndices));
+    emit rpRewound(Y.rows(m_rpIndices));
+    emit mapRewound(Y);
 }

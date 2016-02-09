@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "utils.h"
+
 static const double EPSILON = 1e-3;
 
 arma::mat mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys)
@@ -13,11 +15,12 @@ arma::mat mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const ar
 
 void mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys, arma::mat &Y)
 {
+    int n = uintToInt<arma::uword, int>(X.n_rows);
     const arma::mat &Xs = X.rows(sampleIndices);
     arma::uword sampleSize = sampleIndices.n_elem;
 
-    #pragma omp parallel for shared(X, Xs, Ys, Y)
-    for (arma::uword i = 0; i < X.n_rows; i++) {
+    #pragma omp parallel for shared(X, Xs, Ys, Y, n)
+    for (int i = 0; i < n; i++) {
         const arma::rowvec &point = X.row(i);
 
         // calculate alphas

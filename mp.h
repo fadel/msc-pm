@@ -13,9 +13,9 @@ arma::mat dist(const arma::mat &X, DistFunc dfunc = euclidean);
 void knn(const arma::mat &dmat, arma::uword i, arma::uword k, arma::uvec &nn, arma::vec &dist);
 
 // Evaluation measures
-typedef arma::vec (*MeasureFunc)(const arma::mat &distA, const arma::mat &distB);
 arma::vec neighborhoodPreservation(const arma::mat &distA, const arma::mat &distB, arma::uword k = 10);
 arma::vec silhouette(const arma::mat &distA, const arma::mat &distB, const arma::vec &labels);
+void aggregatedError(const arma::mat &distX, const arma::mat &distY, arma::vec &v);
 
 // Techniques
 arma::mat lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys);

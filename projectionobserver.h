@@ -19,12 +19,16 @@ signals:
     void valuesChanged(const arma::vec &values) const;
     void cpValuesChanged(const arma::vec &values) const;
     void rpValuesChanged(const arma::vec &values) const;
+    void valuesRewound(const arma::vec &values) const;
+    void cpValuesRewound(const arma::vec &values) const;
+    void rpValuesRewound(const arma::vec &values) const;
 
 public slots:
     void setMap(const arma::mat &Y);
     bool setType(int type);
     void setCPSelection(const std::vector<bool> &cpSelection);
     void setRPSelection(const std::vector<bool> &rpSelection);
+    void setRewind(double t);
 
 private:
     bool emitValuesChanged() const;
@@ -37,7 +41,7 @@ private:
     bool m_cpSelectionEmpty, m_rpSelectionEmpty;
     std::vector<int> m_cpSelection, m_rpSelection;
 
-    // alpha(i, j): the influence CP j has on RP i 
+    // alpha(i, j): the influence CP j has on RP i
     void computeAlphas();
     arma::mat m_alphas, m_influences;
 

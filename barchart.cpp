@@ -105,6 +105,7 @@ void BarChart::brushItem(int item)
         m_brushedItem = item;
         emit itemBrushed(m_brushedItem);
     } else {
+        // safe comparison: we just checked for negative values
         if (m_values.n_elem == 0 || item > m_values.n_elem - 1) {
             return;
         }

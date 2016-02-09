@@ -7,31 +7,6 @@
 #include "mp.h"
 #include "numericrange.h"
 
-static const float EPSILON = 1e-6f;
-
-static void aggregatedError(const arma::mat &distX, const arma::mat &distY, arma::vec &v)
-{
-    double maxX = distX.max();
-    double maxY = distY.max();
-
-    #pragma omp parallel for shared(maxX, maxY, distX, distY, v)
-    for (arma::uword i = 0; i < v.n_elem; i++) {
-        v[i] = 0;
-        for (arma::uword j = 0; j < v.n_elem; j++) {
-            if (i == j) {
-                continue;
-            }
-
-            float diff = fabs(distY(i, j) / maxY - distX(i, j) / maxX);
-            if (diff < EPSILON) {
-                continue;
-            }
-
-            v[i] += diff;
-        }
-    }
-}
-
 ProjectionObserver::ProjectionObserver(const arma::mat &X,
                                        const arma::uvec &cpIndices)
     : m_type(OBSERVER_CURRENT)
@@ -82,10 +57,10 @@ void ProjectionObserver::setMap(const arma::mat &Y)
 
     m_Y = Y;
     m_distY = mp::dist(Y);
-    aggregatedError(m_distX, m_distY, m_values);
+    mp::aggregatedError(m_distX, m_distY, m_values);
 
     // method called for the first time; set original Y
-    if (m_origY.n_elem == 0) {
+    if (m_origY.n_elem != m_Y.n_elem) {
         m_origY = m_Y;
         m_origDistY = m_distY;
         m_origValues = m_values;
@@ -172,7 +147,7 @@ bool ProjectionObserver::emitValuesChanged() const
         emit valuesChanged(m_values);
         return true;
     case OBSERVER_DIFF_PREVIOUS:
-        if (m_prevValues.n_elem > 0) {
+        if (m_prevValues.n_elem == m_values.n_elem) {
             arma::vec diff = m_values - m_prevValues;
             emit rpValuesChanged(diff(m_rpIndices));
             emit valuesChanged(diff);
@@ -180,7 +155,7 @@ bool ProjectionObserver::emitValuesChanged() const
         }
         return false;
     case OBSERVER_DIFF_ORIGINAL:
-        if (m_origValues.n_elem > 0) {
+        if (m_origValues.n_elem == m_values.n_elem) {
             arma::vec diff = m_values - m_origValues;
             emit rpValuesChanged(diff(m_rpIndices));
             emit valuesChanged(diff);
@@ -190,4 +165,17 @@ bool ProjectionObserver::emitValuesChanged() const
     default:
         return false;
     }
+}
+
+void ProjectionObserver::setRewind(double t)
+{
+    if (m_prevValues.n_elem != m_values.n_elem) {
+        return;
+    }
+
+    arma::vec values = m_values * t + m_prevValues * (1.0 - t);
+
+    emit cpValuesRewound(values(m_cpIndices));
+    emit rpValuesRewound(values(m_rpIndices));
+    emit valuesRewound(values);
 }
