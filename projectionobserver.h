@@ -34,8 +34,8 @@ private:
     bool emitValuesChanged() const;
 
     int m_type;
-    arma::mat m_X, m_Y, m_origY, m_prevY;
-    arma::mat m_distX, m_distY, m_origDistY, m_prevDistY;
+    arma::mat m_X, m_Y, m_firstY, m_prevY;
+    arma::mat m_distX, m_distY, m_firstDistY, m_prevDistY;
     arma::uvec m_cpIndices, m_rpIndices;
 
     bool m_cpSelectionEmpty, m_rpSelectionEmpty;
@@ -46,7 +46,8 @@ private:
     arma::mat m_alphas, m_influences;
 
     // TODO: one per implemented measure
-    arma::vec m_values, m_prevValues, m_origValues;
+    arma::vec m_values, m_firstValues, m_prevValues;
+    bool m_hasFirst, m_hasPrev;
 };
 
 #endif // PROJECTIONOBSERVER_H

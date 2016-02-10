@@ -33,8 +33,9 @@ public slots:
     void setRewind(double t);
 
 private:
-    arma::mat m_X, m_Y, m_prevY, m_firstY;
+    arma::mat m_X, m_Y, m_firstY, m_prevY;
     arma::uvec m_cpIndices, m_rpIndices;
+    bool m_hasFirst, m_hasPrev;
     Technique m_technique;
 };
 

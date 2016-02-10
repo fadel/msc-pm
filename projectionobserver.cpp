@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <numeric>
 
 #include "mp.h"
 #include "numericrange.h"
@@ -15,9 +14,13 @@ ProjectionObserver::ProjectionObserver(const arma::mat &X,
     , m_rpIndices(X.n_rows - cpIndices.n_elem)
     , m_cpSelectionEmpty(true)
     , m_rpSelectionEmpty(true)
+    , m_values(X.n_rows)
+    , m_prevValues(X.n_rows)
+    , m_firstValues(X.n_rows)
+    , m_hasFirst(false)
+    , m_hasPrev(false)
 {
     m_distX = mp::dist(m_X);
-    m_values.set_size(m_X.n_rows);
 
     NumericRange<arma::uword> range(0, m_X.n_rows);
     std::set_symmetric_difference(range.cbegin(), range.cend(),
@@ -49,19 +52,24 @@ void ProjectionObserver::computeAlphas()
 void ProjectionObserver::setMap(const arma::mat &Y)
 {
     // update previous map
-    m_prevY = m_Y;
-    m_prevDistY = m_distY;
-    m_prevValues = m_values;
+    if (m_hasFirst) {
+        m_hasPrev = true;
+
+        m_prevY = m_Y;
+        m_prevDistY = m_distY;
+        m_prevValues = m_values;
+    }
 
     m_Y = Y;
     m_distY = mp::dist(Y);
     mp::aggregatedError(m_distX, m_distY, m_values);
 
-    // method called for the first time; set original Y
-    if (m_origY.n_elem != m_Y.n_elem) {
-        m_origY = m_Y;
-        m_origDistY = m_distY;
-        m_origValues = m_values;
+    if (!m_hasFirst) {
+        m_hasFirst = true;
+
+        m_firstY = m_Y;
+        m_firstDistY = m_distY;
+        m_firstValues = m_values;
     }
 
     if (m_cpSelectionEmpty && m_rpSelectionEmpty) {
@@ -153,8 +161,8 @@ bool ProjectionObserver::emitValuesChanged() const
         }
         return false;
     case OBSERVER_DIFF_ORIGINAL:
-        if (m_origValues.n_elem == m_values.n_elem) {
-            arma::vec diff = m_values - m_origValues;
+        if (m_firstValues.n_elem == m_values.n_elem) {
+            arma::vec diff = m_values - m_firstValues;
             emit rpValuesChanged(diff(m_rpIndices));
             emit valuesChanged(diff);
             return true;
@@ -167,14 +175,11 @@ bool ProjectionObserver::emitValuesChanged() const
 
 void ProjectionObserver::setRewind(double t)
 {
-    if (m_prevValues.n_elem != m_values.n_elem
-        || !m_cpSelectionEmpty
-        || !m_rpSelectionEmpty) {
+    if (!m_hasPrev) {
         return;
     }
 
     arma::vec values = m_values * t + m_prevValues * (1.0 - t);
-
     emit cpValuesRewound(values(m_cpIndices));
     emit rpValuesRewound(values(m_rpIndices));
     emit valuesRewound(values);

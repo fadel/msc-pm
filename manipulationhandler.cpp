@@ -1,10 +1,6 @@
 #include "manipulationhandler.h"
 
 #include <algorithm>
-#include <iostream>
-#include <numeric>
-
-#include <QDebug>
 
 #include "mp.h"
 #include "numericrange.h"
@@ -13,8 +9,12 @@ ManipulationHandler::ManipulationHandler(const arma::mat &X,
                                          const arma::uvec &cpIndices)
     : m_X(X)
     , m_Y(X.n_rows, 2)
+    , m_firstY(X.n_rows, 2)
+    , m_prevY(X.n_rows, 2)
     , m_cpIndices(cpIndices)
     , m_rpIndices(X.n_rows - cpIndices.n_elem)
+    , m_hasFirst(false)
+    , m_hasPrev(false)
     , m_technique(TECHNIQUE_LAMP)
 {
     NumericRange<arma::uword> range(0, m_X.n_rows);
@@ -32,7 +32,10 @@ void ManipulationHandler::setTechnique(ManipulationHandler::Technique technique)
 
 void ManipulationHandler::setCP(const arma::mat &Ys)
 {
-    m_prevY = m_Y;
+    if (m_hasFirst) {
+        m_prevY = m_Y;
+        m_hasPrev = true;
+    }
 
     switch (m_technique) {
     case TECHNIQUE_PLMP:
@@ -52,7 +55,8 @@ void ManipulationHandler::setCP(const arma::mat &Ys)
         break;
     }
 
-    if (m_firstY.n_rows != m_Y.n_rows) {
+    if (!m_hasFirst) {
+        m_hasFirst = true;
         m_firstY = m_Y;
     }
 
@@ -63,7 +67,7 @@ void ManipulationHandler::setCP(const arma::mat &Ys)
 
 void ManipulationHandler::setRewind(double t)
 {
-    if (m_prevY.n_rows != m_Y.n_rows) {
+    if (!m_hasPrev) {
         return;
     }
 
