@@ -27,7 +27,7 @@ public:
 
     bool sitesChanged() const      { return m_sitesChanged; }
     bool valuesChanged() const     { return m_valuesChanged; }
-    bool colorScaleChanged() const { return m_colorScaleChanged; }
+    bool colormapChanged() const { return m_colormapChanged; }
 
     void setSitesChanged(bool sitesChanged) {
         m_sitesChanged = sitesChanged;
@@ -35,8 +35,8 @@ public:
     void setValuesChanged(bool valuesChanged) {
         m_valuesChanged = valuesChanged;
     }
-    void setColorScaleChanged(bool colorScaleChanged) {
-        m_colorScaleChanged = colorScaleChanged;
+    void setColormapChanged(bool colormapChanged) {
+        m_colormapChanged = colormapChanged;
     }
 
 signals:
@@ -69,7 +69,7 @@ private:
     std::vector<float> m_sites, m_values, m_cmap;
     LinearScale<float> m_sx, m_sy;
     float m_alpha, m_beta;
-    bool m_sitesChanged, m_valuesChanged, m_colorScaleChanged;
+    bool m_sitesChanged, m_valuesChanged, m_colormapChanged;
 };
 
 #endif // VORONOISPLAT_H

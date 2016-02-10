@@ -85,7 +85,7 @@ void VoronoiSplat::setColorScale(const ColorScale &scale)
     scale.sample(scale.numColors(), m_cmap.begin());
     emit colorScaleChanged(scale);
 
-    setColorScaleChanged(true);
+    setColormapChanged(true);
     update();
 }
 
@@ -152,7 +152,7 @@ private:
     GLuint m_VBOs[3];
     GLuint m_textures[2], m_colormapTex;
     QOpenGLVertexArrayObject m_sitesVAO, m_2ndPassVAO;
-    bool m_sitesChanged, m_valuesChanged, m_colorScaleChanged;
+    bool m_sitesChanged, m_valuesChanged, m_colormapChanged;
 };
 
 QQuickFramebufferObject::Renderer *VoronoiSplat::createRenderer() const
@@ -361,7 +361,7 @@ void VoronoiSplatRenderer::render()
     if (m_valuesChanged) {
         updateValues();
     }
-    if (m_colorScaleChanged) {
+    if (m_colormapChanged) {
         updateColorScale();
     }
 
@@ -439,12 +439,12 @@ void VoronoiSplatRenderer::synchronize(QQuickFramebufferObject *item)
 
     m_sitesChanged    = splat->sitesChanged();
     m_valuesChanged   = splat->valuesChanged();
-    m_colorScaleChanged = splat->colorScaleChanged();
+    m_colormapChanged = splat->colormapChanged();
 
     // Reset so that we have the correct values by the next synchronize()
     splat->setSitesChanged(false);
     splat->setValuesChanged(false);
-    splat->setColorScaleChanged(false);
+    splat->setColormapChanged(false);
 
     m_sites  = &(splat->sites());
     m_values = &(splat->values());
@@ -511,7 +511,7 @@ void VoronoiSplatRenderer::updateColorScale()
     gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_cmap->size() / 3, 1, 0, GL_RGB,
             GL_FLOAT, m_cmap->data());
 
-    m_colorScaleChanged = false;
+    m_colormapChanged = false;
 }
 
 void VoronoiSplatRenderer::computeDT()

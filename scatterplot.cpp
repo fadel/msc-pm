@@ -243,7 +243,7 @@ bool Scatterplot::saveToFile(const QUrl &url)
     return m_xy.save(url.path().toStdString(), arma::raw_ascii);
 }
 
-void Scatterplot::setXY(const arma::mat &xy, bool updateView)
+void Scatterplot::setXY(const arma::mat &xy)
 {
     if (xy.n_cols != 2) {
         return;
@@ -262,23 +262,17 @@ void Scatterplot::setXY(const arma::mat &xy, bool updateView)
     }
 
     if (m_opacityData.n_elem != m_xy.n_rows) {
-        arma::vec opacityData(xy.n_rows);
-        opacityData.fill(GLYPH_OPACITY);
-        setOpacityData(opacityData, false);
+        // Reset opacity data
+        m_opacityData.resize(xy.n_rows);
+        m_opacityData.fill(GLYPH_OPACITY);
+        emit opacityDataChanged(m_opacityData);
     }
 
     m_shouldUpdateGeometry = true;
-    if (updateView) {
-        update();
-    }
+    update();
 }
 
-void Scatterplot::setXY(const arma::mat &xy)
-{
-    setXY(xy, true);
-}
-
-void Scatterplot::setColorData(const arma::vec &colorData, bool updateView)
+void Scatterplot::setColorData(const arma::vec &colorData)
 {
     if (m_xy.n_rows > 0
         && (colorData.n_elem > 0 && colorData.n_elem != m_xy.n_rows)) {
@@ -293,17 +287,10 @@ void Scatterplot::setColorData(const arma::vec &colorData, bool updateView)
     }
 
     m_shouldUpdateMaterials = true;
-    if (updateView) {
-        update();
-    }
+    update();
 }
 
-void Scatterplot::setColorData(const arma::vec &colorData)
-{
-    setColorData(colorData, true);
-}
-
-void Scatterplot::setOpacityData(const arma::vec &opacityData, bool updateView)
+void Scatterplot::setOpacityData(const arma::vec &opacityData)
 {
     if (m_xy.n_rows > 0 && opacityData.n_elem != m_xy.n_rows) {
         return;
@@ -311,18 +298,10 @@ void Scatterplot::setOpacityData(const arma::vec &opacityData, bool updateView)
 
     m_opacityData = opacityData;
     emit opacityDataChanged(m_opacityData);
-
-    if (updateView) {
-        update();
-    }
+    update();
 }
 
-void Scatterplot::setOpacityData(const arma::vec &opacityData)
-{
-    setOpacityData(opacityData, true);
-}
-
-void Scatterplot::setScale(const LinearScale<float> &sx, const LinearScale<float> &sy, bool updateView)
+void Scatterplot::setScale(const LinearScale<float> &sx, const LinearScale<float> &sy)
 {
     m_sx = sx;
     m_sy = sy;
@@ -331,14 +310,7 @@ void Scatterplot::setScale(const LinearScale<float> &sx, const LinearScale<float
     updateQuadTree();
 
     m_shouldUpdateGeometry = true;
-    if (updateView) {
-        update();
-    }
-}
-
-void Scatterplot::setScale(const LinearScale<float> &sx, const LinearScale<float> &sy)
-{
-    setScale(sx, sy, true);
+    update();
 }
 
 void Scatterplot::setAutoScale(bool autoScale)
@@ -366,11 +338,6 @@ void Scatterplot::setGlyphSize(float glyphSize, bool updateView)
     if (updateView) {
         update();
     }
-}
-
-void Scatterplot::setGlyphSize(float glyphSize)
-{
-    setGlyphSize(glyphSize, true);
 }
 
 QSGNode *Scatterplot::newSceneGraph()

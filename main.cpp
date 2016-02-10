@@ -158,112 +158,112 @@ int main(int argc, char **argv)
     TransitionControl *plotTC = engine.rootObjects()[0]->findChild<TransitionControl *>("plotTC");
 
     // Keep track of the current cp (in order to save them later, if requested)
-    QObject::connect(m->cpPlot, SIGNAL(xyChanged(const arma::mat &)),
-            m, SLOT(setCP(const arma::mat &)));
-    QObject::connect(m->cpPlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
-            m, SLOT(setCP(const arma::mat &)));
+    QObject::connect(m->cpPlot, &Scatterplot::xyChanged,
+            m, &Main::setCP);
+    QObject::connect(m->cpPlot, &Scatterplot::xyInteractivelyChanged,
+            m, &Main::setCP);
 
     // Update projection as the cp are modified (either directly in the
     // manipulationHandler object or interactively in cpPlot
     ManipulationHandler manipulationHandler(X, cpIndices);
-    QObject::connect(m->cpPlot, SIGNAL(xyInteractivelyChanged(const arma::mat &)),
-            &manipulationHandler, SLOT(setCP(const arma::mat &)));
-    QObject::connect(&manipulationHandler, SIGNAL(cpChanged(const arma::mat &)),
-            m->cpPlot, SLOT(setXY(const arma::mat &)));
-    QObject::connect(&manipulationHandler, SIGNAL(rpChanged(const arma::mat &)),
-            m->rpPlot, SLOT(setXY(const arma::mat &)));
-    QObject::connect(&manipulationHandler, SIGNAL(rpChanged(const arma::mat &)),
-            m->splat, SLOT(setSites(const arma::mat &)));
+    QObject::connect(m->cpPlot, &Scatterplot::xyInteractivelyChanged,
+            &manipulationHandler, &ManipulationHandler::setCP);
+    QObject::connect(&manipulationHandler, &ManipulationHandler::cpChanged,
+            m->cpPlot, &Scatterplot::setXY);
+    QObject::connect(&manipulationHandler, &ManipulationHandler::rpChanged,
+            m->rpPlot, &Scatterplot::setXY);
+    QObject::connect(&manipulationHandler, &ManipulationHandler::rpChanged,
+            m->splat, &VoronoiSplat::setSites);
 
     // Keep both scatterplots and the splat scaled equally and relative to the
     // full plot
     MapScaleHandler mapScaleHandler;
-    QObject::connect(&mapScaleHandler, SIGNAL(scaleChanged(const LinearScale<float> &, const LinearScale<float> &)),
-            m->cpPlot, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
-    QObject::connect(&mapScaleHandler, SIGNAL(scaleChanged(const LinearScale<float> &, const LinearScale<float> &)),
-            m->rpPlot, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
-    QObject::connect(&mapScaleHandler, SIGNAL(scaleChanged(const LinearScale<float> &, const LinearScale<float> &)),
-            m->splat, SLOT(setScale(const LinearScale<float> &, const LinearScale<float> &)));
-    QObject::connect(&manipulationHandler, SIGNAL(mapChanged(const arma::mat &)),
-            &mapScaleHandler, SLOT(scaleToMap(const arma::mat &)));
+    QObject::connect(&manipulationHandler, &ManipulationHandler::mapChanged,
+            &mapScaleHandler, &MapScaleHandler::scaleToMap);
+    QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
+            m->cpPlot, &Scatterplot::setScale);
+    QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
+            m->rpPlot, &Scatterplot::setScale);
+    QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
+            m->splat, &VoronoiSplat::setScale);
 
-    QObject::connect(m->splat, SIGNAL(colorScaleChanged(const ColorScale &)),
-            m->colormap, SLOT(setColorScale(const ColorScale &)));
+    QObject::connect(m->splat, &VoronoiSplat::colorScaleChanged,
+            m->colormap, &Colormap::setColorScale);
 
     // Linking between selections
     SelectionHandler cpSelectionHandler(cpIndices.n_elem);
-    QObject::connect(m->cpPlot, SIGNAL(selectionInteractivelyChanged(const std::vector<bool> &)),
-            &cpSelectionHandler, SLOT(setSelection(const std::vector<bool> &)));
-    QObject::connect(m->cpBarChart, SIGNAL(selectionInteractivelyChanged(const std::vector<bool> &)),
-            &cpSelectionHandler, SLOT(setSelection(const std::vector<bool> &)));
-    QObject::connect(&cpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
-            m->cpPlot, SLOT(setSelection(const std::vector<bool> &)));
+    QObject::connect(m->cpPlot, &Scatterplot::selectionInteractivelyChanged,
+            &cpSelectionHandler, &SelectionHandler::setSelection);
+    QObject::connect(m->cpBarChart, &BarChart::selectionInteractivelyChanged,
+            &cpSelectionHandler, &SelectionHandler::setSelection);
+    QObject::connect(&cpSelectionHandler, &SelectionHandler::selectionChanged,
+            m->cpPlot, &Scatterplot::setSelection);
 
     SelectionHandler rpSelectionHandler(X.n_rows - cpIndices.n_elem);
-    QObject::connect(m->rpPlot, SIGNAL(selectionInteractivelyChanged(const std::vector<bool> &)),
-            &rpSelectionHandler, SLOT(setSelection(const std::vector<bool> &)));
-    QObject::connect(m->rpBarChart, SIGNAL(selectionInteractivelyChanged(const std::vector<bool> &)),
-            &rpSelectionHandler, SLOT(setSelection(const std::vector<bool> &)));
-    QObject::connect(&rpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
-            m->rpPlot, SLOT(setSelection(const std::vector<bool> &)));
+    QObject::connect(m->rpPlot, &Scatterplot::selectionInteractivelyChanged,
+            &rpSelectionHandler, &SelectionHandler::setSelection);
+    QObject::connect(m->rpBarChart, &BarChart::selectionInteractivelyChanged,
+            &rpSelectionHandler, &SelectionHandler::setSelection);
+    QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
+            m->rpPlot, &Scatterplot::setSelection);
 
     // Brushing between bar chart and respective scatterplot
     BrushingHandler cpBrushHandler;
-    QObject::connect(m->cpPlot, SIGNAL(itemInteractivelyBrushed(int)),
-            &cpBrushHandler, SLOT(brushItem(int)));
-    QObject::connect(m->cpBarChart, SIGNAL(itemInteractivelyBrushed(int)),
-            &cpBrushHandler, SLOT(brushItem(int)));
-    QObject::connect(&cpBrushHandler, SIGNAL(itemBrushed(int)),
-            m->cpPlot, SLOT(brushItem(int)));
-    QObject::connect(&cpBrushHandler, SIGNAL(itemBrushed(int)),
-            m->cpBarChart, SLOT(brushItem(int)));
+    QObject::connect(m->cpPlot, &Scatterplot::itemInteractivelyBrushed,
+            &cpBrushHandler, &BrushingHandler::brushItem);
+    QObject::connect(m->cpBarChart, &BarChart::itemInteractivelyBrushed,
+            &cpBrushHandler, &BrushingHandler::brushItem);
+    QObject::connect(&cpBrushHandler, &BrushingHandler::itemBrushed,
+            m->cpPlot, &Scatterplot::brushItem);
+    QObject::connect(&cpBrushHandler, &BrushingHandler::itemBrushed,
+            m->cpBarChart, &BarChart::brushItem);
 
     BrushingHandler rpBrushHandler;
-    QObject::connect(m->rpPlot, SIGNAL(itemInteractivelyBrushed(int)),
-            &rpBrushHandler, SLOT(brushItem(int)));
-    QObject::connect(m->rpBarChart, SIGNAL(itemInteractivelyBrushed(int)),
-            &rpBrushHandler, SLOT(brushItem(int)));
-    QObject::connect(&rpBrushHandler, SIGNAL(itemBrushed(int)),
-            m->rpPlot, SLOT(brushItem(int)));
-    QObject::connect(&rpBrushHandler, SIGNAL(itemBrushed(int)),
-            m->rpBarChart, SLOT(brushItem(int)));
+    QObject::connect(m->rpPlot, &Scatterplot::itemInteractivelyBrushed,
+            &rpBrushHandler, &BrushingHandler::brushItem);
+    QObject::connect(m->rpBarChart, &BarChart::itemInteractivelyBrushed,
+            &rpBrushHandler, &BrushingHandler::brushItem);
+    QObject::connect(&rpBrushHandler, &BrushingHandler::itemBrushed,
+            m->rpPlot, &Scatterplot::brushItem);
+    QObject::connect(&rpBrushHandler, &BrushingHandler::itemBrushed,
+            m->rpBarChart, &BarChart::brushItem);
 
     // Recompute values whenever projection changes
     ProjectionObserver projectionObserver(X, cpIndices);
     m->projectionObserver = &projectionObserver;
-    QObject::connect(&manipulationHandler, SIGNAL(mapChanged(const arma::mat &)),
-            m->projectionObserver, SLOT(setMap(const arma::mat &)));
-    QObject::connect(m->projectionObserver, SIGNAL(cpValuesChanged(const arma::vec &)),
-            m->cpPlot, SLOT(setColorData(const arma::vec &)));
-    QObject::connect(m->projectionObserver, SIGNAL(rpValuesChanged(const arma::vec &)),
-            m->splat, SLOT(setValues(const arma::vec &)));
-    QObject::connect(m->projectionObserver, SIGNAL(cpValuesChanged(const arma::vec &)),
-            m->cpBarChart, SLOT(setValues(const arma::vec &)));
-    QObject::connect(m->projectionObserver, SIGNAL(rpValuesChanged(const arma::vec &)),
-            m->rpBarChart, SLOT(setValues(const arma::vec &)));
+    QObject::connect(&manipulationHandler, &ManipulationHandler::mapChanged,
+            m->projectionObserver, &ProjectionObserver::setMap);
+    QObject::connect(m->projectionObserver, &ProjectionObserver::cpValuesChanged,
+            m->cpPlot, &Scatterplot::setColorData);
+    QObject::connect(m->projectionObserver, &ProjectionObserver::rpValuesChanged,
+            m->splat, &VoronoiSplat::setValues);
+    QObject::connect(m->projectionObserver, &ProjectionObserver::cpValuesChanged,
+            m->cpBarChart, &BarChart::setValues);
+    QObject::connect(m->projectionObserver, &ProjectionObserver::rpValuesChanged,
+            m->rpBarChart, &BarChart::setValues);
 
     // Recompute values whenever selection changes
-    QObject::connect(&cpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
-            &projectionObserver, SLOT(setCPSelection(const std::vector<bool> &)));
-    QObject::connect(&rpSelectionHandler, SIGNAL(selectionChanged(const std::vector<bool> &)),
-            &projectionObserver, SLOT(setRPSelection(const std::vector<bool> &)));
+    QObject::connect(&cpSelectionHandler, &SelectionHandler::selectionChanged,
+            &projectionObserver, &ProjectionObserver::setCPSelection);
+    QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
+            &projectionObserver, &ProjectionObserver::setRPSelection);
 
     // Connect visual components (but not barcharts) to rewinding mechanism
-    QObject::connect(plotTC, SIGNAL(tChanged(double)),
-            &manipulationHandler, SLOT(setRewind(double)));
-    QObject::connect(&manipulationHandler, SIGNAL(cpRewound(const arma::mat &)),
-            m->cpPlot, SLOT(setXY(const arma::mat &)));
-    QObject::connect(&manipulationHandler, SIGNAL(rpRewound(const arma::mat &)),
-            m->rpPlot, SLOT(setXY(const arma::mat &)));
-    QObject::connect(&manipulationHandler, SIGNAL(rpRewound(const arma::mat &)),
-            m->splat, SLOT(setSites(const arma::mat &)));
+    QObject::connect(plotTC, &TransitionControl::tChanged,
+            &manipulationHandler, &ManipulationHandler::setRewind);
+    QObject::connect(&manipulationHandler, &ManipulationHandler::cpRewound,
+            m->cpPlot, &Scatterplot::setXY);
+    QObject::connect(&manipulationHandler, &ManipulationHandler::rpRewound,
+            m->rpPlot, &Scatterplot::setXY);
+    QObject::connect(&manipulationHandler, &ManipulationHandler::rpRewound,
+            m->splat, &VoronoiSplat::setSites);
 
-    QObject::connect(plotTC, SIGNAL(tChanged(double)),
-            m->projectionObserver, SLOT(setRewind(double)));
-    QObject::connect(m->projectionObserver, SIGNAL(cpValuesRewound(const arma::vec &)),
-            m->cpPlot, SLOT(setColorData(const arma::vec &)));
-    QObject::connect(m->projectionObserver, SIGNAL(rpValuesRewound(const arma::vec &)),
-            m->splat, SLOT(setValues(const arma::vec &)));
+    QObject::connect(plotTC, &TransitionControl::tChanged,
+            m->projectionObserver, &ProjectionObserver::setRewind);
+    QObject::connect(m->projectionObserver, &ProjectionObserver::cpValuesRewound,
+            m->cpPlot, &Scatterplot::setColorData);
+    QObject::connect(m->projectionObserver, &ProjectionObserver::rpValuesRewound,
+            m->splat, &VoronoiSplat::setValues);
 
     // General component set up
     plotTC->setAcceptedMouseButtons(Qt::MiddleButton);

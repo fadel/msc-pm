@@ -23,11 +23,6 @@ public:
 
     arma::mat XY() const;
     void setColorScale(const ColorScale &colorScale);
-    void setXY(const arma::mat &xy, bool updateView);
-    void setColorData(const arma::vec &colorData, bool updateView);
-    void setOpacityData(const arma::vec &opacityData, bool updateView);
-    void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy, bool updateView);
-    void setGlyphSize(float glyphSize, bool updateView);
     void setAutoScale(bool autoScale);
     Q_INVOKABLE bool saveToFile(const QUrl &url);
 
@@ -52,10 +47,10 @@ public slots:
     void setXY(const arma::mat &xy);
     void setColorData(const arma::vec &colorData);
     void setOpacityData(const arma::vec &opacityData);
+    void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
     void setSelection(const std::vector<bool> &selection);
     void brushItem(int item);
-    void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
-    Q_INVOKABLE void setGlyphSize(float glyphSize);
+    Q_INVOKABLE void setGlyphSize(float glyphSize, bool updateView = true);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
