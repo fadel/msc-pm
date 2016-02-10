@@ -49,11 +49,9 @@ void ProjectionObserver::computeAlphas()
 void ProjectionObserver::setMap(const arma::mat &Y)
 {
     // update previous map
-    if (m_Y.n_elem > 0) {
-        m_prevY = m_Y;
-        m_prevDistY = m_distY;
-        m_prevValues = m_values;
-    }
+    m_prevY = m_Y;
+    m_prevDistY = m_distY;
+    m_prevValues = m_values;
 
     m_Y = Y;
     m_distY = mp::dist(Y);
@@ -169,7 +167,9 @@ bool ProjectionObserver::emitValuesChanged() const
 
 void ProjectionObserver::setRewind(double t)
 {
-    if (m_prevValues.n_elem != m_values.n_elem) {
+    if (m_prevValues.n_elem != m_values.n_elem
+        || !m_cpSelectionEmpty
+        || !m_rpSelectionEmpty) {
         return;
     }
 
