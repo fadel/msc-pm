@@ -4,6 +4,8 @@
 #include <QObject>
 #include <armadillo>
 
+#include "projectionhistory.h"
+
 class ProjectionObserver
     : public QObject
 {
@@ -13,7 +15,9 @@ public:
     static const int OBSERVER_DIFF_PREVIOUS = 1;
     static const int OBSERVER_DIFF_ORIGINAL = 2;
 
-    ProjectionObserver(const arma::mat &X, const arma::uvec &cpIndices);
+    ProjectionObserver(const arma::mat &X,
+                       const arma::uvec &cpIndices,
+                       ProjectionHistory *history);
 
 signals:
     void valuesChanged(const arma::vec &values) const;
@@ -34,7 +38,7 @@ private:
     bool emitValuesChanged() const;
 
     int m_type;
-    arma::mat m_X, m_Y, m_firstY, m_prevY;
+    arma::mat m_X;
     arma::mat m_distX, m_distY, m_firstDistY, m_prevDistY;
     arma::uvec m_cpIndices, m_rpIndices;
 
@@ -47,7 +51,7 @@ private:
 
     // TODO: one per implemented measure
     arma::vec m_values, m_firstValues, m_prevValues;
-    bool m_hasFirst, m_hasPrev;
+    ProjectionHistory *m_history;
 };
 
 #endif // PROJECTIONOBSERVER_H

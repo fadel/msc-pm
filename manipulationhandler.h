@@ -4,6 +4,8 @@
 #include <QObject>
 #include <armadillo>
 
+#include "projectionhistory.h"
+
 class ManipulationHandler
     : public QObject
 {
@@ -17,8 +19,11 @@ public:
         TECHNIQUE_PEKALSKA
     };
 
-    ManipulationHandler(const arma::mat &X, const arma::uvec &cpIndices);
-    void setTechnique(Technique technique);
+    ManipulationHandler(const arma::mat &X,
+                        const arma::uvec &cpIndices,
+                        ProjectionHistory *history);
+
+    void setTechnique(Technique technique) { m_technique = technique; }
 
 signals:
     void cpChanged(const arma::mat &cpY) const;
@@ -33,9 +38,9 @@ public slots:
     void setRewind(double t);
 
 private:
-    arma::mat m_X, m_Y, m_firstY, m_prevY;
+    arma::mat m_X;
     arma::uvec m_cpIndices, m_rpIndices;
-    bool m_hasFirst, m_hasPrev;
+    ProjectionHistory *m_history;
     Technique m_technique;
 };
 

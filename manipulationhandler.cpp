@@ -6,72 +6,51 @@
 #include "numericrange.h"
 
 ManipulationHandler::ManipulationHandler(const arma::mat &X,
-                                         const arma::uvec &cpIndices)
+                                         const arma::uvec &cpIndices,
+                                         ProjectionHistory *history)
     : m_X(X)
-    , m_Y(X.n_rows, 2)
-    , m_firstY(X.n_rows, 2)
-    , m_prevY(X.n_rows, 2)
     , m_cpIndices(cpIndices)
     , m_rpIndices(X.n_rows - cpIndices.n_elem)
-    , m_hasFirst(false)
-    , m_hasPrev(false)
+    , m_history(history)
     , m_technique(TECHNIQUE_LAMP)
 {
-    NumericRange<arma::uword> range(0, m_X.n_rows);
-    std::set_symmetric_difference(range.cbegin(), range.cend(),
+    Q_ASSERT(history);
+
+    NumericRange<arma::uword> allIndices(0, m_X.n_rows);
+    std::set_symmetric_difference(allIndices.cbegin(), allIndices.cend(),
             m_cpIndices.cbegin(), m_cpIndices.cend(), m_rpIndices.begin());
-}
-
-void ManipulationHandler::setTechnique(ManipulationHandler::Technique technique)
-{
-    if (m_technique == technique)
-        return;
-
-    m_technique = technique;
 }
 
 void ManipulationHandler::setCP(const arma::mat &Ys)
 {
-    if (m_hasFirst) {
-        m_prevY = m_Y;
-        m_hasPrev = true;
-    }
-
+    arma::mat Y(m_X.n_rows, 2);
     switch (m_technique) {
     case TECHNIQUE_PLMP:
         // TODO?
-        // mp::plmp(m_X, m_cpIndices, Ys, m_Y);
         break;
     case TECHNIQUE_LSP:
         // TODO?
-        // mp::lsp(m_X, m_cpIndices, Ys, m_Y);
         break;
     case TECHNIQUE_LAMP:
-        mp::lamp(m_X, m_cpIndices, Ys, m_Y);
+        mp::lamp(m_X, m_cpIndices, Ys, Y);
         break;
     case TECHNIQUE_PEKALSKA:
         // TODO?
-        // mp::pekalska(m_X, m_cpIndices, Ys, m_Y);
         break;
     }
 
-    if (!m_hasFirst) {
-        m_hasFirst = true;
-        m_firstY = m_Y;
-    }
-
-    emit cpChanged(m_Y.rows(m_cpIndices));
-    emit rpChanged(m_Y.rows(m_rpIndices));
-    emit mapChanged(m_Y);
+    emit cpChanged(Y.rows(m_cpIndices));
+    emit rpChanged(Y.rows(m_rpIndices));
+    emit mapChanged(Y);
 }
 
 void ManipulationHandler::setRewind(double t)
 {
-    if (!m_hasPrev) {
+    if (!m_history->hasPrev()) {
         return;
     }
 
-    arma::mat Y = m_Y * t + m_prevY * (1.0 - t);
+    arma::mat Y = m_history->Y() * t + m_history->prev() * (1.0 - t);
     emit cpRewound(Y.rows(m_cpIndices));
     emit rpRewound(Y.rows(m_rpIndices));
     emit mapRewound(Y);

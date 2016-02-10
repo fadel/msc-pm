@@ -36,6 +36,7 @@ HEADERS += main.h \
     selectionhandler.h \
     brushinghandler.h \
     projectionobserver.h \
+    projectionhistory.h \
     skelft.h \
     skelftkernel.h \
     mp.h
@@ -56,6 +57,7 @@ SOURCES += main.cpp \
     selectionhandler.cpp \
     brushinghandler.cpp \
     projectionobserver.cpp \
+    projectionhistory.cpp \
     skelft_core.cpp \
     lamp.cpp \
     plmp.cpp \

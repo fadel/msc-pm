@@ -121,7 +121,7 @@ public:
         splat->setColorScale(getColorScale(colorScaleType));
     }
 
-    // Pointer to visual components whose values are set in the main() function
+    // Pointers to visual components whose values are set in the main() function
     // after components are instantiated by the QtQuick engine
     BarChart *cpBarChart, *rpBarChart;
     Colormap *colormap;
@@ -129,6 +129,11 @@ public:
     VoronoiSplat *splat;
 
     ProjectionObserver *projectionObserver;
+
+    // Shared object that controls manipulation history
+    ProjectionHistory *projectionHistory;
+    Q_INVOKABLE void undoManipulation()  { projectionHistory->undo(); }
+    Q_INVOKABLE void resetManipulation() { projectionHistory->undoAll(); }
 
 public slots:
     void setCPIndices(const arma::uvec &indices) { m_cpIndices = indices; }

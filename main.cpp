@@ -139,13 +139,13 @@ int main(int argc, char **argv)
     fmt.setSamples(8);
     QSurfaceFormat::setDefaultFormat(fmt);
 
+    // Register our custom QML types & init QML engine
     qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
     qmlRegisterType<BarChart>("PM", 1, 0, "BarChart");
     qmlRegisterType<VoronoiSplat>("PM", 1, 0, "VoronoiSplat");
     qmlRegisterType<Colormap>("PM", 1, 0, "Colormap");
     qmlRegisterType<TransitionControl>("PM", 1, 0, "TransitionControl");
     qmlRegisterSingletonType<Main>("PM", 1, 0, "Main", mainProvider);
-
     QQmlApplicationEngine engine(QUrl("qrc:///main_view.qml"));
 
     // Initialize pointers to visual components
@@ -157,6 +157,10 @@ int main(int argc, char **argv)
     m->rpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("rpBarChart");
     TransitionControl *plotTC = engine.rootObjects()[0]->findChild<TransitionControl *>("plotTC");
 
+    // Shared object which stores modifications to projections
+    ProjectionHistory history;
+    m->projectionHistory = &history;
+
     // Keep track of the current cp (in order to save them later, if requested)
     QObject::connect(m->cpPlot, &Scatterplot::xyChanged,
             m, &Main::setCP);
@@ -165,7 +169,7 @@ int main(int argc, char **argv)
 
     // Update projection as the cp are modified (either directly in the
     // manipulationHandler object or interactively in cpPlot
-    ManipulationHandler manipulationHandler(X, cpIndices);
+    ManipulationHandler manipulationHandler(X, cpIndices, m->projectionHistory);
     QObject::connect(m->cpPlot, &Scatterplot::xyInteractivelyChanged,
             &manipulationHandler, &ManipulationHandler::setCP);
     QObject::connect(&manipulationHandler, &ManipulationHandler::cpChanged,
@@ -174,6 +178,10 @@ int main(int argc, char **argv)
             m->rpPlot, &Scatterplot::setXY);
     QObject::connect(&manipulationHandler, &ManipulationHandler::rpChanged,
             m->splat, &VoronoiSplat::setSites);
+
+    // Update history whenever a new projection is computed
+    QObject::connect(&manipulationHandler, &ManipulationHandler::mapChanged,
+            m->projectionHistory, &ProjectionHistory::addMap);
 
     // Keep both scatterplots and the splat scaled equally and relative to the
     // full plot
@@ -229,7 +237,7 @@ int main(int argc, char **argv)
             m->rpBarChart, &BarChart::brushItem);
 
     // Recompute values whenever projection changes
-    ProjectionObserver projectionObserver(X, cpIndices);
+    ProjectionObserver projectionObserver(X, cpIndices, m->projectionHistory);
     m->projectionObserver = &projectionObserver;
     QObject::connect(&manipulationHandler, &ManipulationHandler::mapChanged,
             m->projectionObserver, &ProjectionObserver::setMap);
