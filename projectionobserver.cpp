@@ -175,7 +175,7 @@ bool ProjectionObserver::emitValuesChanged() const
 
 void ProjectionObserver::setRewind(double t)
 {
-    if (!m_hasPrev) {
+    if (!m_hasPrev || !m_cpSelectionEmpty || !m_rpSelectionEmpty) {
         return;
     }
 
