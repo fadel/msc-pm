@@ -7,7 +7,7 @@ ProjectionHistory::ProjectionHistory(QObject *parent)
 {
 }
 
-inline void ProjectionHistory::undo()
+void ProjectionHistory::undo()
 {
     if (m_hasPrev) {
         m_hasPrev = false;
@@ -17,7 +17,7 @@ inline void ProjectionHistory::undo()
     }
 }
 
-inline void ProjectionHistory::undoAll()
+void ProjectionHistory::undoAll()
 {
     if (m_hasFirst) {
         m_hasPrev = false;
