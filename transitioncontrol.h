@@ -14,7 +14,7 @@ class TransitionControl :
 {
     Q_OBJECT
 public:
-    TransitionControl();
+    TransitionControl(QQuickItem *parent = 0);
     double t() const { return m_t; }
 
 signals:

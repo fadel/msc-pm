@@ -8,8 +8,9 @@
 // The mouse button used for interaction
 static const Qt::MouseButton MOUSE_BUTTON = Qt::MiddleButton;
 
-TransitionControl::TransitionControl()
-    : m_t(1.0)
+TransitionControl::TransitionControl(QQuickItem *parent)
+    : QQuickItem(parent)
+    , m_t(1.0)
     , m_startPos(-1)
     , m_shouldRewind(false)
 {
@@ -28,6 +29,7 @@ void TransitionControl::setT(double t)
 void TransitionControl::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() != MOUSE_BUTTON) {
+        event->ignore();
         return;
     }
 
@@ -39,6 +41,7 @@ void TransitionControl::mouseMoveEvent(QMouseEvent *event)
 {
     int x = event->pos().x();
     if (!(event->buttons() & MOUSE_BUTTON) || x > m_startPos || x < 0) {
+        event->ignore();
         return;
     }
 
@@ -50,6 +53,7 @@ void TransitionControl::mouseMoveEvent(QMouseEvent *event)
 void TransitionControl::mouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() != MOUSE_BUTTON) {
+        event->ignore();
         return;
     }
 
