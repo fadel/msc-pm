@@ -212,6 +212,8 @@ int main(int argc, char **argv)
             &cpSelectionHandler, &SelectionHandler::setSelection);
     QObject::connect(&cpSelectionHandler, &SelectionHandler::selectionChanged,
             m->cpPlot, &Scatterplot::setSelection);
+    QObject::connect(&cpSelectionHandler, &SelectionHandler::selectionChanged,
+            m->cpBarChart, &BarChart::setSelection);
 
     SelectionHandler rpSelectionHandler(X.n_rows - cpIndices.n_elem);
     QObject::connect(m->rpPlot, &Scatterplot::selectionInteractivelyChanged,
@@ -220,6 +222,8 @@ int main(int argc, char **argv)
             &rpSelectionHandler, &SelectionHandler::setSelection);
     QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
             m->rpPlot, &Scatterplot::setSelection);
+    QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
+            m->rpBarChart, &BarChart::setSelection);
 
     // Brushing between bar chart and respective scatterplot
     BrushingHandler cpBrushHandler;

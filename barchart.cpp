@@ -1,6 +1,7 @@
 #include "barchart.h"
 
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 
 #include <QOpenGLPaintDevice>
@@ -14,7 +15,9 @@
 static const QColor OUTLINE_COLOR(0, 0, 0);
 static const QColor BRUSH_COLOR(0, 0, 0);
 static const QColor BAR_COLOR(128, 128, 128);
-static const QColor SELECTION_COLOR(128, 128, 128, 96);
+static const QColor PRESELECTION_COLOR(128, 128, 128, 96);
+static const QColor SELECTION_VISIBLE_COLOR(128, 128, 128, 96);
+static const QColor SELECTION_INVISIBLE_COLOR(0, 0, 0, 0);
 
 static const float DEFAULT_OPACITY = 0.8f;
 
@@ -27,10 +30,11 @@ static inline T clamp(T value, T min, T max)
 BarChart::BarChart(QQuickItem *parent)
     : QQuickItem(parent)
     , m_shouldUpdateBars(false)
-    , m_brushedItem(-1)
-    , m_shouldUpdateSelectionRect(false)
+    , m_shouldUpdatePreSelection(false)
     , m_dragStartPos(-1.0f)
     , m_dragLastPos(-1.0f)
+    , m_shouldUpdateSelection(false)
+    , m_brushedItem(-1)
     , m_colorScale(ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS))
     , m_scale(0.0f, 1.0f, 0.0f, 1.0f)
 {
@@ -70,6 +74,7 @@ void BarChart::setValues(const arma::vec &values)
     }
     emit valuesChanged(values);
 
+    m_shouldUpdateSelection = true;
     m_shouldUpdateBars = true;
     update();
 }
@@ -88,15 +93,15 @@ void BarChart::setColorScale(const ColorScale &scale)
 
 void BarChart::setSelection(const std::vector<bool> &selection)
 {
-    if (m_selection.size() != selection.size()) {
-        return;
-    }
-
     m_selection = selection;
     emit selectionChanged(m_selection);
 
-    m_shouldUpdateSelectionRect = true;
-    update();
+    // Our selection changed but we don't want to display it unless we have the
+    // right number of values
+    if (m_values.size() == m_selection.size()) {
+        m_shouldUpdateSelection = true;
+        update();
+    }
 }
 
 void BarChart::brushItem(int item)
@@ -120,16 +125,28 @@ void BarChart::brushItem(int item)
 QSGNode *BarChart::newSceneGraph() const
 {
     // NOTE: scene graph structure is as follows:
-    // root [ barsNode [ ... ] selectionNode brushNode ]
+    // root [
+    //     barsNode [
+    //         barNode ...
+    //     ]
+    //     selectedBarsNode [
+    //         selectedBarNode ...
+    //     ]
+    //     preSelectionNode
+    //     brushNode
+    // ]
     QSGTransformNode *root = new QSGTransformNode;
 
     // The node that has all bars as children
     root->appendChildNode(new QSGNode);
 
-    // The node for drawing the selection rect
-    QSGSimpleRectNode *selectionRectNode = new QSGSimpleRectNode;
-    selectionRectNode->setColor(SELECTION_COLOR);
-    root->appendChildNode(selectionRectNode);
+    // The node that has all selected bars as children
+    root->appendChildNode(new QSGNode);
+
+    // The node for the preselection
+    QSGSimpleRectNode *preSelectionNode = new QSGSimpleRectNode;
+    preSelectionNode->setColor(PRESELECTION_COLOR);
+    root->appendChildNode(preSelectionNode);
 
     // The node for drawing the brush
     QSGGeometryNode *brushGeomNode = new QSGGeometryNode;
@@ -184,6 +201,12 @@ QSGNode *BarChart::newBarNode() const
     return opacityNode;
 }
 
+QSGNode *BarChart::newSelectionBarNode() const
+{
+    QSGSimpleRectNode *node = new QSGSimpleRectNode;
+    return node;
+}
+
 void BarChart::updateViewport(QSGNode *root) const
 {
     QSGTransformNode *viewportNode = static_cast<QSGTransformNode *>(root);
@@ -195,7 +218,7 @@ void BarChart::updateViewport(QSGNode *root) const
 void BarChart::updateBarNodeGeom(QSGNode *barNode,
                                  float x,
                                  float barWidth,
-                                 float barHeight)
+                                 float barHeight) const
 {
     float y = 1.0f - barHeight;
 
@@ -210,7 +233,7 @@ void BarChart::updateBarNodeGeom(QSGNode *barNode,
     //outlineGeomNode->markDirty(QSGNode::DirtyGeometry);
 }
 
-void BarChart::updateBarNodeColor(QSGNode *barNode, const QColor &color)
+void BarChart::updateBarNodeColor(QSGNode *barNode, const QColor &color) const
 {
     QSGGeometryNode *barGeomNode =
         static_cast<QSGGeometryNode *>(barNode->firstChild());
@@ -221,7 +244,7 @@ void BarChart::updateBarNodeColor(QSGNode *barNode, const QColor &color)
     barGeomNode->markDirty(QSGNode::DirtyMaterial);
 }
 
-void BarChart::updateBars(QSGNode *node)
+void BarChart::updateBars(QSGNode *node) const
 {
     int numValues = (int) m_values.n_elem;
     float barWidth = 1.0f / numValues;
@@ -248,7 +271,53 @@ void BarChart::updateBars(QSGNode *node)
     }
 }
 
-void BarChart::updateBrush(QSGNode *node)
+void BarChart::updateSelectionBar(QSGNode *node,
+                                  float x,
+                                  float barWidth,
+                                  const QColor &color) const
+{
+    QSGSimpleRectNode *barNode = static_cast<QSGSimpleRectNode *>(node);
+    barNode->setRect(x, 0, barWidth, 1.0f);
+    barNode->setColor(color);
+}
+
+void BarChart::updateSelectionBars(QSGNode *node) const
+{
+    int numValues = (int) m_values.n_elem;
+    float barWidth = 1.0f / numValues;
+
+    // First, make sure we have the same number of values & bars
+    while (numValues > node->childCount()) {
+        QSGNode *barNode = newSelectionBarNode();
+        node->prependChildNode(barNode);
+    }
+    while (numValues < node->childCount()) {
+        // NOTE: as stated in docs, QSGNode's children are stored in a
+        // linked list. Hence, this operation should be as fast as expected
+        node->removeChildNode(node->firstChild());
+    }
+
+    // Update each bar, displaying it (using a visible color) only if it is a
+    // selected item
+    float x = 0;
+    node = node->firstChild();
+    for (auto it = m_originalIndices.cbegin(); it != m_originalIndices.cend(); it++) {
+        updateSelectionBar(node, x, barWidth,
+                           m_selection[*it] ? SELECTION_VISIBLE_COLOR
+                                            : SELECTION_INVISIBLE_COLOR);
+        x += barWidth;
+        node = node->nextSibling();
+    }
+}
+
+void BarChart::updatePreSelection(QSGNode *node) const
+{
+    QSGSimpleRectNode *preSelectionNode = static_cast<QSGSimpleRectNode *>(node);
+    preSelectionNode->setRect(std::min(m_dragStartPos, m_dragLastPos), 0.0f,
+                              fabs(m_dragLastPos - m_dragStartPos), 1.0f);
+}
+
+void BarChart::updateBrush(QSGNode *node) const
 {
     float barWidth = 1.0f / m_values.n_elem;
     QSGGeometryNode *brushGeomNode = static_cast<QSGGeometryNode *>(node);
@@ -258,18 +327,6 @@ void BarChart::updateBrush(QSGNode *node)
                        barWidth,
                        1.0f);
     brushGeomNode->markDirty(QSGNode::DirtyGeometry);
-}
-
-void BarChart::updateSelectionRect(QSGNode *node)
-{
-    QSGSimpleRectNode *selectionGeomNode =
-        static_cast<QSGSimpleRectNode *>(node);
-
-    float x      = m_dragStartPos,
-          y      = 0.0f,
-          width  = m_dragLastPos - m_dragStartPos,
-          height = 1.0f;
-    selectionGeomNode->setRect(x, y, width, height);
 }
 
 QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
@@ -284,9 +341,15 @@ QSGNode *BarChart::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     }
     node = node->nextSibling();
 
-    if (m_shouldUpdateSelectionRect) {
-        updateSelectionRect(node);
-        m_shouldUpdateSelectionRect = false;
+    if (m_shouldUpdateSelection) {
+        updateSelectionBars(node);
+        m_shouldUpdateSelection = false;
+    }
+    node = node->nextSibling();
+
+    if (m_shouldUpdatePreSelection) {
+        updatePreSelection(node);
+        m_shouldUpdatePreSelection = false;
     }
     node = node->nextSibling();
 
@@ -369,7 +432,7 @@ void BarChart::mousePressEvent(QMouseEvent *event)
         m_dragLastPos  = pos;
     }
 
-    m_shouldUpdateSelectionRect = true;
+    m_shouldUpdatePreSelection = true;
     update();
 }
 
@@ -382,7 +445,7 @@ void BarChart::mouseMoveEvent(QMouseEvent *event)
     float pos = float(event->pos().x()) / width();
     m_dragLastPos = clamp(pos, 0.0f, 1.0f);
 
-    m_shouldUpdateSelectionRect = true;
+    m_shouldUpdatePreSelection = true;
     update();
 }
 
@@ -401,6 +464,8 @@ void BarChart::mouseReleaseEvent(QMouseEvent *event)
         interactiveSelection(m_dragStartPos, m_dragLastPos);
     }
 
-    m_shouldUpdateSelectionRect = true;
+    m_dragStartPos = -1.0f;
+    m_dragLastPos  = -1.0f;
+    m_shouldUpdatePreSelection = true;
     update();
 }

@@ -46,20 +46,27 @@ protected:
 private:
     QSGNode *newSceneGraph() const;
     QSGNode *newBarNode() const;
+    QSGNode *newSelectionBarNode() const;
 
     void updateViewport(QSGNode *root) const;
-    void updateBarNodeGeom(QSGNode *barNode, float x, float width, float height);
-    void updateBarNodeColor(QSGNode *barNode, const QColor &color);
-    void updateBars(QSGNode *node);
-    void updateBrush(QSGNode *node);
+    void updateBarNodeGeom(QSGNode *barNode, float x, float width, float height) const;
+    void updateBarNodeColor(QSGNode *barNode, const QColor &color) const;
+    void updateBars(QSGNode *node) const;
     bool m_shouldUpdateBars;
-    int m_brushedItem;
 
-    void updateSelectionRect(QSGNode *node);
-    bool m_shouldUpdateSelectionRect;
-    void interactiveSelection(float start, float end);
+    void updatePreSelection(QSGNode *node) const;
+    bool m_shouldUpdatePreSelection;
     float m_dragStartPos, m_dragLastPos;
+
+    void updateSelectionBar(QSGNode *node, float x, float barWidth, const QColor &color) const;
+    void updateSelectionBars(QSGNode *node) const;
+    bool m_shouldUpdateSelection;
+
+    void interactiveSelection(float start, float end);
     std::vector<bool> m_selection;
+
+    void updateBrush(QSGNode *node) const;
+    int m_brushedItem;
 
     int itemAt(float x, bool includeSelectorWidth = false) const;
 
