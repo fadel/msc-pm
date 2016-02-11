@@ -277,7 +277,6 @@ int main(int argc, char **argv)
     plotTC->setAcceptedMouseButtons(Qt::MiddleButton);
     m->cpPlot->setDragEnabled(true);
     m->cpPlot->setAutoScale(false);
-    m->rpPlot->setGlyphSize(3.0f);
     m->rpPlot->setAutoScale(false);
     m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);
     m->setSelectCPs();
