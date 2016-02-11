@@ -5,17 +5,22 @@
 
 #include <QObject>
 #include <QThread>
+#include <QEasingCurve>
 
-class RewindWorkerThread
+class TransitionWorkerThread
     : public QThread
 {
     Q_OBJECT
 public:
-    RewindWorkerThread(TransitionControl *control) { m_control = control; }
+    TransitionWorkerThread(TransitionControl *control);
+    TransitionWorkerThread(TransitionControl *control, const QEasingCurve &easing);
+
+    void setEasing(const QEasingCurve &easing);
     void run();
 
 private:
     TransitionControl *m_control;
+    QEasingCurve m_easing;
 };
 
 #endif // REWINDWORKERTHREAD_H

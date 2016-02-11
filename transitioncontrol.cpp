@@ -3,7 +3,7 @@
 #include <QObject>
 #include <QThread>
 
-#include "rewindworkerthread.h"
+#include "transitionworkerthread.h"
 
 // The mouse button used for interaction
 static const Qt::MouseButton MOUSE_BUTTON = Qt::MiddleButton;
@@ -60,7 +60,7 @@ void TransitionControl::mouseReleaseEvent(QMouseEvent *event)
         m_shouldRewind = false;
 
         // We now have to smoothly go back to m_t == 1.0
-        m_rewindThread = new RewindWorkerThread(this);
+        m_rewindThread = new TransitionWorkerThread(this);
         connect(m_rewindThread, &QThread::finished, m_rewindThread, &QObject::deleteLater);
         m_rewindThread->start();
     }

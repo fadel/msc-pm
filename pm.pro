@@ -29,7 +29,7 @@ HEADERS += main.h \
     historygraph.h \
     barchart.h \
     transitioncontrol.h \
-    rewindworkerthread.h \
+    transitionworkerthread.h \
     manipulationhandler.h \
     mapscalehandler.h \
     numericrange.h \
@@ -51,7 +51,7 @@ SOURCES += main.cpp \
     historygraph.cpp \
     barchart.cpp \
     transitioncontrol.cpp \
-    rewindworkerthread.cpp \
+    transitionworkerthread.cpp \
     manipulationhandler.cpp \
     mapscalehandler.cpp \
     selectionhandler.cpp \
