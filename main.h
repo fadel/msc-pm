@@ -9,6 +9,7 @@
 #include "colorscale.h"
 #include "continuouscolorscale.h"
 #include "projectionobserver.h"
+#include "projectionhistory.h"
 #include "scatterplot.h"
 #include "voronoisplat.h"
 
