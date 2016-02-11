@@ -269,11 +269,11 @@ int main(int argc, char **argv)
     // Connect projection components to rewinding mechanism
     QObject::connect(plotTC, &TransitionControl::tChanged,
             &manipulationHandler, &ManipulationHandler::setRewind);
-    QObject::connect(&manipulationHandler, &ManipulationHandler::mapRewound,
-            m, &Main::updateMap);
-
     QObject::connect(plotTC, &TransitionControl::tChanged,
             m->projectionObserver, &ProjectionObserver::setRewind);
+
+    QObject::connect(&manipulationHandler, &ManipulationHandler::mapRewound,
+            m, &Main::updateMap);
     QObject::connect(m->projectionObserver, &ProjectionObserver::cpValuesRewound,
             m->cpPlot, &Scatterplot::setColorData);
     QObject::connect(m->projectionObserver, &ProjectionObserver::rpValuesRewound,
