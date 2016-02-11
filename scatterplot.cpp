@@ -234,15 +234,6 @@ arma::mat Scatterplot::XY() const
     return m_xy;
 }
 
-bool Scatterplot::saveToFile(const QUrl &url)
-{
-    if (!url.isLocalFile()) {
-        return false;
-    }
-
-    return m_xy.save(url.path().toStdString(), arma::raw_ascii);
-}
-
 void Scatterplot::setXY(const arma::mat &xy)
 {
     if (xy.n_cols != 2) {
@@ -329,15 +320,17 @@ void Scatterplot::autoScale()
     emit scaleChanged(m_sx, m_sy);
 }
 
-void Scatterplot::setGlyphSize(float glyphSize, bool updateView)
+void Scatterplot::setGlyphSize(float glyphSize)
 {
+    if (m_glyphSize == glyphSize || glyphSize < 2.0f) {
+        return;
+    }
+
     m_glyphSize = glyphSize;
     emit glyphSizeChanged(m_glyphSize);
 
     m_shouldUpdateGeometry = true;
-    if (updateView) {
-        update();
-    }
+    update();
 }
 
 QSGNode *Scatterplot::newSceneGraph()

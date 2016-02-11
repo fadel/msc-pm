@@ -16,6 +16,7 @@ class Scatterplot
     : public QQuickItem
 {
     Q_OBJECT
+    Q_PROPERTY(float glyphSize READ glyphSize WRITE setGlyphSize NOTIFY glyphSizeChanged)
 public:
     static const int PADDING = 20;
 
@@ -24,9 +25,8 @@ public:
     arma::mat XY() const;
     void setColorScale(const ColorScale &colorScale);
     void setAutoScale(bool autoScale);
-    Q_INVOKABLE bool saveToFile(const QUrl &url);
-
-    Q_INVOKABLE float glyphSize() const { return m_glyphSize; }
+    float glyphSize() const { return m_glyphSize; }
+    void setGlyphSize(float glyphSize);
 
     void setDragEnabled(bool enabled) { m_dragEnabled = enabled; }
     bool isDragEnabled() const { return m_dragEnabled; }
@@ -50,7 +50,6 @@ public slots:
     void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
     void setSelection(const std::vector<bool> &selection);
     void brushItem(int item);
-    Q_INVOKABLE void setGlyphSize(float glyphSize, bool updateView = true);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);
