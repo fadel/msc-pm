@@ -20,10 +20,12 @@ public:
     bool hasPrev() const  { return m_hasPrev; }
 
     void undo();
-    void undoAll();
+    void reset();
 
 signals:
-    void historyChanged(const arma::mat &currentY) const;
+    void undoPerformed(const arma::mat &prevY) const;
+    void resetPerformed(const arma::mat &firstY) const;
+    void mapAdded(const arma::mat &newY) const;
 
 public slots:
     void addMap(const arma::mat &Y);

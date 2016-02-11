@@ -172,21 +172,27 @@ int main(int argc, char **argv)
     ManipulationHandler manipulationHandler(X, cpIndices, m->projectionHistory);
     QObject::connect(m->cpPlot, &Scatterplot::xyInteractivelyChanged,
             &manipulationHandler, &ManipulationHandler::setCP);
-    QObject::connect(&manipulationHandler, &ManipulationHandler::cpChanged,
-            m->cpPlot, &Scatterplot::setXY);
-    QObject::connect(&manipulationHandler, &ManipulationHandler::rpChanged,
-            m->rpPlot, &Scatterplot::setXY);
-    QObject::connect(&manipulationHandler, &ManipulationHandler::rpChanged,
-            m->splat, &VoronoiSplat::setSites);
 
-    // Update history whenever a new projection is computed
+    // Update history whenever a new projection is computed...
     QObject::connect(&manipulationHandler, &ManipulationHandler::mapChanged,
             m->projectionHistory, &ProjectionHistory::addMap);
+
+    // ... and update visual components whenever the history changes
+    QObject::connect(m->projectionHistory, &ProjectionHistory::mapAdded,
+            m, &Main::updateMap);
+    QObject::connect(m->projectionHistory, &ProjectionHistory::undoPerformed,
+            m, &Main::updateMap);
+    QObject::connect(m->projectionHistory, &ProjectionHistory::resetPerformed,
+            m, &Main::updateMap);
 
     // Keep both scatterplots and the splat scaled equally and relative to the
     // full plot
     MapScaleHandler mapScaleHandler;
-    QObject::connect(&manipulationHandler, &ManipulationHandler::mapChanged,
+    QObject::connect(m->projectionHistory, &ProjectionHistory::mapAdded,
+            &mapScaleHandler, &MapScaleHandler::scaleToMap);
+    QObject::connect(m->projectionHistory, &ProjectionHistory::undoPerformed,
+            &mapScaleHandler, &MapScaleHandler::scaleToMap);
+    QObject::connect(m->projectionHistory, &ProjectionHistory::resetPerformed,
             &mapScaleHandler, &MapScaleHandler::scaleToMap);
     QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
             m->cpPlot, &Scatterplot::setScale);
@@ -239,7 +245,11 @@ int main(int argc, char **argv)
     // Recompute values whenever projection changes
     ProjectionObserver projectionObserver(X, cpIndices, m->projectionHistory);
     m->projectionObserver = &projectionObserver;
-    QObject::connect(&manipulationHandler, &ManipulationHandler::mapChanged,
+    QObject::connect(m->projectionHistory, &ProjectionHistory::mapAdded,
+            m->projectionObserver, &ProjectionObserver::setMap);
+    QObject::connect(m->projectionHistory, &ProjectionHistory::undoPerformed,
+            m->projectionObserver, &ProjectionObserver::setMap);
+    QObject::connect(m->projectionHistory, &ProjectionHistory::resetPerformed,
             m->projectionObserver, &ProjectionObserver::setMap);
     QObject::connect(m->projectionObserver, &ProjectionObserver::cpValuesChanged,
             m->cpPlot, &Scatterplot::setColorData);
@@ -256,15 +266,11 @@ int main(int argc, char **argv)
     QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
             &projectionObserver, &ProjectionObserver::setRPSelection);
 
-    // Connect visual components (but not barcharts) to rewinding mechanism
+    // Connect projection components to rewinding mechanism
     QObject::connect(plotTC, &TransitionControl::tChanged,
             &manipulationHandler, &ManipulationHandler::setRewind);
-    QObject::connect(&manipulationHandler, &ManipulationHandler::cpRewound,
-            m->cpPlot, &Scatterplot::setXY);
-    QObject::connect(&manipulationHandler, &ManipulationHandler::rpRewound,
-            m->rpPlot, &Scatterplot::setXY);
-    QObject::connect(&manipulationHandler, &ManipulationHandler::rpRewound,
-            m->splat, &VoronoiSplat::setSites);
+    QObject::connect(&manipulationHandler, &ManipulationHandler::mapRewound,
+            m, &Main::updateMap);
 
     QObject::connect(plotTC, &TransitionControl::tChanged,
             m->projectionObserver, &ProjectionObserver::setRewind);

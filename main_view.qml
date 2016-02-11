@@ -28,6 +28,12 @@ ApplicationWindow {
         }
 
         Menu {
+            title: "Edit"
+            MenuItem { action: undoManipulationAction }
+            MenuItem { action: resetManipulationAction }
+        }
+
+        Menu {
             title: "Select"
             MenuItem { action: selectRPsAction }
             MenuItem { action: selectCPsAction }
@@ -79,6 +85,7 @@ ApplicationWindow {
                         y: parent.y
                         z: 1
                         anchors.fill: parent
+                        glyphSize: 3.0
                     }
 
                     Scatterplot {
@@ -258,10 +265,10 @@ ApplicationWindow {
                         id: cpGlyphSizeSpinBox
                         maximumValue: 100
                         minimumValue: 6
-                        value: cpPlot.glyphSize()
                         decimals: 1
                         stepSize: 1
-                        onValueChanged: cpPlot.setGlyphSize(this.value)
+                        value: cpPlot.glyphSize
+                        onValueChanged: cpPlot.glyphSize = this.value
                     }
 
                     Label { text: "Opacity:" }
@@ -364,10 +371,10 @@ ApplicationWindow {
                         id: rpGlyphSizeSpinBox
                         maximumValue: 100
                         minimumValue: 2
-                        value: rpPlot.glyphSize()
                         decimals: 1
                         stepSize: 1
-                        onValueChanged: rpPlot.setGlyphSize(this.value)
+                        value: rpPlot.glyphSize
+                        onValueChanged: rpPlot.glyphSize = this.value
                     }
 
                     Label { text: "Opacity:" }
@@ -457,6 +464,20 @@ ApplicationWindow {
         text: "&Quit"
         shortcut: "Ctrl+Q"
         onTriggered: Qt.quit()
+    }
+
+    Action {
+        id: undoManipulationAction
+        text: "&Undo manipulation"
+        shortcut: "Ctrl+Z"
+        onTriggered: Main.undoManipulation()
+    }
+
+    Action {
+        id: resetManipulationAction
+        text: "&Reset manipulation"
+        shortcut: "Ctrl+R"
+        onTriggered: Main.resetManipulation()
     }
 
     Action {

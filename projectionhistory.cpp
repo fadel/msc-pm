@@ -13,17 +13,17 @@ void ProjectionHistory::undo()
         m_hasPrev = false;
         m_Y = m_prevY;
 
-        emit historyChanged(m_Y);
+        emit undoPerformed(m_Y);
     }
 }
 
-void ProjectionHistory::undoAll()
+void ProjectionHistory::reset()
 {
     if (m_hasFirst) {
         m_hasPrev = false;
         m_Y = m_firstY;
 
-        emit historyChanged(m_Y);
+        emit resetPerformed(m_Y);
     }
 }
 
@@ -41,5 +41,5 @@ void ProjectionHistory::addMap(const arma::mat &Y)
         m_firstY = m_Y;
     }
 
-    emit historyChanged(m_Y);
+    emit mapAdded(m_Y);
 }

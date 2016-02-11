@@ -4,12 +4,13 @@
 #include <QObject>
 #include <armadillo>
 
-#include "barchart.h"
-#include "colormap.h"
 #include "colorscale.h"
 #include "continuouscolorscale.h"
 #include "projectionobserver.h"
 #include "projectionhistory.h"
+#include "numericrange.h"
+#include "barchart.h"
+#include "colormap.h"
 #include "scatterplot.h"
 #include "voronoisplat.h"
 
@@ -134,10 +135,18 @@ public:
     // Shared object that controls manipulation history
     ProjectionHistory *projectionHistory;
     Q_INVOKABLE void undoManipulation()  { projectionHistory->undo(); }
-    Q_INVOKABLE void resetManipulation() { projectionHistory->undoAll(); }
+    Q_INVOKABLE void resetManipulation() { projectionHistory->reset(); }
 
 public slots:
-    void setCPIndices(const arma::uvec &indices) { m_cpIndices = indices; }
+    void setCPIndices(const arma::uvec &indices) {
+        m_cpIndices = indices;
+
+        m_rpIndices.set_size(m_dataset.n_rows - m_cpIndices.n_elem);
+        NumericRange<arma::uword> allIndices(0, m_dataset.n_rows);
+        std::set_symmetric_difference(allIndices.cbegin(), allIndices.cend(),
+                m_cpIndices.cbegin(), m_cpIndices.cend(), m_rpIndices.begin());
+    }
+
     void setCP(const arma::mat &cp) {
         if (cp.n_cols != 2
             || cp.n_rows != m_cpIndices.n_elem) {
@@ -145,6 +154,14 @@ public slots:
         }
 
         m_cp = cp;
+    }
+
+    void updateMap(const arma::mat &Y) {
+        cpPlot->setXY(Y.rows(m_cpIndices));
+
+        const arma::mat &regularPoints = Y.rows(m_rpIndices);
+        rpPlot->setXY(regularPoints);
+        splat->setSites(regularPoints);
     }
 
 private:
@@ -163,8 +180,11 @@ private:
         , cpPlot(0)
         , rpPlot(0)
         , splat(0)
+        , projectionObserver(0)
+        , projectionHistory(0)
     {
     }
+
     ~Main() {}
 
     ColorScale &getColorScale(ColorScaleType colorScaleType) {
@@ -183,7 +203,7 @@ private:
     }
 
     arma::mat m_dataset, m_cp;
-    arma::uvec m_cpIndices;
+    arma::uvec m_cpIndices, m_rpIndices;
     std::string m_indicesSavePath, m_cpSavePath;
 };
 
