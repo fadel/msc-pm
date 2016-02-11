@@ -11,6 +11,7 @@ static const Qt::MouseButton MOUSE_BUTTON = Qt::MiddleButton;
 TransitionControl::TransitionControl()
     : m_t(1.0)
     , m_startPos(-1)
+    , m_shouldRewind(false)
 {
 }
 
@@ -41,6 +42,7 @@ void TransitionControl::mouseMoveEvent(QMouseEvent *event)
         return;
     }
 
+    m_shouldRewind = true;
     m_t = double(x) / m_startPos;
     emit tChanged(m_t);
 }
@@ -54,8 +56,12 @@ void TransitionControl::mouseReleaseEvent(QMouseEvent *event)
     // Back to initial state
     m_startPos = -1;
 
-    // We now have to smoothly go back to m_t == 1.0
-    m_rewindThread = new RewindWorkerThread(this);
-    connect(m_rewindThread, &QThread::finished, m_rewindThread, &QObject::deleteLater);
-    m_rewindThread->start();
+    if (m_shouldRewind) {
+        m_shouldRewind = false;
+
+        // We now have to smoothly go back to m_t == 1.0
+        m_rewindThread = new RewindWorkerThread(this);
+        connect(m_rewindThread, &QThread::finished, m_rewindThread, &QObject::deleteLater);
+        m_rewindThread->start();
+    }
 }

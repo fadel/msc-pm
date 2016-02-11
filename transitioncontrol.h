@@ -34,6 +34,8 @@ private:
     // The x pos where interaction started
     int m_startPos;
 
+    bool m_shouldRewind;
+
     // Controls the smooth rewind transition
     QThread *m_rewindThread;
 };
