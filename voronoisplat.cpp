@@ -524,7 +524,13 @@ void VoronoiSplatRenderer::computeDT()
     const std::vector<float> &sites = *m_sites;
     std::vector<float> buf(w*h);
     for (unsigned i = 0; i < sites.size(); i += 2) {
-        buf[int(m_sy(sites[i + 1]))*h + int(m_sx(sites[i]))] = i/2.0f + 1.0f;
+        unsigned bufIndex = unsigned(m_sy(sites[i + 1]))*h + unsigned(m_sx(sites[i]));
+        if (bufIndex > buf.size()) {
+            // points outside our scale
+            continue;
+        }
+
+        buf[bufIndex] = i/2.0f + 1.0f;
     }
     skelft2DFT(0, buf.data(), 0, 0, w, h, w);
 
