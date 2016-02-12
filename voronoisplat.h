@@ -12,6 +12,8 @@ class VoronoiSplat
     : public QQuickFramebufferObject
 {
     Q_OBJECT
+    Q_PROPERTY(float alpha READ alpha WRITE setAlpha NOTIFY alphaChanged)
+    Q_PROPERTY(float beta  READ beta  WRITE setBeta  NOTIFY betaChanged)
 public:
     VoronoiSplat(QQuickItem *parent = 0);
 
@@ -20,10 +22,10 @@ public:
     const std::vector<float> &sites() const      { return m_sites; }
     const std::vector<float> &values() const     { return m_values; }
     const std::vector<float> &colorScale() const { return m_cmap; }
-    LinearScale<float> scaleX() const            { return m_sx; }
-    LinearScale<float> scaleY() const            { return m_sy; }
-    Q_INVOKABLE float alpha() const              { return m_alpha; }
-    Q_INVOKABLE float beta() const               { return m_beta; }
+    LinearScale<float> scaleX() const { return m_sx; }
+    LinearScale<float> scaleY() const { return m_sy; }
+    float alpha() const { return m_alpha; }
+    float beta() const  { return m_beta; }
 
     bool sitesChanged() const      { return m_sitesChanged; }
     bool valuesChanged() const     { return m_valuesChanged; }
@@ -60,10 +62,10 @@ public slots:
     void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
 
     // Shepard blur radius
-    Q_INVOKABLE void setAlpha(float alpha);
+    void setAlpha(float alpha);
 
     // Maximum blur radius
-    Q_INVOKABLE void setBeta(float beta);
+    void setBeta(float beta);
 
 private:
     std::vector<float> m_sites, m_values, m_cmap;

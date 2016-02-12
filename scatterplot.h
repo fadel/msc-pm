@@ -88,11 +88,11 @@ private:
     int m_brushedItem;
 
     enum State {
-        STATE_NONE,
-        STATE_BRUSHING,
-        STATE_SELECTING,
-        STATE_SELECTED,
-        STATE_MOVING
+        StateNone,
+        StateBrushing,
+        StateSelecting,
+        StateSelected,
+        StateMoving
     } m_interactionState;
     bool m_dragEnabled;
 

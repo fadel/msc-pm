@@ -8,7 +8,7 @@
 
 ProjectionObserver::ProjectionObserver(const arma::mat &X,
                                        const arma::uvec &cpIndices, ProjectionHistory *history)
-    : m_type(OBSERVER_CURRENT)
+    : m_type(ObserverCurrent)
     , m_X(X)
     , m_cpIndices(cpIndices)
     , m_rpIndices(X.n_rows - cpIndices.n_elem)
@@ -79,7 +79,7 @@ bool ProjectionObserver::setType(int type)
         return true;
     }
 
-    if (type == OBSERVER_DIFF_PREVIOUS && !m_history->hasPrev()) {
+    if (type == ObserverDiffPrevious && !m_history->hasPrev()) {
         return false;
     }
 
@@ -146,11 +146,11 @@ void ProjectionObserver::setRPSelection(const std::vector<bool> &rpSelection)
 bool ProjectionObserver::emitValuesChanged() const
 {
     switch (m_type) {
-    case OBSERVER_CURRENT:
+    case ObserverCurrent:
         emit rpValuesChanged(m_values(m_rpIndices));
         emit valuesChanged(m_values);
         return true;
-    case OBSERVER_DIFF_PREVIOUS:
+    case ObserverDiffPrevious:
         if (m_history->hasPrev()) {
             arma::vec diff = m_values - m_prevValues;
             emit rpValuesChanged(diff(m_rpIndices));
@@ -158,7 +158,7 @@ bool ProjectionObserver::emitValuesChanged() const
             return true;
         }
         return false;
-    case OBSERVER_DIFF_ORIGINAL:
+    case ObserverDiffFirst:
         if (m_history->hasFirst()) {
             arma::vec diff = m_values - m_firstValues;
             emit rpValuesChanged(diff(m_rpIndices));

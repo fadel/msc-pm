@@ -77,9 +77,9 @@ public:
     }
 
     enum ObserverType {
-        ObserverCurrent      = ProjectionObserver::OBSERVER_CURRENT,
-        ObserverDiffPrevious = ProjectionObserver::OBSERVER_DIFF_PREVIOUS,
-        ObserverDiffOriginal = ProjectionObserver::OBSERVER_DIFF_ORIGINAL
+        ObserverCurrent      = ProjectionObserver::ObserverCurrent,
+        ObserverDiffPrevious = ProjectionObserver::ObserverDiffPrevious,
+        ObserverDiffFirst    = ProjectionObserver::ObserverDiffFirst
     };
 
     Q_INVOKABLE bool setObserverType(ObserverType observerType) {
@@ -172,9 +172,9 @@ private:
             QColor("#d62728"), QColor("#9467bd"), QColor("#8c564b"),
             QColor("#e377c2"), QColor("#17becf"), QColor("#7f7f7f"),
           }}
-        , COLOR_SCALE_CONTINUOUS{ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS)}
-        , COLOR_SCALE_DIVERGENT{ContinuousColorScale::builtin(ContinuousColorScale::RED_GRAY_BLUE)}
-        , COLOR_SCALE_RAINBOW{ContinuousColorScale::builtin(ContinuousColorScale::RAINBOW)}
+        , COLOR_SCALE_CONTINUOUS{ContinuousColorScale::builtin(ContinuousColorScale::HeatedObjects)}
+        , COLOR_SCALE_DIVERGENT{ContinuousColorScale::builtin(ContinuousColorScale::RedGrayBlue)}
+        , COLOR_SCALE_RAINBOW{ContinuousColorScale::builtin(ContinuousColorScale::Rainbow)}
         , cpBarChart(0)
         , rpBarChart(0)
         , cpPlot(0)

@@ -204,12 +204,12 @@ void QuadTree::query(const QRectF &rect, std::vector<int> &result) const
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
     , m_glyphSize(DEFAULT_GLYPH_SIZE)
-    , m_colorScale(ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS))
+    , m_colorScale(ContinuousColorScale::builtin(ContinuousColorScale::HeatedObjects))
     , m_autoScale(true)
     , m_sx(0, 1, 0, 1)
     , m_sy(0, 1, 0, 1)
     , m_brushedItem(-1)
-    , m_interactionState(STATE_NONE)
+    , m_interactionState(StateNone)
     , m_dragEnabled(false)
     , m_shouldUpdateGeometry(false)
     , m_shouldUpdateMaterials(false)
@@ -449,7 +449,7 @@ QSGNode *Scatterplot::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 
     // Selection
     QSGSimpleRectNode *selectionNode = static_cast<QSGSimpleRectNode *>(node);
-    if (m_interactionState == STATE_SELECTING) {
+    if (m_interactionState == StateSelecting) {
         selectionNode->setRect(QRectF(m_dragOriginPos, m_dragCurrentPos));
         selectionNode->markDirty(QSGNode::DirtyGeometry);
     } else {
@@ -473,7 +473,7 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
         return;
     }
 
-    if (m_interactionState == STATE_MOVING) {
+    if (m_interactionState == StateMoving) {
         tx = m_dragCurrentPos.x() - m_dragOriginPos.x();
         ty = m_dragCurrentPos.y() - m_dragOriginPos.y();
     } else {
@@ -528,8 +528,8 @@ void Scatterplot::updateBrush(QSGNode *node)
 {
     QMatrix4x4 transform;
     if (m_brushedItem < 0
-        || (m_interactionState != STATE_NONE
-            && m_interactionState != STATE_SELECTED)) {
+        || (m_interactionState != StateNone
+            && m_interactionState != StateSelected)) {
         transform.translate(-width(), -height());
     } else {
         const arma::rowvec &row = m_xy.row(m_brushedItem);
@@ -543,28 +543,28 @@ void Scatterplot::updateBrush(QSGNode *node)
 void Scatterplot::mousePressEvent(QMouseEvent *event)
 {
     switch (m_interactionState) {
-    case STATE_NONE:
-    case STATE_SELECTED:
+    case StateNone:
+    case StateSelected:
         switch (event->button()) {
         case Qt::LeftButton:
             if (event->modifiers() == Qt::ShiftModifier && m_dragEnabled) {
-                m_interactionState = STATE_MOVING;
+                m_interactionState = StateMoving;
                 m_dragOriginPos = event->localPos();
                 m_dragCurrentPos = m_dragOriginPos;
             } else {
-                m_interactionState = STATE_BRUSHING;
+                m_interactionState = StateBrushing;
             }
             break;
         case Qt::RightButton:
-            m_interactionState = STATE_NONE;
+            m_interactionState = StateNone;
             m_selection.assign(m_selection.size(), false);
             emit selectionInteractivelyChanged(m_selection);
             break;
         }
         break;
-    case STATE_BRUSHING:
-    case STATE_SELECTING:
-    case STATE_MOVING:
+    case StateBrushing:
+    case StateSelecting:
+    case StateMoving:
         // Probably shouldn't reach these
         break;
     }
@@ -573,22 +573,22 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
 void Scatterplot::mouseMoveEvent(QMouseEvent *event)
 {
     switch (m_interactionState) {
-    case STATE_BRUSHING:
-        m_interactionState = STATE_SELECTING;
+    case StateBrushing:
+        m_interactionState = StateSelecting;
         m_dragOriginPos = event->localPos();
         m_dragCurrentPos = m_dragOriginPos;
         // fall through
-    case STATE_SELECTING:
+    case StateSelecting:
         m_dragCurrentPos = event->localPos();
         update();
         break;
-    case STATE_MOVING:
+    case StateMoving:
         m_dragCurrentPos = event->localPos();
         m_shouldUpdateGeometry = true;
         update();
         break;
-    case STATE_NONE:
-    case STATE_SELECTED:
+    case StateNone:
+    case StateSelected:
         break;
     }
 }
@@ -598,16 +598,16 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
     bool mergeSelection = (event->modifiers() == Qt::ControlModifier);
 
     switch (m_interactionState) {
-    case STATE_BRUSHING:
+    case StateBrushing:
         // Mouse clicked with brush target; set new selection or append to
         // current
         if (!mergeSelection) {
             m_selection.assign(m_selection.size(), false);
         }
         if (m_brushedItem == -1) {
-            m_interactionState = STATE_NONE;
+            m_interactionState = StateNone;
         } else {
-            m_interactionState = STATE_SELECTED;
+            m_interactionState = StateSelected;
             m_selection[m_brushedItem] = !m_selection[m_brushedItem];
         }
 
@@ -615,13 +615,13 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
         m_shouldUpdateMaterials = true;
         update();
         break;
-    case STATE_SELECTING:
+    case StateSelecting:
         {
         // Selecting points and mouse is now released; update selection and
         // brush
         bool anySelected = interactiveSelection(mergeSelection);
-        m_interactionState = anySelected ? STATE_SELECTED
-                                         : STATE_NONE;
+        m_interactionState = anySelected ? StateSelected
+                                         : StateNone;
 
         QPoint pos = event->pos();
         m_brushedItem = m_quadtree->nearestTo(pos.x(), pos.y());
@@ -631,17 +631,17 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
         update();
         }
         break;
-    case STATE_MOVING:
+    case StateMoving:
         // Moving points and now stopped; apply manipulation
-        m_interactionState = STATE_SELECTED;
+        m_interactionState = StateSelected;
         applyManipulation();
         m_shouldUpdateGeometry = true;
         update();
 
         m_dragOriginPos = m_dragCurrentPos;
         break;
-    case STATE_NONE:
-    case STATE_SELECTED:
+    case StateNone:
+    case StateSelected:
         break;
     }
 }

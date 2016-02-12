@@ -11,9 +11,11 @@ class ProjectionObserver
 {
     Q_OBJECT
 public:
-    static const int OBSERVER_CURRENT       = 0;
-    static const int OBSERVER_DIFF_PREVIOUS = 1;
-    static const int OBSERVER_DIFF_ORIGINAL = 2;
+    enum ObserverType {
+        ObserverCurrent,
+        ObserverDiffPrevious,
+        ObserverDiffFirst
+    };
 
     ProjectionObserver(const arma::mat &X,
                        const arma::uvec &cpIndices,

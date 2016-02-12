@@ -336,10 +336,10 @@ ApplicationWindow {
                                 id: alphaSpinBox
                                 maximumValue: 100
                                 minimumValue: 1
-                                value: splat.alpha()
+                                value: splat.alpha
                                 decimals: 2
                                 stepSize: 1
-                                onValueChanged: splat.setAlpha(this.value)
+                                onValueChanged: splat.alpha = this.value
                             }
 
                             Label { text: "Radius (β):" }
@@ -347,10 +347,10 @@ ApplicationWindow {
                                 id: betaSpinBox
                                 maximumValue: 100
                                 minimumValue: 1
-                                value: splat.beta()
+                                value: splat.beta
                                 decimals: 2
                                 stepSize: 1
-                                onValueChanged: splat.setBeta(this.value)
+                                onValueChanged: splat.beta = this.value
                             }
 
                             Label { text: "Opacity:" }
@@ -417,10 +417,10 @@ ApplicationWindow {
                     }
                     RadioButton {
                         id: diffOriginalMetricRadioButton
-                        text: "Diff. to original"
+                        text: "Diff. to first"
                         exclusiveGroup: wrtMetricsGroup
                         onClicked: {
-                            if (!Main.setObserverType(Main.ObserverDiffOriginal)) {
+                            if (!Main.setObserverType(Main.ObserverDiffFirst)) {
                                 this.checked = false;
                                 currentMetricRadioButton.checked = true;
                             }

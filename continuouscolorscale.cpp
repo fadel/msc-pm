@@ -32,7 +32,7 @@ QColor ContinuousColorScale::color(qreal t) const
 ContinuousColorScale ContinuousColorScale::builtin(BuiltinContinuousColorScale scale)
 {
     switch (scale) {
-    case HEATED_OBJECTS:
+    case HeatedObjects:
         return ContinuousColorScale{
             QColor(  0,   0,   0),
             QColor( 35,   0,   0),
@@ -291,7 +291,7 @@ ContinuousColorScale ContinuousColorScale::builtin(BuiltinContinuousColorScale s
             QColor(255, 255, 247),
             QColor(255, 255, 255)
         };
-    case RED_GRAY_BLUE:
+    case RedGrayBlue:
         return ContinuousColorScale{
             QColor(221,  68,  68),
             QColor(220,  69,  68),
@@ -550,7 +550,7 @@ ContinuousColorScale ContinuousColorScale::builtin(BuiltinContinuousColorScale s
             QColor( 69,  68, 220),
             QColor( 68,  68, 221)
         };
-    case RAINBOW:
+    case Rainbow:
         return ContinuousColorScale{
             QColor(  0,   0,   0),
             QColor( 45,   0,  36),
@@ -810,6 +810,6 @@ ContinuousColorScale ContinuousColorScale::builtin(BuiltinContinuousColorScale s
             QColor(255, 255, 255)
         };
     default:
-        return ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS);
+        return ContinuousColorScale::builtin(ContinuousColorScale::HeatedObjects);
     }
 }

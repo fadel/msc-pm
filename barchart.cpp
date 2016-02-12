@@ -35,7 +35,7 @@ BarChart::BarChart(QQuickItem *parent)
     , m_dragLastPos(-1.0f)
     , m_shouldUpdateSelection(false)
     , m_brushedItem(-1)
-    , m_colorScale(ContinuousColorScale::builtin(ContinuousColorScale::HEATED_OBJECTS))
+    , m_colorScale(ContinuousColorScale::builtin(ContinuousColorScale::HeatedObjects))
     , m_scale(0.0f, 1.0f, 0.0f, 1.0f)
 {
     setClip(true);
