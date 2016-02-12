@@ -7,7 +7,7 @@
 #include "numericrange.h"
 
 ProjectionObserver::ProjectionObserver(const arma::mat &X,
-                                       const arma::uvec &cpIndices, ProjectionHistory *history)
+                                       const arma::uvec &cpIndices)
     : m_type(ObserverCurrent)
     , m_X(X)
     , m_cpIndices(cpIndices)
@@ -17,10 +17,9 @@ ProjectionObserver::ProjectionObserver(const arma::mat &X,
     , m_values(X.n_rows)
     , m_prevValues(X.n_rows)
     , m_firstValues(X.n_rows)
-    , m_history(history)
+    , m_hasFirst(false)
+    , m_hasPrev(false)
 {
-    Q_ASSERT(history);
-
     m_distX = mp::dist(m_X);
 
     NumericRange<arma::uword> allIndices(0, m_X.n_rows);
@@ -50,10 +49,36 @@ void ProjectionObserver::computeAlphas()
     }
 }
 
-void ProjectionObserver::setMap(const arma::mat &Y)
+void ProjectionObserver::undo()
 {
-    // update data of previous map
-    if (m_history->hasFirst()) {
+    if (m_hasPrev) {
+        m_hasPrev = false;
+        m_distY  = m_prevDistY;
+        m_values = m_prevValues;
+
+        if (m_cpSelectionEmpty && m_rpSelectionEmpty) {
+            emitValuesChanged();
+        }
+    }
+}
+
+void ProjectionObserver::reset()
+{
+    if (m_hasFirst) {
+        m_hasPrev = false;
+        m_distY  = m_firstDistY;
+        m_values = m_firstValues;
+
+        if (m_cpSelectionEmpty && m_rpSelectionEmpty) {
+            emitValuesChanged();
+        }
+    }
+}
+
+void ProjectionObserver::addMap(const arma::mat &Y)
+{
+    if (m_hasFirst) {
+        m_hasPrev = true;
         m_prevDistY = m_distY;
         m_prevValues = m_values;
     }
@@ -62,8 +87,8 @@ void ProjectionObserver::setMap(const arma::mat &Y)
 
     mp::aggregatedError(m_distX, m_distY, m_values);
 
-    // update data of first map
-    if (!m_history->hasFirst()) {
+    if (!m_hasFirst) {
+        m_hasFirst = true;
         m_firstDistY = m_distY;
         m_firstValues = m_values;
     }
@@ -73,13 +98,14 @@ void ProjectionObserver::setMap(const arma::mat &Y)
     }
 }
 
-bool ProjectionObserver::setType(int type)
+bool ProjectionObserver::setType(ObserverType type)
 {
     if (m_type == type) {
         return true;
     }
 
-    if (type == ObserverDiffPrevious && !m_history->hasPrev()) {
+    if ((type == ObserverDiffPrevious && !m_hasPrev)
+        || (type == ObserverDiffFirst && !m_hasFirst)) {
         return false;
     }
 
@@ -151,7 +177,7 @@ bool ProjectionObserver::emitValuesChanged() const
         emit valuesChanged(m_values);
         return true;
     case ObserverDiffPrevious:
-        if (m_history->hasPrev()) {
+        if (m_hasPrev) {
             arma::vec diff = m_values - m_prevValues;
             emit rpValuesChanged(diff(m_rpIndices));
             emit valuesChanged(diff);
@@ -159,7 +185,7 @@ bool ProjectionObserver::emitValuesChanged() const
         }
         return false;
     case ObserverDiffFirst:
-        if (m_history->hasFirst()) {
+        if (m_hasFirst) {
             arma::vec diff = m_values - m_firstValues;
             emit rpValuesChanged(diff(m_rpIndices));
             emit valuesChanged(diff);
@@ -173,7 +199,7 @@ bool ProjectionObserver::emitValuesChanged() const
 
 void ProjectionObserver::setRewind(double t)
 {
-    if (!m_history->hasPrev() || !m_cpSelectionEmpty || !m_rpSelectionEmpty) {
+    if (!m_hasPrev || !m_cpSelectionEmpty || !m_rpSelectionEmpty) {
         return;
     }
 

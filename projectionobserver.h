@@ -18,8 +18,10 @@ public:
     };
 
     ProjectionObserver(const arma::mat &X,
-                       const arma::uvec &cpIndices,
-                       ProjectionHistory *history);
+                       const arma::uvec &cpIndices);
+
+    void undo();
+    void reset();
 
 signals:
     void valuesChanged(const arma::vec &values) const;
@@ -30,8 +32,8 @@ signals:
     void rpValuesRewound(const arma::vec &values) const;
 
 public slots:
-    void setMap(const arma::mat &Y);
-    bool setType(int type);
+    void addMap(const arma::mat &Y);
+    bool setType(ObserverType type);
     void setCPSelection(const std::vector<bool> &cpSelection);
     void setRPSelection(const std::vector<bool> &rpSelection);
     void setRewind(double t);
@@ -39,7 +41,7 @@ public slots:
 private:
     bool emitValuesChanged() const;
 
-    int m_type;
+    ObserverType m_type;
     arma::mat m_X;
     arma::mat m_distX, m_distY, m_firstDistY, m_prevDistY;
     arma::uvec m_cpIndices, m_rpIndices;
@@ -53,7 +55,7 @@ private:
 
     // TODO: one per implemented measure
     arma::vec m_values, m_firstValues, m_prevValues;
-    ProjectionHistory *m_history;
+    bool m_hasFirst, m_hasPrev;
 };
 
 #endif // PROJECTIONOBSERVER_H

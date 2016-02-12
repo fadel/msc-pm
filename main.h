@@ -83,7 +83,16 @@ public:
     };
 
     Q_INVOKABLE bool setObserverType(ObserverType observerType) {
-        return projectionObserver->setType((int) observerType);
+        switch (observerType) {
+        case ObserverCurrent:
+            return projectionObserver->setType(ProjectionObserver::ObserverCurrent);
+        case ObserverDiffPrevious:
+            return projectionObserver->setType(ProjectionObserver::ObserverDiffPrevious);
+        case ObserverDiffFirst:
+            return projectionObserver->setType(ProjectionObserver::ObserverDiffFirst);
+        }
+
+        return false;
     }
 
     enum ColorScaleType {
@@ -130,12 +139,18 @@ public:
     Scatterplot *cpPlot, *rpPlot;
     VoronoiSplat *splat;
 
-    ProjectionObserver *projectionObserver;
-
     // Shared object that controls manipulation history
     ProjectionHistory *projectionHistory;
-    Q_INVOKABLE void undoManipulation()  { projectionHistory->undo(); }
-    Q_INVOKABLE void resetManipulation() { projectionHistory->reset(); }
+    ProjectionObserver *projectionObserver;
+
+    Q_INVOKABLE void undoManipulation()  {
+        projectionHistory->undo();
+        projectionObserver->undo();
+    }
+    Q_INVOKABLE void resetManipulation() {
+        projectionHistory->reset();
+        projectionObserver->reset();
+    }
 
 public slots:
     void setCPIndices(const arma::uvec &indices) {

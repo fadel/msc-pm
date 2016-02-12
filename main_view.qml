@@ -217,6 +217,7 @@ ApplicationWindow {
             Layout.alignment: Qt.AlignTop | Qt.AlignLeft
 
             GroupBox {
+                Layout.fillWidth: true
                 title: "Control points"
                 checkable: true
                 __checkbox.onClicked: {
@@ -285,6 +286,7 @@ ApplicationWindow {
             }
 
             GroupBox {
+                Layout.fillWidth: true
                 title: "Regular points"
                 checked: true
                 checkable: true
@@ -392,7 +394,9 @@ ApplicationWindow {
 
             GroupBox {
                 Layout.fillWidth: true
+                id: metricsGroupBox
                 title: "Projection metrics"
+                property RadioButton current: currentMetricRadioButton
 
                 Column {
                     ExclusiveGroup { id: wrtMetricsGroup }
@@ -402,7 +406,13 @@ ApplicationWindow {
                         text: "Current"
                         exclusiveGroup: wrtMetricsGroup
                         checked: true
-                        onClicked: Main.setObserverType(Main.ObserverCurrent)
+                        onClicked: {
+                            if (!Main.setObserverType(Main.ObserverCurrent)) {
+                                metricsGroupBox.current.checked = true;
+                            } else {
+                                metricsGroupBox.current = this;
+                            }
+                        }
                     }
                     RadioButton {
                         id: diffPreviousMetricRadioButton
@@ -410,19 +420,21 @@ ApplicationWindow {
                         exclusiveGroup: wrtMetricsGroup
                         onClicked: {
                             if (!Main.setObserverType(Main.ObserverDiffPrevious)) {
-                                this.checked = false;
-                                currentMetricRadioButton.checked = true;
+                                metricsGroupBox.current.checked = true;
+                            } else {
+                                metricsGroupBox.current = this;
                             }
                         }
                     }
                     RadioButton {
-                        id: diffOriginalMetricRadioButton
+                        id: diffFirstMetricRadioButton
                         text: "Diff. to first"
                         exclusiveGroup: wrtMetricsGroup
                         onClicked: {
                             if (!Main.setObserverType(Main.ObserverDiffFirst)) {
-                                this.checked = false;
-                                currentMetricRadioButton.checked = true;
+                                metricsGroupBox.current.checked = true;
+                            } else {
+                                metricsGroupBox.current = this;
                             }
                         }
                     }

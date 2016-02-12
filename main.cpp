@@ -247,14 +247,10 @@ int main(int argc, char **argv)
             m->rpBarChart, &BarChart::brushItem);
 
     // Recompute values whenever projection changes
-    ProjectionObserver projectionObserver(X, cpIndices, m->projectionHistory);
+    ProjectionObserver projectionObserver(X, cpIndices);
     m->projectionObserver = &projectionObserver;
     QObject::connect(m->projectionHistory, &ProjectionHistory::mapAdded,
-            m->projectionObserver, &ProjectionObserver::setMap);
-    QObject::connect(m->projectionHistory, &ProjectionHistory::undoPerformed,
-            m->projectionObserver, &ProjectionObserver::setMap);
-    QObject::connect(m->projectionHistory, &ProjectionHistory::resetPerformed,
-            m->projectionObserver, &ProjectionObserver::setMap);
+            m->projectionObserver, &ProjectionObserver::addMap);
     QObject::connect(m->projectionObserver, &ProjectionObserver::cpValuesChanged,
             m->cpPlot, &Scatterplot::setColorData);
     QObject::connect(m->projectionObserver, &ProjectionObserver::rpValuesChanged,
