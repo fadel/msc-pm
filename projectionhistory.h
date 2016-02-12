@@ -10,11 +10,17 @@ class ProjectionHistory
 {
     Q_OBJECT
 public:
-    explicit ProjectionHistory(QObject *parent = 0);
+    enum ObserverType {
+        ObserverCurrent,
+        ObserverDiffPrevious,
+        ObserverDiffFirst
+    };
 
-    const arma::mat &Y() const     { return m_Y; }
-    const arma::mat &first() const { return m_firstY; }
-    const arma::mat &prev() const  { return m_prevY; }
+    ProjectionHistory(const arma::mat &X, const arma::uvec &cpIndices);
+
+    const arma::mat &Y() const      { return m_Y; }
+    const arma::mat &firstY() const { return m_firstY; }
+    const arma::mat &prevY() const  { return m_prevY; }
 
     bool hasFirst() const { return m_hasFirst; }
     bool hasPrev() const  { return m_hasPrev; }
@@ -23,15 +29,47 @@ public:
     void reset();
 
 signals:
-    void undoPerformed(const arma::mat &prevY) const;
-    void resetPerformed(const arma::mat &firstY) const;
-    void mapAdded(const arma::mat &newY) const;
+    void undoPerformed() const;
+    void resetPerformed() const;
+
+    void currentMapChanged(const arma::mat &Y) const;
+    void valuesChanged(const arma::vec &values) const;
+    void cpValuesChanged(const arma::vec &values) const;
+    void rpValuesChanged(const arma::vec &values) const;
+
+    void mapRewound(const arma::mat &Y) const;
+    void valuesRewound(const arma::vec &values) const;
+    void cpValuesRewound(const arma::vec &values) const;
+    void rpValuesRewound(const arma::vec &values) const;
 
 public slots:
     void addMap(const arma::mat &Y);
 
+    bool setType(ObserverType type);
+    void setCPSelection(const std::vector<bool> &cpSelection);
+    void setRPSelection(const std::vector<bool> &rpSelection);
+
+    void setRewind(double t);
+
 private:
-    arma::mat m_Y, m_firstY, m_prevY;
+    bool emitValuesChanged() const;
+
+    ObserverType m_type;
+
+    arma::mat m_X, m_Y, m_firstY, m_prevY;
+    arma::mat m_distX, m_distY, m_firstDistY, m_prevDistY;
+    arma::uvec m_cpIndices, m_rpIndices;
+
+    bool m_cpSelectionEmpty, m_rpSelectionEmpty;
+    std::vector<int> m_cpSelection, m_rpSelection;
+
+    // alpha(i, j): the influence CP j has on RP i
+    void computeAlphas();
+    arma::mat m_alphas, m_influences;
+
+    // TODO: one per implemented measure
+    arma::vec m_values, m_firstValues, m_prevValues;
+
     bool m_hasFirst, m_hasPrev;
 };
 

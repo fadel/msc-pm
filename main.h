@@ -6,7 +6,6 @@
 
 #include "colorscale.h"
 #include "continuouscolorscale.h"
-#include "projectionobserver.h"
 #include "projectionhistory.h"
 #include "numericrange.h"
 #include "barchart.h"
@@ -76,25 +75,6 @@ public:
         cpPlot->setAcceptHoverEvents(true);
     }
 
-    enum ObserverType {
-        ObserverCurrent      = ProjectionObserver::ObserverCurrent,
-        ObserverDiffPrevious = ProjectionObserver::ObserverDiffPrevious,
-        ObserverDiffFirst    = ProjectionObserver::ObserverDiffFirst
-    };
-
-    Q_INVOKABLE bool setObserverType(ObserverType observerType) {
-        switch (observerType) {
-        case ObserverCurrent:
-            return projectionObserver->setType(ProjectionObserver::ObserverCurrent);
-        case ObserverDiffPrevious:
-            return projectionObserver->setType(ProjectionObserver::ObserverDiffPrevious);
-        case ObserverDiffFirst:
-            return projectionObserver->setType(ProjectionObserver::ObserverDiffFirst);
-        }
-
-        return false;
-    }
-
     enum ColorScaleType {
         ColorScaleCategorical,
         ColorScaleContinuous,
@@ -139,17 +119,29 @@ public:
     Scatterplot *cpPlot, *rpPlot;
     VoronoiSplat *splat;
 
-    // Shared object that controls manipulation history
+    // Object that controls manipulation history
     ProjectionHistory *projectionHistory;
-    ProjectionObserver *projectionObserver;
 
-    Q_INVOKABLE void undoManipulation()  {
-        projectionHistory->undo();
-        projectionObserver->undo();
-    }
-    Q_INVOKABLE void resetManipulation() {
-        projectionHistory->reset();
-        projectionObserver->reset();
+    Q_INVOKABLE void undoManipulation()  { projectionHistory->undo(); }
+    Q_INVOKABLE void resetManipulation() { projectionHistory->reset(); }
+
+    enum ObserverType {
+        ObserverCurrent      = ProjectionHistory::ObserverCurrent,
+        ObserverDiffPrevious = ProjectionHistory::ObserverDiffPrevious,
+        ObserverDiffFirst    = ProjectionHistory::ObserverDiffFirst
+    };
+
+    Q_INVOKABLE bool setObserverType(ObserverType observerType) {
+        switch (observerType) {
+        case ObserverCurrent:
+            return projectionHistory->setType(ProjectionHistory::ObserverCurrent);
+        case ObserverDiffPrevious:
+            return projectionHistory->setType(ProjectionHistory::ObserverDiffPrevious);
+        case ObserverDiffFirst:
+            return projectionHistory->setType(ProjectionHistory::ObserverDiffFirst);
+        }
+
+        return false;
     }
 
 public slots:
@@ -195,7 +187,6 @@ private:
         , cpPlot(0)
         , rpPlot(0)
         , splat(0)
-        , projectionObserver(0)
         , projectionHistory(0)
     {
     }

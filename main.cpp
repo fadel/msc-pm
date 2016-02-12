@@ -17,11 +17,11 @@
 #include "barchart.h"
 #include "colormap.h"
 #include "transitioncontrol.h"
+#include "projectionhistory.h"
 #include "manipulationhandler.h"
 #include "mapscalehandler.h"
 #include "selectionhandler.h"
 #include "brushinghandler.h"
-#include "projectionobserver.h"
 
 static const int RNG_SEED = 1;
 
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
     TransitionControl *plotTC = engine.rootObjects()[0]->findChild<TransitionControl *>("plotTC");
 
     // Shared object which stores modifications to projections
-    ProjectionHistory history;
+    ProjectionHistory history(X, cpIndices);
     m->projectionHistory = &history;
 
     // Keep track of the current cp (in order to save them later, if requested)
@@ -178,28 +178,20 @@ int main(int argc, char **argv)
             m->projectionHistory, &ProjectionHistory::addMap);
 
     // ... and update visual components whenever the history changes
-    QObject::connect(m->projectionHistory, &ProjectionHistory::mapAdded,
-            m, &Main::updateMap);
-    QObject::connect(m->projectionHistory, &ProjectionHistory::undoPerformed,
-            m, &Main::updateMap);
-    QObject::connect(m->projectionHistory, &ProjectionHistory::resetPerformed,
+    QObject::connect(m->projectionHistory, &ProjectionHistory::currentMapChanged,
             m, &Main::updateMap);
 
     // Keep both scatterplots and the splat scaled equally and relative to the
     // full plot
     MapScaleHandler mapScaleHandler;
-    QObject::connect(m->projectionHistory, &ProjectionHistory::mapAdded,
-            &mapScaleHandler, &MapScaleHandler::scaleToMap);
-    QObject::connect(m->projectionHistory, &ProjectionHistory::undoPerformed,
-            &mapScaleHandler, &MapScaleHandler::scaleToMap);
-    QObject::connect(m->projectionHistory, &ProjectionHistory::resetPerformed,
-            &mapScaleHandler, &MapScaleHandler::scaleToMap);
     QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
             m->cpPlot, &Scatterplot::setScale);
     QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
             m->rpPlot, &Scatterplot::setScale);
     QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
             m->splat, &VoronoiSplat::setScale);
+    QObject::connect(m->projectionHistory, &ProjectionHistory::currentMapChanged,
+            &mapScaleHandler, &MapScaleHandler::scaleToMap);
 
     QObject::connect(m->splat, &VoronoiSplat::colorScaleChanged,
             m->colormap, &Colormap::setColorScale);
@@ -225,7 +217,7 @@ int main(int argc, char **argv)
     QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
             m->rpBarChart, &BarChart::setSelection);
 
-    // Brushing between bar chart and respective scatterplot
+    // Brushing between each bar chart and respective scatterplot
     BrushingHandler cpBrushHandler;
     QObject::connect(m->cpPlot, &Scatterplot::itemInteractivelyBrushed,
             &cpBrushHandler, &BrushingHandler::brushItem);
@@ -246,37 +238,31 @@ int main(int argc, char **argv)
     QObject::connect(&rpBrushHandler, &BrushingHandler::itemBrushed,
             m->rpBarChart, &BarChart::brushItem);
 
-    // Recompute values whenever projection changes
-    ProjectionObserver projectionObserver(X, cpIndices);
-    m->projectionObserver = &projectionObserver;
-    QObject::connect(m->projectionHistory, &ProjectionHistory::mapAdded,
-            m->projectionObserver, &ProjectionObserver::addMap);
-    QObject::connect(m->projectionObserver, &ProjectionObserver::cpValuesChanged,
+    // Update visual components whenever values change
+    QObject::connect(m->projectionHistory, &ProjectionHistory::cpValuesChanged,
             m->cpPlot, &Scatterplot::setColorData);
-    QObject::connect(m->projectionObserver, &ProjectionObserver::rpValuesChanged,
+    QObject::connect(m->projectionHistory, &ProjectionHistory::rpValuesChanged,
             m->splat, &VoronoiSplat::setValues);
-    QObject::connect(m->projectionObserver, &ProjectionObserver::cpValuesChanged,
+    QObject::connect(m->projectionHistory, &ProjectionHistory::cpValuesChanged,
             m->cpBarChart, &BarChart::setValues);
-    QObject::connect(m->projectionObserver, &ProjectionObserver::rpValuesChanged,
+    QObject::connect(m->projectionHistory, &ProjectionHistory::rpValuesChanged,
             m->rpBarChart, &BarChart::setValues);
 
     // Recompute values whenever selection changes
     QObject::connect(&cpSelectionHandler, &SelectionHandler::selectionChanged,
-            &projectionObserver, &ProjectionObserver::setCPSelection);
+            m->projectionHistory, &ProjectionHistory::setCPSelection);
     QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
-            &projectionObserver, &ProjectionObserver::setRPSelection);
+            m->projectionHistory, &ProjectionHistory::setRPSelection);
 
     // Connect projection components to rewinding mechanism
     QObject::connect(plotTC, &TransitionControl::tChanged,
-            &manipulationHandler, &ManipulationHandler::setRewind);
-    QObject::connect(plotTC, &TransitionControl::tChanged,
-            m->projectionObserver, &ProjectionObserver::setRewind);
+            m->projectionHistory, &ProjectionHistory::setRewind);
 
-    QObject::connect(&manipulationHandler, &ManipulationHandler::mapRewound,
+    QObject::connect(m->projectionHistory, &ProjectionHistory::mapRewound,
             m, &Main::updateMap);
-    QObject::connect(m->projectionObserver, &ProjectionObserver::cpValuesRewound,
+    QObject::connect(m->projectionHistory, &ProjectionHistory::cpValuesRewound,
             m->cpPlot, &Scatterplot::setColorData);
-    QObject::connect(m->projectionObserver, &ProjectionObserver::rpValuesRewound,
+    QObject::connect(m->projectionHistory, &ProjectionHistory::rpValuesRewound,
             m->splat, &VoronoiSplat::setValues);
 
     // General component set up
@@ -296,7 +282,6 @@ int main(int argc, char **argv)
     m->setSplatColorScale(Main::ColorScaleRainbow);
     m->setCPBarChartColorScale(Main::ColorScaleRainbow);
     m->setRPBarChartColorScale(Main::ColorScaleRainbow);
-
 
     // This sets the initial CP configuration, triggering all the necessary
     // signals to set up the helper objects and visual components

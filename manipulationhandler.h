@@ -27,11 +27,9 @@ public:
 
 signals:
     void mapChanged(const arma::mat &Y) const;
-    void mapRewound(const arma::mat &Y) const;
 
 public slots:
     void setCP(const arma::mat &Ys);
-    void setRewind(double t);
 
 private:
     arma::mat m_X;

@@ -35,13 +35,3 @@ void ManipulationHandler::setCP(const arma::mat &Ys)
 
     emit mapChanged(Y);
 }
-
-void ManipulationHandler::setRewind(double t)
-{
-    if (!m_history->hasPrev()) {
-        return;
-    }
-
-    arma::mat Y = m_history->Y() * t + m_history->prev() * (1.0 - t);
-    emit mapRewound(Y);
-}
