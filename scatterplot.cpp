@@ -31,6 +31,10 @@ static const QColor CROSSHAIR_COLOR2(0, 0, 0);
 // Selection settings
 static const QColor SELECTION_COLOR(128, 128, 128, 96);
 
+// Mouse buttons
+static const Qt::MouseButton NORMAL_BUTTON = Qt::LeftButton;
+static const Qt::MouseButton SPECIAL_BUTTON = Qt::RightButton;
+
 class QuadTree
 {
 public:
@@ -546,7 +550,7 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
     case StateNone:
     case StateSelected:
         switch (event->button()) {
-        case Qt::LeftButton:
+        case NORMAL_BUTTON:
             if (event->modifiers() == Qt::ShiftModifier && m_dragEnabled) {
                 m_interactionState = StateMoving;
                 m_dragOriginPos = event->localPos();
@@ -555,7 +559,7 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
                 m_interactionState = StateBrushing;
             }
             break;
-        case Qt::RightButton:
+        case SPECIAL_BUTTON:
             m_interactionState = StateNone;
             m_selection.assign(m_selection.size(), false);
             emit selectionInteractivelyChanged(m_selection);
