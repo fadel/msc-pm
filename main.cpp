@@ -151,7 +151,8 @@ int main(int argc, char **argv)
     // Initialize pointers to visual components
     m->cpPlot = engine.rootObjects()[0]->findChild<Scatterplot *>("cpPlot");
     m->rpPlot = engine.rootObjects()[0]->findChild<Scatterplot *>("rpPlot");
-    m->colormap = engine.rootObjects()[0]->findChild<Colormap *>("colormap");
+    m->cpColormap = engine.rootObjects()[0]->findChild<Colormap *>("cpColormap");
+    m->rpColormap = engine.rootObjects()[0]->findChild<Colormap *>("rpColormap");
     m->splat = engine.rootObjects()[0]->findChild<VoronoiSplat *>("splat");
     m->cpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("cpBarChart");
     m->rpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("rpBarChart");
@@ -192,9 +193,6 @@ int main(int argc, char **argv)
             m->splat, &VoronoiSplat::setScale);
     QObject::connect(m->projectionHistory, &ProjectionHistory::currentMapChanged,
             &mapScaleHandler, &MapScaleHandler::scaleToMap);
-
-    QObject::connect(m->splat, &VoronoiSplat::colorScaleChanged,
-            m->colormap, &Colormap::setColorScale);
 
     // Linking between selections
     SelectionHandler cpSelectionHandler(cpIndices.n_elem);
@@ -276,12 +274,8 @@ int main(int argc, char **argv)
     m->cpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);
     m->rpBarChart->setAcceptedMouseButtons(Qt::LeftButton | Qt::RightButton);
 
-    m->setColormapColorScale(Main::ColorScaleRainbow);
-    m->setCPPlotColorScale(Main::ColorScaleRainbow);
-    m->setRPPlotColorScale(Main::ColorScaleRainbow);
-    m->setSplatColorScale(Main::ColorScaleRainbow);
-    m->setCPBarChartColorScale(Main::ColorScaleRainbow);
-    m->setRPBarChartColorScale(Main::ColorScaleRainbow);
+    m->setCPColorScale(Main::ColorScaleRainbow);
+    m->setRPColorScale(Main::ColorScaleRainbow);
 
     // This sets the initial CP configuration, triggering all the necessary
     // signals to set up the helper objects and visual components

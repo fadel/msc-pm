@@ -88,34 +88,27 @@ public:
     ColorScale COLOR_SCALE_DIVERGENT;
     ColorScale COLOR_SCALE_RAINBOW;
 
-    Q_INVOKABLE void setCPPlotColorScale(ColorScaleType colorScaleType) {
-        cpPlot->setColorScale(getColorScale(colorScaleType));
+    Q_INVOKABLE void setCPColorScale(ColorScaleType colorScaleType) {
+        ColorScale &scale = getColorScale(colorScaleType);
+
+        cpPlot->setColorScale(scale);
+        cpBarChart->setColorScale(scale);
+        cpColormap->setColorScale(scale);
     }
 
-    Q_INVOKABLE void setRPPlotColorScale(ColorScaleType colorScaleType) {
-        rpPlot->setColorScale(getColorScale(colorScaleType));
-    }
+    Q_INVOKABLE void setRPColorScale(ColorScaleType colorScaleType) {
+        ColorScale &scale = getColorScale(colorScaleType);
 
-    Q_INVOKABLE void setColormapColorScale(ColorScaleType colorScaleType) {
-        colormap->setColorScale(getColorScale(colorScaleType));
-    }
-
-    Q_INVOKABLE void setCPBarChartColorScale(ColorScaleType colorScaleType) {
-        cpBarChart->setColorScale(getColorScale(colorScaleType));
-    }
-
-    Q_INVOKABLE void setRPBarChartColorScale(ColorScaleType colorScaleType) {
-        rpBarChart->setColorScale(getColorScale(colorScaleType));
-    }
-
-    Q_INVOKABLE void setSplatColorScale(ColorScaleType colorScaleType) {
-        splat->setColorScale(getColorScale(colorScaleType));
+        rpPlot->setColorScale(scale);
+        splat->setColorScale(scale);
+        rpBarChart->setColorScale(scale);
+        rpColormap->setColorScale(scale);
     }
 
     // Pointers to visual components whose values are set in the main() function
     // after components are instantiated by the QtQuick engine
     BarChart *cpBarChart, *rpBarChart;
-    Colormap *colormap;
+    Colormap *cpColormap, *rpColormap;
     Scatterplot *cpPlot, *rpPlot;
     VoronoiSplat *splat;
 
@@ -184,6 +177,8 @@ private:
         , COLOR_SCALE_RAINBOW{ContinuousColorScale::builtin(ContinuousColorScale::Rainbow)}
         , cpBarChart(0)
         , rpBarChart(0)
+        , cpColormap(0)
+        , rpColormap(0)
         , cpPlot(0)
         , rpPlot(0)
         , splat(0)

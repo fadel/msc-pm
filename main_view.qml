@@ -97,26 +97,6 @@ ApplicationWindow {
                         anchors.fill: parent
                     }
 
-                    Colormap {
-                        id: colormap
-                        objectName: "colormap"
-                        x: parent.x + 5
-                        y: parent.y + 5
-                        z: 2
-                        width: 128
-                        height: 5
-
-                        Rectangle { // Adds a border around the colormap
-                            x: parent.x - 1
-                            y: parent.y - 1
-                            width: parent.width + 2
-                            height: parent.height + 2
-                            border.width: 1
-                            border.color: "#000000"
-                            color: "transparent"
-                        }
-                    }
-
                     TransitionControl {
                         id: plotTC
                         objectName: "plotTC"
@@ -135,79 +115,114 @@ ApplicationWindow {
                 }
             }
 
-            Rectangle {
+            RowLayout {
                 Layout.minimumHeight: 60
                 Layout.fillHeight: true
                 width: mainView.width
-                color: "#ffffff"
 
-                Item {
-                    id: bottomViewCP
-                    anchors.fill: parent
+                Colormap {
+                    Layout.fillHeight: true
+                    id: cpColormap
+                    objectName: "cpColormap"
+                    width: 5
+                    orientation: Colormap.Vertical
 
-                    BarChart {
-                        id: cpBarChart
-                        objectName: "cpBarChart"
-                        anchors.fill: parent
-
-                        Label {
-                            anchors.fill: parent
-                            anchors.margins: 5
-                            horizontalAlignment: Text.AlignRight
-                            text: "Control points"
-                        }
+                    Rectangle { // Adds a border around the colormap
+                        x: parent.x - 1
+                        y: parent.y - 1
+                        width: parent.width + 2
+                        height: parent.height + 2
+                        border.width: 1
+                        border.color: "#000000"
+                        color: "transparent"
                     }
-
-                    //HistoryGraph {
-                    //    id: history
-                    //    objectName: "history"
-                    //    anchors.fill: parent
-                    //}
                 }
 
                 Rectangle {
-                    anchors.fill: parent
-                    border.width: 1
-                    border.color: "#cccccc"
-                    color: "transparent"
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    color: "#ffffff"
+
+                    Item {
+                        id: bottomViewCP
+                        anchors.fill: parent
+
+                        BarChart {
+                            id: cpBarChart
+                            objectName: "cpBarChart"
+                            anchors.fill: parent
+
+                            Label {
+                                anchors.fill: parent
+                                anchors.margins: 5
+                                horizontalAlignment: Text.AlignRight
+                                text: "Control points"
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        border.width: 1
+                        border.color: "#cccccc"
+                        color: "transparent"
+                    }
                 }
             }
 
-            Rectangle {
+            RowLayout {
                 Layout.minimumHeight: 60
                 Layout.fillHeight: true
                 width: mainView.width
-                color: "#ffffff"
 
-                Item {
-                    id: bottomViewRP
-                    anchors.fill: parent
+                Colormap {
+                    Layout.fillHeight: true
+                    id: rpColormap
+                    objectName: "rpColormap"
+                    width: 5
+                    orientation: Colormap.Vertical
 
-                    BarChart {
-                        id: rpBarChart
-                        objectName: "rpBarChart"
-                        anchors.fill: parent
-
-                        Label {
-                            anchors.fill: parent
-                            anchors.margins: 5
-                            horizontalAlignment: Text.AlignRight
-                            text: "Regular points"
-                        }
+                    Rectangle { // Adds a border around the colormap
+                        x: parent.x - 1
+                        y: parent.y - 1
+                        width: parent.width + 2
+                        height: parent.height + 2
+                        border.width: 1
+                        border.color: "#000000"
+                        color: "transparent"
                     }
-
-                    //HistoryGraph {
-                    //    id: history
-                    //    objectName: "history"
-                    //    anchors.fill: parent
-                    //}
                 }
 
                 Rectangle {
-                    anchors.fill: parent
-                    border.width: 1
-                    border.color: "#cccccc"
-                    color: "transparent"
+                    Layout.minimumHeight: 60
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+                    color: "#ffffff"
+
+                    Item {
+                        id: bottomViewRP
+                        anchors.fill: parent
+
+                        BarChart {
+                            id: rpBarChart
+                            objectName: "rpBarChart"
+                            anchors.fill: parent
+
+                            Label {
+                                anchors.fill: parent
+                                anchors.margins: 5
+                                horizontalAlignment: Text.AlignRight
+                                text: "Regular points"
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        border.width: 1
+                        border.color: "#cccccc"
+                        color: "transparent"
+                    }
                 }
             }
         }
@@ -232,11 +247,8 @@ ApplicationWindow {
                     }
                 }
 
-                GridLayout {
-                    columns: 2
-
+                ColumnLayout {
                     GroupBox {
-                        Layout.columnSpan: 2
                         flat: true
                         title: "Colors"
 
@@ -253,34 +265,41 @@ ApplicationWindow {
                             ComboBox {
                                 id: cpPlotColormapCombo
                                 model: colormapModel
-                                onActivated: {
-                                    Main.setCPPlotColorScale(model.get(index).value);
-                                    Main.setCPBarChartColorScale(model.get(index).value);
-                                }
+                                onActivated:
+                                    Main.setCPColorScale(model.get(index).value);
                             }
                         }
                     }
 
-                    Label { text: "Glyph size:" }
-                    SpinBox {
-                        id: cpGlyphSizeSpinBox
-                        maximumValue: 100
-                        minimumValue: 6
-                        decimals: 1
-                        stepSize: 1
-                        value: cpPlot.glyphSize
-                        onValueChanged: cpPlot.glyphSize = this.value
-                    }
+                    GroupBox {
+                        flat: true
+                        title: "Glyphs"
 
-                    Label { text: "Opacity:" }
-                    Slider {
-                        id: cpPlotOpacitySlider
-                        tickmarksEnabled: true
-                        stepSize: 0.1
-                        maximumValue: 1
-                        minimumValue: 0
-                        value: cpPlot.opacity
-                        onValueChanged: cpPlot.opacity = this.value
+                        GridLayout {
+                            columns: 2
+
+                            Label { text: "Size:" }
+                            SpinBox {
+                                id: cpGlyphSizeSpinBox
+                                maximumValue: 100
+                                minimumValue: 6
+                                decimals: 1
+                                stepSize: 1
+                                value: cpPlot.glyphSize
+                                onValueChanged: cpPlot.glyphSize = this.value
+                            }
+
+                            Label { text: "Opacity:" }
+                            Slider {
+                                id: cpPlotOpacitySlider
+                                tickmarksEnabled: true
+                                stepSize: 0.1
+                                maximumValue: 1
+                                minimumValue: 0
+                                value: cpPlot.opacity
+                                onValueChanged: cpPlot.opacity = this.value
+                            }
+                        }
                     }
                 }
             }
@@ -295,11 +314,8 @@ ApplicationWindow {
                     splat.visible  = this.checked;
                 }
 
-                GridLayout {
-                    columns: 2
-
+                ColumnLayout {
                     GroupBox {
-                        Layout.columnSpan: 2
                         flat: true
                         title: "Colors"
 
@@ -316,17 +332,13 @@ ApplicationWindow {
                             ComboBox {
                                 id: rpPlotColormapCombo
                                 model: colormapModel
-                                onActivated: {
-                                    Main.setRPPlotColorScale(model.get(index).value);
-                                    Main.setSplatColorScale(model.get(index).value);
-                                    Main.setRPBarChartColorScale(model.get(index).value);
-                                }
+                                onActivated:
+                                    Main.setRPColorScale(model.get(index).value);
                             }
                         }
                     }
 
                     GroupBox {
-                        Layout.columnSpan: 2
                         flat: true
                         title: "Splat"
 
@@ -368,26 +380,35 @@ ApplicationWindow {
                         }
                     }
 
-                    Label { text: "Glyph size:" }
-                    SpinBox {
-                        id: rpGlyphSizeSpinBox
-                        maximumValue: 100
-                        minimumValue: 2
-                        decimals: 1
-                        stepSize: 1
-                        value: rpPlot.glyphSize
-                        onValueChanged: rpPlot.glyphSize = this.value
-                    }
+                    GroupBox {
+                        flat: true
+                        title: "Glyphs"
 
-                    Label { text: "Opacity:" }
-                    Slider {
-                        id: rpPlotOpacitySlider
-                        tickmarksEnabled: true
-                        stepSize: 0.1
-                        maximumValue: 1
-                        minimumValue: 0
-                        value: rpPlot.opacity
-                        onValueChanged: rpPlot.opacity = this.value
+                        GridLayout {
+                            columns: 2
+
+                            Label { text: "Size:" }
+                            SpinBox {
+                                id: rpGlyphSizeSpinBox
+                                maximumValue: 100
+                                minimumValue: 2
+                                decimals: 1
+                                stepSize: 1
+                                value: rpPlot.glyphSize
+                                onValueChanged: rpPlot.glyphSize = this.value
+                            }
+
+                            Label { text: "Opacity:" }
+                            Slider {
+                                id: rpPlotOpacitySlider
+                                tickmarksEnabled: true
+                                stepSize: 0.1
+                                maximumValue: 1
+                                minimumValue: 0
+                                value: rpPlot.opacity
+                                onValueChanged: rpPlot.opacity = this.value
+                            }
+                        }
                     }
                 }
             }
