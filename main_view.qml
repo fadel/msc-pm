@@ -464,22 +464,45 @@ ApplicationWindow {
         }
     }
 
+    Dialog {
+        id: prefixDialog
+        title: "Save screenshot"
+        standardButtons: StandardButton.Save | StandardButton.Cancel
+
+        TextField {
+            id: prefixTextField
+            placeholderText: "Enter prefix"
+        }
+
+        onAccepted: {
+            var prefix = prefixTextField.text;
+            if (prefix.length == 0) {
+                prefix = "screenshot";
+            }
+
+            mainView.grabToImage(function(result) {
+                result.saveToFile(prefix + "-main.png");
+            });
+
+            bottomViewCP.grabToImage(function(result) {
+                result.saveToFile(prefix + "-bottom-cp.png");
+            });
+
+            bottomViewRP.grabToImage(function(result) {
+                result.saveToFile(prefix + "-bottom-rp.png");
+            });
+
+            prefixTextField.text = "";
+        }
+    }
+
     Action {
         id: screenshotAction
         text: "Save screenshot"
         shortcut: "Ctrl+Shift+S"
         onTriggered: {
-            mainView.grabToImage(function(result) {
-                result.saveToFile("screenshot-main.png");
-            });
-
-            bottomViewCP.grabToImage(function(result) {
-                result.saveToFile("screenshot-bottom-cp.png");
-            });
-
-            bottomViewRP.grabToImage(function(result) {
-                result.saveToFile("screenshot-bottom-rp.png");
-            });
+            prefixDialog.open();
+            prefixTextField.forceActiveFocus();
         }
     }
 
@@ -487,9 +510,7 @@ ApplicationWindow {
         id: savePlotAction
         text: "&Save data"
         shortcut: "Ctrl+S"
-        onTriggered: {
-            Main.saveData()
-        }
+        onTriggered: Main.saveData()
     }
 
     Action {
