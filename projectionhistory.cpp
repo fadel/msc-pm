@@ -220,7 +220,7 @@ void ProjectionHistory::setRewind(double t)
     }
 
     arma::vec values = m_values * t + m_prevValues * (1.0 - t);
-    emit cpValuesRewound(values(m_cpIndices));
+    // emit cpValuesRewound(values(m_cpIndices));
     emit rpValuesRewound(values(m_rpIndices));
     emit valuesRewound(values);
 }
