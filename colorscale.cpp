@@ -32,7 +32,7 @@ void ColorScale::setExtents(float min, float max)
     m_max = max;
 }
 
-static QColor lerp(const QColor &c1, const QColor &c2, float _t)
+QColor ColorScale::lerp(const QColor &c1, const QColor &c2, float _t)
 {
     qreal r1, g1, b1, a1;
     qreal r2, g2, b2, a2;

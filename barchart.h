@@ -20,7 +20,7 @@ public:
 
 signals:
     void valuesChanged(const arma::vec &values) const;
-    void colorScaleChanged(const ColorScale &scale) const;
+    void colorScaleChanged(const ColorScale *scale) const;
     void selectionChanged(const std::vector<bool> &selection) const;
     void selectionInteractivelyChanged(const std::vector<bool> &selection) const;
     void itemBrushed(int item) const;
@@ -28,7 +28,7 @@ signals:
 
 public slots:
     void setValues(const arma::vec &values);
-    void setColorScale(const ColorScale &scale);
+    void setColorScale(const ColorScale *scale);
     void setSelection(const std::vector<bool> &selection);
     void brushItem(int item);
 
@@ -71,7 +71,7 @@ private:
     int itemAt(float x, bool includeSelectorWidth = false) const;
 
     arma::vec m_values;
-    ColorScale m_colorScale;
+    const ColorScale *m_colorScale;
     std::vector<int> m_originalIndices, m_currentIndices;
     LinearScale<float> m_scale;
 };

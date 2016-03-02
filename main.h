@@ -3,9 +3,11 @@
 
 #include <QObject>
 #include <armadillo>
+#include <memory>
 
 #include "colorscale.h"
 #include "continuouscolorscale.h"
+#include "divergentcolorscale.h"
 #include "projectionhistory.h"
 #include "numericrange.h"
 #include "barchart.h"
@@ -82,27 +84,36 @@ public:
         ColorScaleRainbow
     };
 
-    // No need to be static: this class is a singleton
-    ColorScale COLOR_SCALE_CATEGORICAL;
-    ColorScale COLOR_SCALE_CONTINUOUS;
-    ColorScale COLOR_SCALE_DIVERGENT;
-    ColorScale COLOR_SCALE_RAINBOW;
-
     Q_INVOKABLE void setCPColorScale(ColorScaleType colorScaleType) {
-        ColorScale &scale = getColorScale(colorScaleType);
+        ColorScale *ptr = colorScaleCPs.get();
+        float min = ptr != nullptr ? ptr->min() : 0.0f;
+        float max = ptr != nullptr ? ptr->max() : 1.0f;
 
-        cpPlot->setColorScale(scale);
-        cpBarChart->setColorScale(scale);
-        cpColormap->setColorScale(scale);
+        ptr = getColorScale(colorScaleType);
+        ptr->setExtents(min, max);
+        colorScaleCPs.reset(ptr);
+
+        cpPlot->setColorScale(colorScaleCPs.get());
+        cpBarChart->setColorScale(colorScaleCPs.get());
+        cpColormap->setColorScale(colorScaleCPs.get());
     }
 
     Q_INVOKABLE void setRPColorScale(ColorScaleType colorScaleType) {
-        ColorScale &scale = getColorScale(colorScaleType);
+        ColorScale *ptr = colorScaleCPs.get();
+        float min = 0.0f;
+        float max = 1.0f;
+        if (ptr) {
+            min = ptr->min();
+            max = ptr->max();
+        }
+        ptr = getColorScale(colorScaleType);
+        ptr->setExtents(min, max);
+        colorScaleRPs.reset(ptr);
 
-        rpPlot->setColorScale(scale);
-        splat->setColorScale(scale);
-        rpBarChart->setColorScale(scale);
-        rpColormap->setColorScale(scale);
+        rpPlot->setColorScale(colorScaleRPs.get());
+        splat->setColorScale(colorScaleRPs.get());
+        rpBarChart->setColorScale(colorScaleRPs.get());
+        rpColormap->setColorScale(colorScaleRPs.get());
     }
 
     // Pointers to visual components whose values are set in the main() function
@@ -111,6 +122,9 @@ public:
     Colormap *cpColormap, *rpColormap;
     Scatterplot *cpPlot, *rpPlot;
     VoronoiSplat *splat;
+
+    // Color scales in use
+    std::unique_ptr<ColorScale> colorScaleCPs, colorScaleRPs;
 
     // Object that controls manipulation history
     ProjectionHistory *projectionHistory;
@@ -167,14 +181,6 @@ public slots:
 private:
     Main(QObject *parent = 0)
         : QObject(parent)
-        , COLOR_SCALE_CATEGORICAL{{
-            QColor("#1f77b4"), QColor("#ff7f0e"), QColor("#2ca02c"),
-            QColor("#d62728"), QColor("#9467bd"), QColor("#8c564b"),
-            QColor("#e377c2"), QColor("#17becf"), QColor("#7f7f7f"),
-          }}
-        , COLOR_SCALE_CONTINUOUS{ContinuousColorScale::builtin(ContinuousColorScale::HeatedObjects)}
-        , COLOR_SCALE_DIVERGENT{ContinuousColorScale::builtin(ContinuousColorScale::RedGrayBlue)}
-        , COLOR_SCALE_RAINBOW{ContinuousColorScale::builtin(ContinuousColorScale::Rainbow)}
         , cpBarChart(0)
         , rpBarChart(0)
         , cpColormap(0)
@@ -188,18 +194,25 @@ private:
 
     ~Main() {}
 
-    ColorScale &getColorScale(ColorScaleType colorScaleType) {
+    ColorScale *getColorScale(ColorScaleType colorScaleType) {
         switch (colorScaleType) {
         case ColorScaleCategorical:
-            return COLOR_SCALE_CATEGORICAL;
+            return new ColorScale{
+                    QColor("#1f77b4"), QColor("#ff7f0e"), QColor("#2ca02c"),
+                    QColor("#d62728"), QColor("#9467bd"), QColor("#8c564b"),
+                    QColor("#e377c2"), QColor("#17becf"), QColor("#7f7f7f"),
+                  };
         case ColorScaleContinuous:
-            return COLOR_SCALE_CONTINUOUS;
+            return ContinuousColorScale::builtin(
+                        ContinuousColorScale::HeatedObjects, nullptr);
         case ColorScaleDivergent:
-            return COLOR_SCALE_DIVERGENT;
+            return DivergentColorScale::builtin(
+                        DivergentColorScale::RedGrayBlue, nullptr);
         case ColorScaleRainbow:
             // fall-through
         default:
-            return COLOR_SCALE_RAINBOW;
+            return ContinuousColorScale::builtin(
+                        ContinuousColorScale::Rainbow, nullptr);
         }
     }
 

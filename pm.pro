@@ -21,6 +21,7 @@ unix {
 HEADERS += main.h \
     colorscale.h \
     continuouscolorscale.h \
+    divergentcolorscale.h \
     geometry.h \
     scale.h \
     scatterplot.h \
@@ -43,6 +44,7 @@ HEADERS += main.h \
 SOURCES += main.cpp \
     colorscale.cpp \
     continuouscolorscale.cpp \
+    divergentcolorscale.cpp \
     geometry.cpp \
     scatterplot.cpp \
     voronoisplat.cpp \

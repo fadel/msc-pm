@@ -208,10 +208,11 @@ void QuadTree::query(const QRectF &rect, std::vector<int> &result) const
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
     , m_glyphSize(DEFAULT_GLYPH_SIZE)
-    , m_colorScale(ContinuousColorScale::builtin(ContinuousColorScale::HeatedObjects))
+    , m_colorScale(0)
     , m_autoScale(true)
     , m_sx(0, 1, 0, 1)
     , m_sy(0, 1, 0, 1)
+    , m_anySelected(false)
     , m_brushedItem(-1)
     , m_interactionState(StateNone)
     , m_dragEnabled(false)
@@ -223,11 +224,10 @@ Scatterplot::Scatterplot(QQuickItem *parent)
     setFlag(QQuickItem::ItemHasContents);
 }
 
-void Scatterplot::setColorScale(const ColorScale &colorScale)
+void Scatterplot::setColorScale(const ColorScale *colorScale)
 {
     m_colorScale = colorScale;
     if (m_colorData.n_elem > 0) {
-        m_colorScale.setExtents(m_colorData.min(), m_colorData.max());
         m_shouldUpdateMaterials = true;
         update();
     }
@@ -276,10 +276,6 @@ void Scatterplot::setColorData(const arma::vec &colorData)
 
     m_colorData = colorData;
     emit colorDataChanged(m_colorData);
-
-    if (m_colorData.n_elem > 0) {
-        m_colorScale.setExtents(m_colorData.min(), m_colorData.max());
-    }
 
     m_shouldUpdateMaterials = true;
     update();
@@ -517,7 +513,7 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
 
             material = static_cast<QSGFlatColorMaterial *>(glyphNode->material());
             if (m_colorData.n_elem > 0) {
-                material->setColor(m_colorScale.color(m_colorData[i]));
+                material->setColor(m_colorScale->color(m_colorData[i]));
             } else {
                 material->setColor(DEFAULT_GLYPH_COLOR);
             }
@@ -613,6 +609,9 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
         } else {
             m_interactionState = StateSelected;
             m_selection[m_brushedItem] = !m_selection[m_brushedItem];
+            if (m_selection[m_brushedItem]) {
+                m_anySelected = true;
+            }
         }
 
         emit selectionInteractivelyChanged(m_selection);
@@ -623,9 +622,9 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
         {
         // Selecting points and mouse is now released; update selection and
         // brush
-        bool anySelected = interactiveSelection(mergeSelection);
-        m_interactionState = anySelected ? StateSelected
-                                         : StateNone;
+        interactiveSelection(mergeSelection);
+        m_interactionState = m_anySelected ? StateSelected
+                                           : StateNone;
 
         QPoint pos = event->pos();
         m_brushedItem = m_quadtree->nearestTo(pos.x(), pos.y());
@@ -676,27 +675,26 @@ void Scatterplot::hoverLeaveEvent(QHoverEvent *event)
     update();
 }
 
-bool Scatterplot::interactiveSelection(bool mergeSelection)
+void Scatterplot::interactiveSelection(bool mergeSelection)
 {
     if (!mergeSelection) {
         m_selection.assign(m_selection.size(), false);
     }
 
-    bool anySelected = false;
     std::vector<int> selected;
     m_quadtree->query(QRectF(m_dragOriginPos, m_dragCurrentPos), selected);
     for (auto i: selected) {
         m_selection[i] = true;
     }
+
     for (auto isSelected: m_selection) {
         if (isSelected) {
-            anySelected = true;
+            m_anySelected = true;
             break;
         }
     }
 
     emit selectionInteractivelyChanged(m_selection);
-    return anySelected;
 }
 
 void Scatterplot::setSelection(const std::vector<bool> &selection)

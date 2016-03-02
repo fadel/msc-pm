@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 /*
- * A range in [first, last) in steps of 1.
+ *  A (low memory usage) generator of ranges in steps of 1.
  */
 template<typename T>
 class NumericRange
@@ -55,6 +55,9 @@ public:
         T m_value;
     };
 
+    /*
+     * The range [first, last).
+     */
     NumericRange(const T &first, const T &last)
         : m_begin(first)
         , m_end(last)

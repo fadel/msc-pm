@@ -170,7 +170,7 @@ int main(int argc, char **argv)
 
     // Update projection as the cp are modified (either directly in the
     // manipulationHandler object or interactively in cpPlot
-    ManipulationHandler manipulationHandler(X, cpIndices, m->projectionHistory);
+    ManipulationHandler manipulationHandler(X, cpIndices);
     QObject::connect(m->cpPlot, &Scatterplot::xyInteractivelyChanged,
             &manipulationHandler, &ManipulationHandler::setCP);
 
@@ -237,6 +237,33 @@ int main(int argc, char **argv)
             m->rpBarChart, &BarChart::brushItem);
 
     // Update visual components whenever values change
+    QObject::connect(m->projectionHistory, &ProjectionHistory::rpValuesChanged,
+            [m](const arma::vec &v, bool rescale) {
+                ColorScale *ptr = m->colorScaleRPs.get();
+                if (!ptr || v.n_elem == 0) {
+                    return;
+                }
+
+                if (rescale) {
+                    ptr->setExtents(v.min(), v.max());
+                } else {
+                    ptr->setExtents(std::min(ptr->min(), (float) v.min()),
+                                    std::max(ptr->max(), (float) v.max()));
+                }
+
+                m->splat->setColorScale(ptr);
+                m->rpColormap->setColorScale(ptr);
+            });
+    QObject::connect(m->projectionHistory, &ProjectionHistory::cpValuesChanged,
+             [m](const arma::vec &v) {
+                 ColorScale *ptr = m->colorScaleCPs.get();
+                 if (!ptr || v.n_elem == 0) {
+                     return;
+                 }
+
+                 ptr->setExtents(v.min(), v.max());
+                 m->cpColormap->setColorScale(ptr);
+             });
     QObject::connect(m->projectionHistory, &ProjectionHistory::cpValuesChanged,
             m->cpPlot, &Scatterplot::setColorData);
     QObject::connect(m->projectionHistory, &ProjectionHistory::rpValuesChanged,

@@ -129,10 +129,10 @@ void Colormap::setOrientation(Colormap::Orientation orientation)
     update();
 }
 
-void Colormap::setColorScale(const ColorScale &scale)
+void Colormap::setColorScale(const ColorScale *scale)
 {
-    m_cmap.resize(scale.numColors() * 3);
-    scale.sample(scale.numColors(), m_cmap.data());
+    m_cmap.resize(SAMPLES * 3);
+    scale->sample(SAMPLES, m_cmap.data());
     if (m_orientation == Colormap::Vertical) {
         reverseCMap(m_cmap);
     }

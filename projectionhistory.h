@@ -33,9 +33,9 @@ signals:
     void resetPerformed() const;
 
     void currentMapChanged(const arma::mat &Y) const;
-    void valuesChanged(const arma::vec &values) const;
-    void cpValuesChanged(const arma::vec &values) const;
-    void rpValuesChanged(const arma::vec &values) const;
+    void valuesChanged(const arma::vec &values, bool rescale) const;
+    void cpValuesChanged(const arma::vec &values, bool rescale) const;
+    void rpValuesChanged(const arma::vec &values, bool rescale) const;
 
     void mapRewound(const arma::mat &Y) const;
     void valuesRewound(const arma::vec &values) const;

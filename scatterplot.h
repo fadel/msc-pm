@@ -23,7 +23,7 @@ public:
     Scatterplot(QQuickItem *parent = 0);
 
     arma::mat XY() const;
-    void setColorScale(const ColorScale &colorScale);
+    void setColorScale(const ColorScale *colorScale);
     void setAutoScale(bool autoScale);
     float glyphSize() const { return m_glyphSize; }
     void setGlyphSize(float glyphSize);
@@ -76,15 +76,16 @@ private:
 
     // Visuals
     float m_glyphSize;
-    ColorScale m_colorScale;
+    const ColorScale *m_colorScale;
 
     void autoScale();
     bool m_autoScale;
     LinearScale<float> m_sx, m_sy;
 
     // Internal state
-    bool interactiveSelection(bool mergeSelection);
+    void interactiveSelection(bool mergeSelection);
     std::vector<bool> m_selection;
+    bool m_anySelected;
     int m_brushedItem;
 
     enum State {

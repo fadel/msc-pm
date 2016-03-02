@@ -11,13 +11,13 @@ public:
 
     enum BuiltinContinuousColorScale {
         HeatedObjects,
-        RedGrayBlue,
         Rainbow,
     };
 
-    QColor color(qreal t) const;
+    QColor color(float t) const;
 
-    static ContinuousColorScale builtin(enum BuiltinContinuousColorScale);
+    static ContinuousColorScale builtin(BuiltinContinuousColorScale);
+    static ContinuousColorScale *builtin(BuiltinContinuousColorScale, void *);
 };
 
 #endif // CONTINUOUSCOLORSCALE_H

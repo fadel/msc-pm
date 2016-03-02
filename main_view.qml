@@ -474,26 +474,34 @@ ApplicationWindow {
             placeholderText: "Enter prefix"
         }
 
-        onAccepted: {
-            var prefix = prefixTextField.text;
-            if (prefix.length == 0) {
-                prefix = "screenshot";
+        Timer {
+            id: screenshotTimer
+            interval: 500
+            running: false
+            repeat: false
+            onTriggered: {
+                var prefix = prefixTextField.text;
+                if (prefix.length == 0) {
+                    prefix = "screenshot";
+                }
+
+                mainView.grabToImage(function(result) {
+                    result.saveToFile(prefix + "-main.png");
+                });
+
+                bottomViewCP.grabToImage(function(result) {
+                    result.saveToFile(prefix + "-bottom-cp.png");
+                });
+
+                bottomViewRP.grabToImage(function(result) {
+                    result.saveToFile(prefix + "-bottom-rp.png");
+                });
+
+                prefixTextField.text = "";
             }
-
-            mainView.grabToImage(function(result) {
-                result.saveToFile(prefix + "-main.png");
-            });
-
-            bottomViewCP.grabToImage(function(result) {
-                result.saveToFile(prefix + "-bottom-cp.png");
-            });
-
-            bottomViewRP.grabToImage(function(result) {
-                result.saveToFile(prefix + "-bottom-rp.png");
-            });
-
-            prefixTextField.text = "";
         }
+
+        onAccepted: screenshotTimer.start()
     }
 
     Action {

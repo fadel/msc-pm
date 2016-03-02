@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include <QDebug>
+
 #include "mp.h"
 #include "numericrange.h"
 
@@ -93,6 +95,7 @@ void ProjectionHistory::addMap(const arma::mat &Y)
     m_distY = mp::dist(Y);
 
     mp::aggregatedError(m_distX, m_distY, m_values);
+    qDebug("Aggr. error: min: %f, max: %f", m_values.min(), m_values.max());
 
     if (!m_hasFirst) {
         m_hasFirst = true;
@@ -147,7 +150,7 @@ void ProjectionHistory::setCPSelection(const std::vector<bool> &cpSelection)
             }
         }
 
-        emit rpValuesChanged(m_influences(m_rpIndices));
+        emit rpValuesChanged(m_influences(m_rpIndices), true);
     } else {
         emitValuesChanged();
     }
@@ -172,9 +175,9 @@ void ProjectionHistory::setRPSelection(const std::vector<bool> &rpSelection)
             }
         }
 
-        emit cpValuesChanged(m_influences(m_cpIndices));
+        emit cpValuesChanged(m_influences(m_cpIndices), true);
     } else {
-        emit cpValuesChanged(arma::vec());
+        emit cpValuesChanged(arma::vec(), false);
     }
 }
 
@@ -182,22 +185,22 @@ bool ProjectionHistory::emitValuesChanged() const
 {
     switch (m_type) {
     case ObserverCurrent:
-        emit rpValuesChanged(m_values(m_rpIndices));
-        emit valuesChanged(m_values);
+        emit rpValuesChanged(m_values(m_rpIndices), false);
+        emit valuesChanged(m_values, false);
         return true;
     case ObserverDiffPrevious:
         if (m_hasPrev) {
             arma::vec diff = m_values - m_prevValues;
-            emit rpValuesChanged(diff(m_rpIndices));
-            emit valuesChanged(diff);
+            emit rpValuesChanged(diff(m_rpIndices), true);
+            emit valuesChanged(diff, false);
             return true;
         }
         return false;
     case ObserverDiffFirst:
         if (m_hasFirst) {
             arma::vec diff = m_values - m_firstValues;
-            emit rpValuesChanged(diff(m_rpIndices));
-            emit valuesChanged(diff);
+            emit rpValuesChanged(diff(m_rpIndices), true);
+            emit valuesChanged(diff, true);
             return true;
         }
         return false;

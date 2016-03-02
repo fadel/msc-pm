@@ -5,14 +5,11 @@
 #include "mp.h"
 
 ManipulationHandler::ManipulationHandler(const arma::mat &X,
-                                         const arma::uvec &cpIndices,
-                                         ProjectionHistory *history)
+                                         const arma::uvec &cpIndices)
     : m_X(X)
     , m_cpIndices(cpIndices)
-    , m_history(history)
     , m_technique(TECHNIQUE_LAMP)
 {
-    Q_ASSERT(history);
 }
 
 void ManipulationHandler::setCP(const arma::mat &Ys)

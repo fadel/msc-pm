@@ -15,6 +15,8 @@ class VoronoiSplat
     Q_PROPERTY(float alpha READ alpha WRITE setAlpha NOTIFY alphaChanged)
     Q_PROPERTY(float beta  READ beta  WRITE setBeta  NOTIFY betaChanged)
 public:
+    static const int SAMPLES = 128;
+
     VoronoiSplat(QQuickItem *parent = 0);
 
     Renderer *createRenderer() const;
@@ -44,7 +46,7 @@ public:
 signals:
     void sitesChanged(const arma::mat &sites) const;
     void valuesChanged(const arma::vec &values) const;
-    void colorScaleChanged(const ColorScale &scale) const;
+    void colorScaleChanged(const ColorScale *scale) const;
     void scaleChanged(const LinearScale<float> &sx, const LinearScale<float> &sy) const;
     void alphaChanged(float alpha) const;
     void betaChanged(float alpha) const;
@@ -57,7 +59,7 @@ public slots:
     void setValues(const arma::vec &values);
 
     // Set colorScale data based on the given color scale
-    void setColorScale(const ColorScale &scale);
+    void setColorScale(const ColorScale *scale);
 
     void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
 

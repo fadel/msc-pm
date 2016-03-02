@@ -79,10 +79,10 @@ void VoronoiSplat::setValues(const arma::vec &values)
     update();
 }
 
-void VoronoiSplat::setColorScale(const ColorScale &scale)
+void VoronoiSplat::setColorScale(const ColorScale *scale)
 {
-    m_cmap.resize(scale.numColors() * 3);
-    scale.sample(scale.numColors(), m_cmap.begin());
+    m_cmap.resize(SAMPLES * 3);
+    scale->sample(SAMPLES, m_cmap.begin());
     emit colorScaleChanged(scale);
 
     setColormapChanged(true);

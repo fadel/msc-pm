@@ -4,8 +4,6 @@
 #include <QObject>
 #include <armadillo>
 
-#include "projectionhistory.h"
-
 class ManipulationHandler
     : public QObject
 {
@@ -20,8 +18,7 @@ public:
     };
 
     ManipulationHandler(const arma::mat &X,
-                        const arma::uvec &cpIndices,
-                        ProjectionHistory *history);
+                        const arma::uvec &cpIndices);
 
     void setTechnique(Technique technique) { m_technique = technique; }
 
@@ -34,7 +31,6 @@ public slots:
 private:
     arma::mat m_X;
     arma::uvec m_cpIndices;
-    ProjectionHistory *m_history;
     Technique m_technique;
 };
 

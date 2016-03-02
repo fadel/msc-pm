@@ -31,11 +31,11 @@ public:
     Orientation orientation() const { return m_orientation; }
 
 signals:
-    void colorScaleChanged(const ColorScale &scale) const;
+    void colorScaleChanged(const ColorScale *scale) const;
     void orientationChanged(Orientation orientation) const;
 
 public slots:
-    void setColorScale(const ColorScale &scale);
+    void setColorScale(const ColorScale *scale);
 
 protected:
     QSGNode *updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *);

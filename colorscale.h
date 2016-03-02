@@ -25,6 +25,8 @@ public:
     template<typename OutputIterator>
     void sample(int samples, OutputIterator it) const;
 
+    static QColor lerp(const QColor &c1, const QColor &c2, float _t);
+
 protected:
     float m_min, m_max;
     QList<QColor> m_colors;

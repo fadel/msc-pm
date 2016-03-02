@@ -35,7 +35,7 @@ BarChart::BarChart(QQuickItem *parent)
     , m_dragLastPos(-1.0f)
     , m_shouldUpdateSelection(false)
     , m_brushedItem(-1)
-    , m_colorScale(ContinuousColorScale::builtin(ContinuousColorScale::HeatedObjects))
+    , m_colorScale(0)
     , m_scale(0.0f, 1.0f, 0.0f, 1.0f)
 {
     setClip(true);
@@ -61,7 +61,6 @@ void BarChart::setValues(const arma::vec &values)
     setAcceptHoverEvents(m_values.n_elem > 0);
     if (m_values.n_elem > 0) {
         m_scale.setDomain(m_values.min(), m_values.max());
-        m_colorScale.setExtents(m_values.min(), m_values.max());
 
         std::iota(m_originalIndices.begin(), m_originalIndices.end(), 0);
         std::sort(m_originalIndices.begin(), m_originalIndices.end(),
@@ -79,12 +78,9 @@ void BarChart::setValues(const arma::vec &values)
     update();
 }
 
-void BarChart::setColorScale(const ColorScale &scale)
+void BarChart::setColorScale(const ColorScale *scale)
 {
     m_colorScale = scale;
-    if (m_values.n_elem > 0) {
-        m_colorScale.setExtents(m_values.min(), m_values.max());
-    }
     emit colorScaleChanged(m_colorScale);
 
     m_shouldUpdateBars = true;
@@ -265,7 +261,7 @@ void BarChart::updateBars(QSGNode *node) const
     float x = 0;
     for (auto it = m_originalIndices.cbegin(); it != m_originalIndices.cend(); it++) {
         updateBarNodeGeom(node, x, barWidth, m_scale(m_values[*it]));
-        updateBarNodeColor(node, m_colorScale.color(m_values[*it]));
+        updateBarNodeColor(node, m_colorScale->color(m_values[*it]));
         x += barWidth;
         node = node->nextSibling();
     }
