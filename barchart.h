@@ -28,6 +28,7 @@ signals:
 
 public slots:
     void setValues(const arma::vec &values);
+    void updateValues(const arma::vec &values);
     void setColorScale(const ColorScale *scale);
     void setSelection(const std::vector<bool> &selection);
     void brushItem(int item);

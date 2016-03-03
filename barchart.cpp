@@ -78,6 +78,17 @@ void BarChart::setValues(const arma::vec &values)
     update();
 }
 
+void BarChart::updateValues(const arma::vec &values)
+{
+    if (m_values.n_elem != values.n_elem) {
+        return;
+    }
+
+    m_values = values;
+    m_shouldUpdateBars = true;
+    update();
+}
+
 void BarChart::setColorScale(const ColorScale *scale)
 {
     m_colorScale = scale;

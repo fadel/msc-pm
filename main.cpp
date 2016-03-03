@@ -289,9 +289,11 @@ int main(int argc, char **argv)
             m->cpPlot, &Scatterplot::setColorData);
     QObject::connect(m->projectionHistory, &ProjectionHistory::rpValuesRewound,
             m->splat, &VoronoiSplat::setValues);
+    QObject::connect(m->projectionHistory, &ProjectionHistory::rpValuesRewound,
+            m->rpBarChart, &BarChart::updateValues);
 
     // General component set up
-    plotTC->setAcceptedMouseButtons(Qt::MiddleButton);
+    plotTC->setAcceptedMouseButtons(Qt::RightButton);
     m->cpPlot->setDragEnabled(true);
     m->cpPlot->setAutoScale(false);
     m->rpPlot->setAutoScale(false);

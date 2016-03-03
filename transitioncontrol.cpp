@@ -6,7 +6,7 @@
 #include "transitionworkerthread.h"
 
 // The mouse button used for interaction
-static const Qt::MouseButton MOUSE_BUTTON = Qt::MiddleButton;
+static const Qt::MouseButton MOUSE_BUTTON = Qt::RightButton;
 
 TransitionControl::TransitionControl(QQuickItem *parent)
     : QQuickItem(parent)
@@ -28,7 +28,8 @@ void TransitionControl::setT(double t)
 
 void TransitionControl::mousePressEvent(QMouseEvent *event)
 {
-    if (event->button() != MOUSE_BUTTON) {
+    if (event->button() != MOUSE_BUTTON
+        || !(event->modifiers() & Qt::ControlModifier)) {
         event->ignore();
         return;
     }
