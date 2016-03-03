@@ -17,8 +17,8 @@ ProjectionHistory::ProjectionHistory(const arma::mat &X,
     , m_cpSelectionEmpty(true)
     , m_rpSelectionEmpty(true)
     , m_values(X.n_rows)
-    , m_prevValues(X.n_rows)
     , m_firstValues(X.n_rows)
+    , m_prevValues(X.n_rows)
     , m_hasFirst(false)
     , m_hasPrev(false)
 {
