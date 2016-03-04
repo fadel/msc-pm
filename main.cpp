@@ -110,7 +110,7 @@ int main(int argc, char **argv)
         m->setCPSavePath(cpFilename);
         Ys.load(cpFilename.toStdString(), arma::raw_ascii);
     } else {
-        std::cerr << "No CP file, generating initial projection.\n";
+        std::cerr << "No CP file, generating initial projection...\n";
         Ys.set_size(cpIndices.n_elem, 2);
         mp::forceScheme(mp::dist(X.rows(cpIndices)), Ys);
     }
