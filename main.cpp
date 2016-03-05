@@ -23,7 +23,7 @@
 #include "selectionhandler.h"
 #include "brushinghandler.h"
 
-static const int RNG_SEED = 1;
+static const int RNG_SEED = 96123;
 
 static QObject *mainProvider(QQmlEngine *engine, QJSEngine *scriptEngine)
 {
@@ -36,12 +36,11 @@ static QObject *mainProvider(QQmlEngine *engine, QJSEngine *scriptEngine)
 arma::uvec extractCPs(const arma::mat &X)
 {
     int numCPs = (int) (3 * sqrt(X.n_rows));
-    arma::uvec cpIndices(numCPs);
-    std::iota(cpIndices.begin(), cpIndices.end(), 0);
-    std::shuffle(cpIndices.begin(),
-                 cpIndices.end(),
-                 std::default_random_engine(RNG_SEED));
-    return cpIndices;
+    arma::uvec indices(X.n_rows);
+    std::iota(indices.begin(), indices.end(), 0);
+    arma::shuffle(indices);
+
+    return indices.subvec(0, numCPs-1);
 }
 
 int main(int argc, char **argv)
@@ -80,9 +79,10 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    arma::mat X = m->X();
-    arma::vec labels = m->labels();
+    const arma::mat &X = m->X();
+    //arma::vec labels = m->labels();
 
+    arma::arma_rng::set_seed(RNG_SEED);
     arma::uvec cpIndices;
     arma::mat Ys;
 
@@ -112,6 +112,7 @@ int main(int argc, char **argv)
     } else {
         std::cerr << "No CP file, generating initial projection...\n";
         Ys.set_size(cpIndices.n_elem, 2);
+        Ys.randu();
         mp::forceScheme(mp::dist(X.rows(cpIndices)), Ys);
     }
 

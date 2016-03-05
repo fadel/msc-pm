@@ -5,8 +5,6 @@
 
 static const double EPSILON = 1e-3;
 
-typedef arma::uvec V;
-
 arma::mat mp::forceScheme(const arma::mat &D,
         arma::mat &Y,
         size_t maxIter,
@@ -14,28 +12,28 @@ arma::mat mp::forceScheme(const arma::mat &D,
         double fraction)
 {
     arma::uword n = Y.n_rows;
-    V i(n), j(n);
+    arma::uvec indices1(n), indices2(n);
     for (arma::uword k = 0; k < n; k++) {
-        i[k] = j[k] = k;
+        indices1[k] = indices2[k] = k;
     }
 
     double prevDeltaSum = std::numeric_limits<double>::infinity();
     for (size_t iter = 0; iter < maxIter; iter++) {
         double deltaSum = 0;
 
-        arma::shuffle(i);
-        for (V::iterator a = i.begin(); a != i.end(); a++) {
-            arma::shuffle(j);
-            for (V::iterator b = j.begin(); b != j.end(); b++) {
-                if (*a == *b) {
+        arma::shuffle(indices1);
+        for (auto i: indices1) {
+            arma::shuffle(indices2);
+            for (auto j: indices2) {
+                if (i == j) {
                     continue;
                 }
 
-                arma::rowvec direction(Y.row(*b) - Y.row(*a));
+                arma::rowvec direction(Y.row(j) - Y.row(i));
                 double d2 = std::max(arma::norm(direction, 2), EPSILON);
-                double delta = (D(*a, *b) - d2) / fraction;
+                double delta = (D(i, j) - d2) / fraction;
                 deltaSum += fabs(delta);
-                Y.row(*b) += delta * (direction / d2);
+                Y.row(j) += delta * (direction / d2);
             }
         }
 
