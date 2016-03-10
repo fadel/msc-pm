@@ -32,13 +32,16 @@ This program needs a CUDA-enabled GPU (not necessarily powerful) to run.
     ./pm [options] dataset
 
 ## Options
+Options accepted are:
 
 Option                   | Description
 -------------------------| --------------------------------------------------------------------------------------------
--h, --help               | Displays this help.
+-h, --help               | Displays usage.
 -v, --version            | Displays version information.
 -i, --indices <filename> | Filename to store the control points' indices. Omitting this option disables saving indices.
 -c, --cpoints <filename> | Filename to store the control points' map. Omitting this option disables saving this map.
+
+And the arguments are:
 
 Argument | Description
 ---------|-----------------------------
@@ -55,4 +58,6 @@ else. Note that the number of lines of this file and the indices file are
 supposed to be the same.
 
 **Dataset files** are the same as CP map files, except they are allowed to have
-any number of columns (the same number of columns in each line, though).
+any number of columns. In addition, the last column is assumed to be the class
+labels (currently unused, but must be present). Node that the number of columns
+must be the same on each line.
