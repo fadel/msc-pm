@@ -12,11 +12,12 @@ CMake *should* automatically find all the mentioned libraries under normal
 circumstances (not Windows).
 
 ## Windows
-On Windows, Armadillo should be installed in `C:\Program Files (x86)\Armadillo`.
-Also remember to build `armadillo.lib` instead of the default `armadillo.dll`.
+On Windows, Armadillo should be installed in `C:\Program Files (x86)\Armadillo`
+(this is where CMake usually looks for Armadillo). Also remember to build
+`armadillo.lib` instead of the default `armadillo.dll`.
 
 # Building
-Assuming the current directory is the source folder:
+Assuming the current directory is the root of this project:
 
     mkdir build
     cd build
