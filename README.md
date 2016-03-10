@@ -1,7 +1,7 @@
 Interactive multidimensional projections.
 
 # Prerequisites
-In order to build, this program depends on the following libraries:
+This program depends on the following libraries:
 
 * Qt 5 (Qt5Widgets, Qt5Qml, Qt5Quick)
 * Armadillo 6.x.x (might work with older versions)
