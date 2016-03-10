@@ -32,7 +32,6 @@ program is run as follows:
 
     ./pm [options] dataset
 
-## Options
 Options accepted are:
 
 Option                   | Description
