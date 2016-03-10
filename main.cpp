@@ -38,8 +38,7 @@ arma::uvec extractCPs(const arma::mat &X)
     int numCPs = (int) (3 * sqrt(X.n_rows));
     arma::uvec indices(X.n_rows);
     std::iota(indices.begin(), indices.end(), 0);
-    arma::shuffle(indices);
-
+    indices = arma::shuffle(indices);
     return indices.subvec(0, numCPs-1);
 }
 
