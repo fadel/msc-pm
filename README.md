@@ -27,7 +27,8 @@ Assuming the current directory is the root of this project:
 For faster builds, you can use `make -j NUM_CORES`.
 
 # Usage
-This program needs a CUDA-enabled GPU (not necessarily powerful) to run.
+This program needs a CUDA-enabled GPU (not necessarily powerful) to run. The
+program is run as follows:
 
     ./pm [options] dataset
 
