@@ -30,7 +30,7 @@ if (OPENMP_FOUND)
 endif()
 
 # This is the only one tested, might work with other configs
-set(CUDA_NVCC_FLAGS -gencode=arch=sm_30)
+set(CUDA_NVCC_FLAGS -arch=compute_30)
 
 qt5_add_resources(RESOURCES
     pm.qrc)
