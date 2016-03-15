@@ -97,12 +97,21 @@ ApplicationWindow {
                         anchors.fill: parent
                     }
 
+                    LinePlot {
+                        id: linePlot
+                        objectName: "linePlot"
+                        x: parent.x
+                        y: parent.y
+                        z: 3
+                        anchors.fill: parent
+                    }
+
                     TransitionControl {
                         id: plotTC
                         objectName: "plotTC"
                         x: parent.x
                         y: parent.y
-                        z: 3
+                        z: 4
                         anchors.fill: parent
                     }
                 }

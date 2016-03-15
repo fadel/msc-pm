@@ -1,6 +1,9 @@
-cmake_minimum_required (VERSION 2.8.12)
+cmake_minimum_required(VERSION 2.8.12)
 
-project (pm)
+project(pm)
+
+# Change accordingly
+get_filename_component(CUBU "../cubu" ABSOLUTE)
 
 if ((${CMAKE_CXX_COMPILER_ID} MATCHES "GNU") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang"))
     set(CMAKE_CXX_FLAGS "-std=c++11")
@@ -29,6 +32,13 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
+find_library(CUBU_LIB
+    NAMES cubu
+    PATHS ${CUBU})
+if (CUBU_LIB)
+    message("Found CUBU: ${CUBU_LIB}")
+endif()
+
 # This is the only one tested, might work with other configs
 set(CUDA_NVCC_FLAGS -arch=compute_30)
 
@@ -49,6 +59,7 @@ cuda_add_executable(pm
     historygraph.cpp
     knn.cpp
     lamp.cpp
+    lineplot.cpp
     manipulationhandler.cpp
     mapscalehandler.cpp
     measures.cpp
@@ -63,10 +74,15 @@ cuda_add_executable(pm
     voronoisplat.cpp
     ${RESOURCES})
 
+include_directories(
+    ${CUBU}
+    ${CUBU}/include)
+
 target_link_libraries(pm
     ${ARMADILLO_LIBRARIES}
     Qt5::Widgets
     Qt5::Qml
-    Qt5::Quick)
+    Qt5::Quick
+    ${CUBU_LIB})
 
 install(TARGETS pm RUNTIME DESTINATION ${CMAKE_SOURCE_DIR})

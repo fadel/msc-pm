@@ -14,6 +14,7 @@
 #include "continuouscolorscale.h"
 #include "scatterplot.h"
 #include "voronoisplat.h"
+#include "lineplot.h"
 #include "barchart.h"
 #include "colormap.h"
 #include "transitioncontrol.h"
@@ -23,7 +24,7 @@
 #include "selectionhandler.h"
 #include "brushinghandler.h"
 
-static const int RNG_SEED = 96123;
+static const int RNG_SEED = 123;
 
 static QObject *mainProvider(QQmlEngine *engine, QJSEngine *scriptEngine)
 {
@@ -143,6 +144,7 @@ int main(int argc, char **argv)
     qmlRegisterType<Scatterplot>("PM", 1, 0, "Scatterplot");
     qmlRegisterType<BarChart>("PM", 1, 0, "BarChart");
     qmlRegisterType<VoronoiSplat>("PM", 1, 0, "VoronoiSplat");
+    qmlRegisterType<LinePlot>("PM", 1, 0, "LinePlot");
     qmlRegisterType<Colormap>("PM", 1, 0, "Colormap");
     qmlRegisterType<TransitionControl>("PM", 1, 0, "TransitionControl");
     qmlRegisterSingletonType<Main>("PM", 1, 0, "Main", mainProvider);
