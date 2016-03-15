@@ -30,6 +30,9 @@ VoronoiSplat::VoronoiSplat(QQuickItem *parent)
     , m_sy(0.0f, 1.0f, 0.0f, 1.0f)
     , m_alpha(DEFAULT_ALPHA)
     , m_beta(DEFAULT_BETA)
+    , m_sitesChanged(false)
+    , m_valuesChanged(false)
+    , m_colorScaleChanged(false)
 {
     setTextureFollowsItemSize(false);
 }
@@ -85,7 +88,7 @@ void VoronoiSplat::setColorScale(const ColorScale *scale)
     scale->sample(SAMPLES, m_cmap.begin());
     emit colorScaleChanged(scale);
 
-    setColormapChanged(true);
+    setColorScaleChanged(true);
     update();
 }
 
@@ -135,7 +138,7 @@ private:
 
     void updateSites();
     void updateValues();
-    void updateColorScale();
+    void updateColormap();
     void updateTransform();
     void computeDT();
 
@@ -243,13 +246,13 @@ R"EOF(
 
 uniform sampler2D siteDT;
 uniform sampler2D accumTex;
-uniform sampler2D colorScale;
+uniform sampler2D colormap;
 uniform float rad_max;
 
 layout (location = 0) out vec4 fragColor;
 
 vec3 getRGB(float value) {
-  return texture(colorScale, vec2(mix(0.005, 0.995, value), 0)).rgb;
+  return texture(colormap, vec2(mix(0.005, 0.995, value), 0)).rgb;
 }
 
 void main() {
@@ -354,6 +357,10 @@ QOpenGLFramebufferObject *VoronoiSplatRenderer::createFramebufferObject(const QS
 
 void VoronoiSplatRenderer::render()
 {
+    if (!m_sitesChanged || !m_valuesChanged || !m_colormapChanged) {
+        return;
+    }
+
     // Update OpenGL buffers and textures as needed
     if (m_sitesChanged) {
         updateSites();
@@ -362,7 +369,7 @@ void VoronoiSplatRenderer::render()
         updateValues();
     }
     if (m_colormapChanged) {
-        updateColorScale();
+        updateColormap();
     }
 
     int originalFBO;
@@ -414,7 +421,7 @@ void VoronoiSplatRenderer::render()
     m_program2->setUniformValue("accumTex", 1);
     gl.glActiveTexture(GL_TEXTURE2);
     gl.glBindTexture(GL_TEXTURE_2D, m_colormapTex);
-    m_program2->setUniformValue("colorScale", 2);
+    m_program2->setUniformValue("colormap", 2);
 
     gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -439,12 +446,7 @@ void VoronoiSplatRenderer::synchronize(QQuickFramebufferObject *item)
 
     m_sitesChanged    = splat->sitesChanged();
     m_valuesChanged   = splat->valuesChanged();
-    m_colormapChanged = splat->colormapChanged();
-
-    // Reset so that we have the correct values by the next synchronize()
-    splat->setSitesChanged(false);
-    splat->setValuesChanged(false);
-    splat->setColormapChanged(false);
+    m_colormapChanged = splat->colorScaleChanged();
 
     m_sites  = &(splat->sites());
     m_values = &(splat->values());
@@ -454,6 +456,11 @@ void VoronoiSplatRenderer::synchronize(QQuickFramebufferObject *item)
     m_alpha  = splat->alpha();
     m_beta   = splat->beta();
     m_window = splat->window();
+
+    // Reset so that we have the correct values by the next synchronize()
+    splat->setSitesChanged(false);
+    splat->setValuesChanged(false);
+    splat->setColorScaleChanged(false);
 }
 
 void VoronoiSplatRenderer::updateTransform()
@@ -505,7 +512,7 @@ void VoronoiSplatRenderer::updateValues()
     m_valuesChanged = false;
 }
 
-void VoronoiSplatRenderer::updateColorScale()
+void VoronoiSplatRenderer::updateColormap()
 {
     gl.glBindTexture(GL_TEXTURE_2D, m_colormapTex);
     gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_cmap->size() / 3, 1, 0, GL_RGB,

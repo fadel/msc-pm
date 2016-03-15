@@ -31,7 +31,7 @@ public:
 
     bool sitesChanged() const      { return m_sitesChanged; }
     bool valuesChanged() const     { return m_valuesChanged; }
-    bool colormapChanged() const { return m_colormapChanged; }
+    bool colorScaleChanged() const { return m_colorScaleChanged; }
 
     void setSitesChanged(bool sitesChanged) {
         m_sitesChanged = sitesChanged;
@@ -39,15 +39,16 @@ public:
     void setValuesChanged(bool valuesChanged) {
         m_valuesChanged = valuesChanged;
     }
-    void setColormapChanged(bool colormapChanged) {
-        m_colormapChanged = colormapChanged;
+    void setColorScaleChanged(bool colorScaleChanged) {
+        m_colorScaleChanged = colorScaleChanged;
     }
 
 signals:
     void sitesChanged(const arma::mat &sites) const;
     void valuesChanged(const arma::vec &values) const;
     void colorScaleChanged(const ColorScale *scale) const;
-    void scaleChanged(const LinearScale<float> &sx, const LinearScale<float> &sy) const;
+    void scaleChanged(const LinearScale<float> &sx,
+                      const LinearScale<float> &sy) const;
     void alphaChanged(float alpha) const;
     void betaChanged(float alpha) const;
 
@@ -61,7 +62,8 @@ public slots:
     // Set colorScale data based on the given color scale
     void setColorScale(const ColorScale *scale);
 
-    void setScale(const LinearScale<float> &sx, const LinearScale<float> &sy);
+    void setScale(const LinearScale<float> &sx,
+                  const LinearScale<float> &sy);
 
     // Shepard blur radius
     void setAlpha(float alpha);
@@ -73,7 +75,7 @@ private:
     std::vector<float> m_sites, m_values, m_cmap;
     LinearScale<float> m_sx, m_sy;
     float m_alpha, m_beta;
-    bool m_sitesChanged, m_valuesChanged, m_colormapChanged;
+    bool m_sitesChanged, m_valuesChanged, m_colorScaleChanged;
 };
 
 #endif // VORONOISPLAT_H
