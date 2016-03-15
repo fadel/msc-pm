@@ -3,6 +3,9 @@ Interactive multidimensional projections.
 # Prerequisites
 This program depends on the following libraries:
 
+* [CUBu](https://bitbucket.org/rmmartins/cubu) (All platforms: download the
+  sources and follow the instructions on README.md to build and install)
+  * You *must* edit CMakeLists.txt and point the CUBU variable to the base folder
 * Qt 5 (Qt5Widgets, Qt5Qml, Qt5Quick)
 * Armadillo 6.x.x (might work with older versions)
 * CUDA 7.5 (high chance of working with older versions)
