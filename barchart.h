@@ -23,7 +23,7 @@ signals:
     void colorScaleChanged(const ColorScale *scale) const;
     void selectionChanged(const std::vector<bool> &selection) const;
     void selectionInteractivelyChanged(const std::vector<bool> &selection) const;
-    void itemBrushed(int item) const;
+    void itemBrushed(int item, float value) const;
     void itemInteractivelyBrushed(int item) const;
 
 public slots:

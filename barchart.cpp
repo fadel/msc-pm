@@ -62,10 +62,12 @@ void BarChart::setValues(const arma::vec &values)
     if (m_values.n_elem > 0) {
         m_scale.setDomain(m_values.min(), m_values.max());
 
+        // m_originalIndices[i] == the original (datum) index of item i
         std::iota(m_originalIndices.begin(), m_originalIndices.end(), 0);
         std::sort(m_originalIndices.begin(), m_originalIndices.end(),
             [this](int i, int j) { return m_values[i] > m_values[j]; });
 
+        // m_currentIndices[i] == the displayed position of datum i
         int k = 0;
         for (auto i: m_originalIndices) {
             m_currentIndices[i] = k++;
@@ -115,7 +117,7 @@ void BarChart::brushItem(int item)
 {
     if (item < 0) {
         m_brushedItem = item;
-        emit itemBrushed(m_brushedItem);
+        emit itemBrushed(m_brushedItem, 0.0f);
     } else {
         // safe comparison: we just checked for negative values
         if (m_values.n_elem == 0 || item > m_values.n_elem - 1) {
@@ -123,7 +125,8 @@ void BarChart::brushItem(int item)
         }
 
         m_brushedItem = m_currentIndices[item];
-        emit itemBrushed(m_originalIndices[m_brushedItem]);
+        item = m_originalIndices[m_brushedItem];
+        emit itemBrushed(item, m_values[item]);
     }
 
     update();
