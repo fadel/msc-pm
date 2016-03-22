@@ -357,7 +357,7 @@ QOpenGLFramebufferObject *VoronoiSplatRenderer::createFramebufferObject(const QS
 
 void VoronoiSplatRenderer::render()
 {
-    if (!m_sitesChanged || !m_valuesChanged || !m_colormapChanged) {
+    if (!m_sitesChanged && !m_valuesChanged && !m_colormapChanged) {
         return;
     }
 

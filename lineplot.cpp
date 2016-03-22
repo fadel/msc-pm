@@ -28,7 +28,7 @@ LinePlot::LinePlot(QQuickItem *parent)
     , m_colorScaleChanged(false)
     , m_bundleGPU(true)
 {
-    setTextureFollowsItemSize(true);
+    setTextureFollowsItemSize(false);
 }
 
 void LinePlot::setColorScale(const ColorScale *colorScale)
@@ -247,7 +247,7 @@ QOpenGLFramebufferObject *LinePlotRenderer::createFramebufferObject(const QSize 
 
 void LinePlotRenderer::render()
 {
-    if (!m_pointsChanged || !m_valuesChanged || !m_colormapChanged) {
+    if (!m_pointsChanged && !m_valuesChanged && !m_colormapChanged) {
         return;
     }
 
