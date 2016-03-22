@@ -1,7 +1,5 @@
 #include "selectionhandler.h"
 
-#include <QDebug>
-
 SelectionHandler::SelectionHandler(int numItems)
     : m_selection(numItems, false)
 {

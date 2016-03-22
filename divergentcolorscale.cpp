@@ -2,8 +2,6 @@
 
 #include <cmath>
 
-#include <QDebug>
-
 DivergentColorScale::DivergentColorScale(const QColor &color1,
                                          const QColor &colorMiddle,
                                          const QColor &color2)
