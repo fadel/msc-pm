@@ -55,156 +55,6 @@ private:
     QuadTree *m_nw, *m_ne, *m_sw, *m_se;
 };
 
-QuadTree::QuadTree(const QRectF &bounds)
-    : m_bounds(bounds)
-    , m_value(-1)
-    , m_nw(0), m_ne(0), m_sw(0), m_se(0)
-{
-}
-
-QuadTree::~QuadTree()
-{
-    if (m_nw) {
-        delete m_nw;
-        delete m_ne;
-        delete m_sw;
-        delete m_se;
-    }
-}
-
-bool QuadTree::subdivide()
-{
-    float halfWidth = m_bounds.width() / 2;
-    float halfHeight = m_bounds.height() / 2;
-
-    m_nw = new QuadTree(QRectF(m_bounds.x(),
-                               m_bounds.y(),
-                               halfWidth,
-                               halfHeight));
-    m_ne = new QuadTree(QRectF(m_bounds.x() + halfWidth,
-                               m_bounds.y(),
-                               halfWidth,
-                               halfHeight));
-    m_sw = new QuadTree(QRectF(m_bounds.x(),
-                               m_bounds.y() + halfHeight,
-                               halfWidth,
-                               halfHeight));
-    m_se = new QuadTree(QRectF(m_bounds.x() + halfWidth,
-                               m_bounds.y() + halfHeight,
-                               halfWidth,
-                               halfHeight));
-
-    int value = m_value;
-    m_value = -1;
-    return m_nw->insert(m_x, m_y, value)
-        || m_ne->insert(m_x, m_y, value)
-        || m_sw->insert(m_x, m_y, value)
-        || m_se->insert(m_x, m_y, value);
-}
-
-bool QuadTree::insert(float x, float y, int value)
-{
-    if (!m_bounds.contains(x, y)) {
-        return false;
-    }
-
-    if (m_nw) {
-        return m_nw->insert(x, y, value)
-            || m_ne->insert(x, y, value)
-            || m_sw->insert(x, y, value)
-            || m_se->insert(x, y, value);
-    }
-
-    if (m_value >= 0) {
-        subdivide();
-        return insert(x, y, value);
-    }
-
-    m_x = x;
-    m_y = y;
-    m_value = value;
-    return true;
-}
-
-int QuadTree::nearestTo(float x, float y) const
-{
-    if (!m_bounds.contains(x, y)) {
-        return -1;
-    }
-
-    int q;
-    if (m_nw) {
-        q = m_nw->nearestTo(x, y);
-        if (q >= 0) return q;
-        q = m_ne->nearestTo(x, y);
-        if (q >= 0) return q;
-        q = m_sw->nearestTo(x, y);
-        if (q >= 0) return q;
-        q = m_se->nearestTo(x, y);
-        if (q >= 0) return q;
-    }
-
-    float dist = std::numeric_limits<float>::infinity();
-    nearestTo(x, y, q, dist);
-    if (dist < BRUSHING_MAX_DIST * BRUSHING_MAX_DIST)
-        return q;
-    return -1;
-}
-
-void QuadTree::nearestTo(float x, float y, int &nearest, float &dist) const
-{
-    if (m_nw) {
-        m_nw->nearestTo(x, y, nearest, dist);
-        m_ne->nearestTo(x, y, nearest, dist);
-        m_sw->nearestTo(x, y, nearest, dist);
-        m_se->nearestTo(x, y, nearest, dist);
-    } else if (m_value >= 0) {
-        float d = (m_x - x)*(m_x - x) + (m_y - y)*(m_y - y);
-        if (d < dist) {
-            nearest = m_value;
-            dist = d;
-        }
-    }
-}
-
-int QuadTree::query(float x, float y) const
-{
-    if (!m_bounds.contains(x, y)) {
-        // There is no way we could find the point
-        return -1;
-    }
-
-    if (m_nw) {
-        int q = -1;
-        q = m_nw->query(x, y);
-        if (q >= 0) return q;
-        q = m_ne->query(x, y);
-        if (q >= 0) return q;
-        q = m_sw->query(x, y);
-        if (q >= 0) return q;
-        q = m_se->query(x, y);
-        return q;
-    }
-
-    return m_value;
-}
-
-void QuadTree::query(const QRectF &rect, std::vector<int> &result) const
-{
-    if (!m_bounds.intersects(rect)) {
-        return;
-    }
-
-    if (m_nw) {
-        m_nw->query(rect, result);
-        m_ne->query(rect, result);
-        m_sw->query(rect, result);
-        m_se->query(rect, result);
-    } else if (rect.contains(m_x, m_y) && m_value != -1) {
-        result.push_back(m_value);
-    }
-}
-
 Scatterplot::Scatterplot(QQuickItem *parent)
     : QQuickItem(parent)
     , m_glyphSize(DEFAULT_GLYPH_SIZE)
@@ -222,6 +72,13 @@ Scatterplot::Scatterplot(QQuickItem *parent)
 {
     setClip(true);
     setFlag(QQuickItem::ItemHasContents);
+}
+
+Scatterplot::~Scatterplot()
+{
+    if (m_quadtree) {
+        delete m_quadtree;
+    }
 }
 
 void Scatterplot::setColorScale(const ColorScale *colorScale)
@@ -250,6 +107,8 @@ void Scatterplot::setXY(const arma::mat &xy)
     if (m_autoScale) {
         autoScale();
     }
+
+    updateQuadTree();
 
     if (m_selection.size() != m_xy.n_rows) {
         m_selection.resize(m_xy.n_rows);
@@ -316,7 +175,6 @@ void Scatterplot::autoScale()
 {
     m_sx.setDomain(m_xy.col(0).min(), m_xy.col(0).max());
     m_sy.setDomain(m_xy.col(1).min(), m_xy.col(1).max());
-
     emit scaleChanged(m_sx, m_sy);
 }
 
@@ -755,5 +613,155 @@ void Scatterplot::updateQuadTree()
     for (arma::uword i = 0; i < m_xy.n_rows; i++) {
         const arma::rowvec &row = m_xy.row(i);
         m_quadtree->insert(m_sx(row[0]), m_sy(row[1]), (int) i);
+    }
+}
+
+QuadTree::QuadTree(const QRectF &bounds)
+    : m_bounds(bounds)
+    , m_value(-1)
+    , m_nw(0), m_ne(0), m_sw(0), m_se(0)
+{
+}
+
+QuadTree::~QuadTree()
+{
+    if (m_nw) {
+        delete m_nw;
+        delete m_ne;
+        delete m_sw;
+        delete m_se;
+    }
+}
+
+bool QuadTree::subdivide()
+{
+    float halfWidth = m_bounds.width() / 2;
+    float halfHeight = m_bounds.height() / 2;
+
+    m_nw = new QuadTree(QRectF(m_bounds.x(),
+                               m_bounds.y(),
+                               halfWidth,
+                               halfHeight));
+    m_ne = new QuadTree(QRectF(m_bounds.x() + halfWidth,
+                               m_bounds.y(),
+                               halfWidth,
+                               halfHeight));
+    m_sw = new QuadTree(QRectF(m_bounds.x(),
+                               m_bounds.y() + halfHeight,
+                               halfWidth,
+                               halfHeight));
+    m_se = new QuadTree(QRectF(m_bounds.x() + halfWidth,
+                               m_bounds.y() + halfHeight,
+                               halfWidth,
+                               halfHeight));
+
+    int value = m_value;
+    m_value = -1;
+    return m_nw->insert(m_x, m_y, value)
+        || m_ne->insert(m_x, m_y, value)
+        || m_sw->insert(m_x, m_y, value)
+        || m_se->insert(m_x, m_y, value);
+}
+
+bool QuadTree::insert(float x, float y, int value)
+{
+    if (!m_bounds.contains(x, y)) {
+        return false;
+    }
+
+    if (m_nw) {
+        return m_nw->insert(x, y, value)
+            || m_ne->insert(x, y, value)
+            || m_sw->insert(x, y, value)
+            || m_se->insert(x, y, value);
+    }
+
+    if (m_value >= 0) {
+        subdivide();
+        return insert(x, y, value);
+    }
+
+    m_x = x;
+    m_y = y;
+    m_value = value;
+    return true;
+}
+
+int QuadTree::nearestTo(float x, float y) const
+{
+    if (!m_bounds.contains(x, y)) {
+        return -1;
+    }
+
+    int q;
+    if (m_nw) {
+        q = m_nw->nearestTo(x, y);
+        if (q >= 0) return q;
+        q = m_ne->nearestTo(x, y);
+        if (q >= 0) return q;
+        q = m_sw->nearestTo(x, y);
+        if (q >= 0) return q;
+        q = m_se->nearestTo(x, y);
+        if (q >= 0) return q;
+    }
+
+    float dist = std::numeric_limits<float>::infinity();
+    nearestTo(x, y, q, dist);
+    if (dist < BRUSHING_MAX_DIST * BRUSHING_MAX_DIST)
+        return q;
+    return -1;
+}
+
+void QuadTree::nearestTo(float x, float y, int &nearest, float &dist) const
+{
+    if (m_nw) {
+        m_nw->nearestTo(x, y, nearest, dist);
+        m_ne->nearestTo(x, y, nearest, dist);
+        m_sw->nearestTo(x, y, nearest, dist);
+        m_se->nearestTo(x, y, nearest, dist);
+    } else if (m_value >= 0) {
+        float d = (m_x - x)*(m_x - x) + (m_y - y)*(m_y - y);
+        if (d < dist) {
+            nearest = m_value;
+            dist = d;
+        }
+    }
+}
+
+int QuadTree::query(float x, float y) const
+{
+    if (!m_bounds.contains(x, y)) {
+        // There is no way we could find the point
+        return -1;
+    }
+
+    if (m_nw) {
+        int q = -1;
+        q = m_nw->query(x, y);
+        if (q >= 0) return q;
+        q = m_ne->query(x, y);
+        if (q >= 0) return q;
+        q = m_sw->query(x, y);
+        if (q >= 0) return q;
+        q = m_se->query(x, y);
+        return q;
+    }
+
+    return m_value;
+}
+
+void QuadTree::query(const QRectF &rect, std::vector<int> &result) const
+{
+    if (!m_bounds.intersects(rect)) {
+        return;
+    }
+
+    if (m_nw) {
+        m_nw->query(rect, result);
+        m_ne->query(rect, result);
+        m_sw->query(rect, result);
+        m_se->query(rect, result);
+    } else if (rect.contains(m_x, m_y) && m_value != -1) {
+        result.push_back(m_value);
     }
 }

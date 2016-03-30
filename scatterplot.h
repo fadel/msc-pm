@@ -21,6 +21,7 @@ public:
     static const int PADDING = 20;
 
     Scatterplot(QQuickItem *parent = 0);
+    virtual ~Scatterplot();
 
     arma::mat XY() const;
     void setColorScale(const ColorScale *colorScale);
