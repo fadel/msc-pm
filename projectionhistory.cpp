@@ -57,6 +57,7 @@ void ProjectionHistory::undo()
         m_Y = m_prevY;
         m_distY  = m_prevDistY;
         m_values = m_prevValues;
+        updateUnreliability();
 
         emit undoPerformed();
         emit currentMapChanged(m_Y);
@@ -73,6 +74,7 @@ void ProjectionHistory::reset()
         m_Y = m_firstY;
         m_distY  = m_firstDistY;
         m_values = m_firstValues;
+        updateUnreliability();
 
         emit resetPerformed();
         emit currentMapChanged(m_Y);
@@ -93,6 +95,7 @@ void ProjectionHistory::addMap(const arma::mat &Y)
 
     m_Y = Y;
     m_distY = mp::dist(Y);
+    updateUnreliability();
 
     mp::aggregatedError(m_distX, m_distY, m_values);
     qDebug("Aggr. error: min: %f, max: %f", m_values.min(), m_values.max());
@@ -226,4 +229,10 @@ void ProjectionHistory::setRewind(double t)
     // emit cpValuesRewound(values(m_cpIndices));
     emit rpValuesRewound(values(m_rpIndices));
     emit valuesRewound(values);
+}
+
+void ProjectionHistory::updateUnreliability()
+{
+    m_unreliability.copy_size(m_alphas);
+    m_unreliability = m_alphas % m_distY(m_rpIndices, m_cpIndices);
 }

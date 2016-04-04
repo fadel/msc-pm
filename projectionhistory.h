@@ -18,9 +18,13 @@ public:
 
     ProjectionHistory(const arma::mat &X, const arma::uvec &cpIndices);
 
-    const arma::mat &Y() const      { return m_Y; }
-    const arma::mat &firstY() const { return m_firstY; }
-    const arma::mat &prevY() const  { return m_prevY; }
+    const arma::mat &Y() const             { return m_Y; }
+    const arma::mat &firstY() const        { return m_firstY; }
+    const arma::mat &prevY() const         { return m_prevY; }
+    const arma::mat &unreliability() const { return m_unreliability; }
+
+    const arma::uvec &cpIndices() const { return m_cpIndices; }
+    const arma::uvec &rpIndices() const { return m_rpIndices; }
 
     bool hasFirst() const { return m_hasFirst; }
     bool hasPrev() const  { return m_hasPrev; }
@@ -53,11 +57,13 @@ public slots:
 
 private:
     bool emitValuesChanged() const;
+    void updateUnreliability();
 
     ObserverType m_type;
 
     arma::mat m_X, m_Y, m_firstY, m_prevY;
     arma::mat m_distX, m_distY, m_firstDistY, m_prevDistY;
+    arma::mat m_unreliability;
     arma::uvec m_cpIndices, m_rpIndices;
 
     bool m_cpSelectionEmpty, m_rpSelectionEmpty;
