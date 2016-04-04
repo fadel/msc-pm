@@ -12,6 +12,7 @@
 #include "numericrange.h"
 #include "barchart.h"
 #include "colormap.h"
+#include "lineplot.h"
 #include "scatterplot.h"
 #include "voronoisplat.h"
 
@@ -96,6 +97,7 @@ public:
         cpPlot->setColorScale(colorScaleCPs.get());
         cpBarChart->setColorScale(colorScaleCPs.get());
         cpColormap->setColorScale(colorScaleCPs.get());
+        bundlePlot->setColorScale(colorScaleCPs.get());
     }
 
     Q_INVOKABLE void setRPColorScale(ColorScaleType colorScaleType) {
@@ -122,6 +124,7 @@ public:
     Colormap *cpColormap, *rpColormap;
     Scatterplot *cpPlot, *rpPlot;
     VoronoiSplat *splat;
+    LinePlot *bundlePlot;
 
     // Color scales in use
     std::unique_ptr<ColorScale> colorScaleCPs, colorScaleRPs;
@@ -188,6 +191,7 @@ private:
         , cpPlot(0)
         , rpPlot(0)
         , splat(0)
+        , bundlePlot(0)
         , projectionHistory(0)
     {
     }

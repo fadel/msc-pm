@@ -19,86 +19,124 @@
 #include "geometry.h"
 #include "scatterplot.h"
 
+static const int SAMPLES = 128;
+
 LinePlot::LinePlot(QQuickItem *parent)
     : QQuickFramebufferObject(parent)
     , m_sx(0, 1, 0, 1)
     , m_sy(0, 1, 0, 1)
-    , m_xyChanged(false)
+    , m_linesChanged(false)
     , m_valuesChanged(false)
     , m_colorScaleChanged(false)
+
+    // Q_PROPERTY's
+    , m_iterations(15)
+    , m_kernelSize(32)
+    , m_smoothingFactor(0.2)
+    , m_smoothingIterations(1)
+
+    , m_blockEndpoints(true)
+    , m_endsIterations(0)
+    , m_endsKernelSize(32)
+    , m_endsSmoothingFactor(0.5)
+
+    , m_edgeSampling(15)
+    , m_advectionSpeed(0.5)
+    , m_relaxation(0)
     , m_bundleGPU(true)
 {
+    setFlag(QQuickItem::ItemHasContents);
     setTextureFollowsItemSize(false);
 }
 
-void LinePlot::setColorScale(const ColorScale *colorScale)
+void LinePlot::setColorScale(const ColorScale *scale)
 {
-    m_colorScale = colorScale;
-    if (m_values.size() > 0) {
-        // FIXME
-        m_colorScaleChanged = true;
-        update();
-    }
+    m_cmap.resize(SAMPLES * 3);
+    scale->sample(SAMPLES, m_cmap.begin());
+
+    setColorScaleChanged(true);
+    update();
 }
 
 void LinePlot::bundle()
 {
-    Graph g(m_xy.n_rows);
-    PointSet points;
-
-    for (arma::uword i = 0; i < m_xy.n_rows; i++) {
-        const arma::rowvec &row = m_xy.row(i);
-        points.push_back(Point2d(row[0], row[1]));
-
-        if (i > 0) {
-            g(i - 1, i) = m_values[i];
-            g(i, i - 1) = m_values[i];
-        }
-    }
-
-    m_gdPtr.reset(new GraphDrawing);
-    m_gdPtr.get()->build(&g, &points);
+    m_gdBundlePtr.reset(new GraphDrawing);
+    *m_gdBundlePtr.get() = *m_gdPtr.get();
 
     CPUBundling bundling(std::min(width(), height()));
-    bundling.setInput(m_gdPtr.get());
+    bundling.setInput(m_gdBundlePtr.get());
+
+    bundling.niter  = m_iterations;
+    bundling.h      = m_kernelSize;
+    bundling.lambda = m_smoothingFactor;
+    bundling.liter  = m_smoothingIterations;
+
+    bundling.block_endpoints = m_blockEndpoints;
+    bundling.niter_ms        = m_endsIterations;
+    bundling.h_ms            = m_endsKernelSize;
+    bundling.lambda_ends     = m_endsSmoothingFactor;
+
+    bundling.spl = m_edgeSampling;
+    bundling.eps = m_advectionSpeed;
+    // TODO: use m_relaxation as lerp param towards original (without bundling)
+
     if (m_bundleGPU) {
         bundling.bundleGPU();
     } else {
         bundling.bundleCPU();
     }
+
+    setLinesChanged(true);
 }
 
-void LinePlot::setXY(const arma::mat &xy)
+void LinePlot::setLines(const arma::uvec &indices, const arma::mat &Y)
 {
-    if (xy.n_cols != 2) {
+    if (indices.n_elem % 2 != 0 || Y.n_cols != 2) {
         return;
     }
 
-    m_xy = xy;
-    m_xyChanged = true;
-    emit xyChanged(m_xy);
+    m_lines = Y.rows(indices);
 
-    // Build the line plot's internal representation: graph where each endpoint
-    // of a line is a node, each line is a link; and then bundle the graph's
-    // edges
+    // Build the line plot's internal representation: a graph where each
+    // endpoint of a line is a node, each line is a link...
+    Graph g(Y.n_rows);
+    PointSet points;
+
+    m_sx.setRange(0, width());
+    m_sy.setRange(0, height());
+    for (arma::uword i = 0; i < Y.n_rows; i++) {
+        points.push_back(Point2d(m_sx(Y(i, 0)), m_sy(Y(i, 1))));
+    }
+
+    for (arma::uword k = 0; k < m_values.size(); k++) {
+        arma::uword i = indices(2*k + 0),
+                    j = indices(2*k + 1);
+
+        g(i, j) = g(j, i) = m_values[k];
+    }
+
+    m_gdPtr.reset(new GraphDrawing);
+    m_gdPtr.get()->build(&g, &points);
+
+    // ... then bundle the edges
     bundle();
 
+    emit linesChanged(m_lines);
     update();
 }
 
 void LinePlot::setValues(const arma::vec &values)
 {
-    if (m_xy.n_rows > 0
-        && (values.n_elem > 0 && values.n_elem != m_xy.n_rows)) {
+    if (m_lines.n_rows > 0
+        && (values.n_elem > 0 && values.n_elem != m_lines.n_rows)) {
         return;
     }
 
     m_values.resize(values.n_elem);
-    LinearScale<float> scale(values.min(), values.max(), 0, 1.0f);
-    std::transform(values.begin(), values.end(), m_values.begin(), scale);
+    std::copy(values.begin(), values.end(), m_values.begin());
     emit valuesChanged(values);
 
-    m_valuesChanged = true;
+    setValuesChanged(true);
     update();
 }
 
@@ -108,6 +146,162 @@ void LinePlot::setScale(const LinearScale<float> &sx,
     m_sx = sx;
     m_sy = sy;
     emit scaleChanged(m_sx, m_sy);
+    update();
+}
+
+// Q_PROPERTY's
+void LinePlot::setIterations(int iterations) {
+    if (m_iterations == iterations) {
+        return;
+    }
+
+    m_iterations = iterations;
+    emit iterationsChanged(m_iterations);
+
+    bundle();
+    update();
+}
+
+void LinePlot::setKernelSize(float kernelSize)
+{
+    if (m_kernelSize == kernelSize) {
+        return;
+    }
+
+    m_kernelSize = kernelSize;
+    emit kernelSizeChanged(m_kernelSize);
+
+    bundle();
+    update();
+}
+
+void LinePlot::setSmoothingFactor(float smoothingFactor)
+{
+    if (m_smoothingFactor == smoothingFactor) {
+        return;
+    }
+
+    m_smoothingFactor = smoothingFactor;
+    emit smoothingFactorChanged(m_smoothingFactor);
+
+    bundle();
+    update();
+}
+
+void LinePlot::setSmoothingIterations(int smoothingIterations)
+{
+    if (m_smoothingIterations == smoothingIterations) {
+        return;
+    }
+
+    m_smoothingIterations = smoothingIterations;
+    emit smoothingIterationsChanged(m_smoothingIterations);
+
+    bundle();
+    update();
+}
+
+void LinePlot::setBlockEndpoints(bool blockEndpoints)
+{
+    if (m_blockEndpoints == blockEndpoints) {
+        return;
+    }
+
+    m_blockEndpoints = blockEndpoints;
+    emit blockEndpointsChanged(m_blockEndpoints);
+
+    bundle();
+    update();
+}
+
+void LinePlot::setEndsIterations(int endsIterations)
+{
+    if (m_endsIterations == endsIterations) {
+        return;
+    }
+
+    m_endsIterations = endsIterations;
+    emit endsIterationsChanged(m_endsIterations);
+
+    bundle();
+    update();
+}
+
+void LinePlot::setEndsKernelSize(float endsKernelSize)
+{
+    if (m_endsKernelSize == endsKernelSize) {
+        return;
+    }
+
+    m_endsKernelSize = endsKernelSize;
+    emit endsKernelSizeChanged(m_endsKernelSize);
+
+    bundle();
+    update();
+}
+
+void LinePlot::setEndsSmoothingFactor(float endsSmoothingFactor)
+{
+    if (m_endsSmoothingFactor == endsSmoothingFactor) {
+        return;
+    }
+
+    m_endsSmoothingFactor = endsSmoothingFactor;
+    emit endsSmoothingFactorChanged(m_endsSmoothingFactor);
+
+    bundle();
+    update();
+}
+
+void LinePlot::setEdgeSampling(float edgeSampling)
+{
+    if (m_edgeSampling == edgeSampling) {
+        return;
+    }
+
+    m_edgeSampling = edgeSampling;
+    emit edgeSamplingChanged(m_edgeSampling);
+
+    bundle();
+    update();
+}
+
+void LinePlot::setAdvectionSpeed(float advectionSpeed)
+{
+    if (m_advectionSpeed == advectionSpeed) {
+        return;
+    }
+
+    m_advectionSpeed = advectionSpeed;
+    emit advectionSpeedChanged(m_advectionSpeed);
+
+    bundle();
+    update();
+}
+
+void LinePlot::setRelaxation(float relaxation)
+{
+    if (m_relaxation == relaxation) {
+        return;
+    }
+
+    m_relaxation = relaxation;
+    emit relaxationChanged(m_relaxation);
+
+    bundle();
+    update();
+}
+
+void LinePlot::setBundleGPU(bool bundleGPU)
+{
+    if (m_bundleGPU == bundleGPU) {
+        return;
+    }
+
+    m_bundleGPU = bundleGPU;
+    emit bundleGPUChanged(m_bundleGPU);
+
+    bundle();
     update();
 }
 
@@ -133,23 +327,21 @@ private:
     void updatePoints();
     void updateValues();
     void updateColormap();
-    void updateTransform();
 
     void copyPolylines(const GraphDrawing *gd);
 
     QSize m_size;
     std::vector<float> m_points;
-    const std::vector<float> *m_values;
+    const std::vector<float> *m_values, *m_cmap;
     std::vector<int> m_offsets;
-    float m_alpha, m_beta;
-    GLfloat m_transform[4][4];
-    LinearScale<float> m_sx, m_sy;
 
     QQuickWindow *m_window; // used to reset OpenGL state (as per docs)
     QOpenGLFunctions gl;
     QOpenGLShaderProgram *m_program;
     GLuint m_VBOs[2], m_colormapTex;
     QOpenGLVertexArrayObject m_VAO;
+    GLfloat m_transform[4][4];
+    LinearScale<float> m_sx, m_sy;
     bool m_pointsChanged, m_valuesChanged, m_colormapChanged;
 };
 
@@ -159,13 +351,12 @@ QQuickFramebufferObject::Renderer *LinePlot::createRenderer() const
 }
 
 LinePlotRenderer::LinePlotRenderer()
-    : m_sx(0, 1, 0, 1)
-    , m_sy(0, 1, 0, 1)
-    , gl(QOpenGLContext::currentContext())
+    : gl(QOpenGLContext::currentContext())
+    , m_sx(0.0f, 1.0f, 0.0f, 1.0f)
+    , m_sy(0.0f, 1.0f, 0.0f, 1.0f)
 {
     std::fill(&m_transform[0][0], &m_transform[0][0] + 16, 0.0f);
     m_transform[3][3] = 1.0f;
-
     setupShaders();
     setupVAOs();
     setupTextures();
@@ -236,12 +427,39 @@ void LinePlotRenderer::setupTextures()
 
 LinePlotRenderer::~LinePlotRenderer()
 {
+    gl.glDeleteBuffers(2, m_VBOs);
+    gl.glDeleteTextures(1, &m_colormapTex);
+
     delete m_program;
 }
 
 QOpenGLFramebufferObject *LinePlotRenderer::createFramebufferObject(const QSize &size)
 {
     m_size = size;
+    GLfloat w = m_size.width(), h = m_size.height();
+
+    GLfloat rangeOffset = Scatterplot::PADDING / w;
+    m_sx.setDomain(0, w);
+    m_sx.setRange(rangeOffset, 1.0f - rangeOffset);
+    GLfloat sx = 2.0f * m_sx.slope();
+    GLfloat tx = 2.0f * m_sx.offset() - 1.0f;
+
+    rangeOffset = Scatterplot::PADDING / h;
+    m_sy.setDomain(0, h);
+    m_sy.setRange(1.0f - rangeOffset, rangeOffset); // inverted on purpose
+    GLfloat sy = 2.0f * m_sy.slope();
+    GLfloat ty = 2.0f * m_sy.offset() - 1.0f;
+
+    // The transform matrix should be this (but transposed -- column major):
+    // [   sx  0.0f  0.0f    tx ]
+    // [ 0.0f    sy  0.0f    ty ]
+    // [ 0.0f  0.0f  0.0f  0.0f ]
+    // [ 0.0f  0.0f  0.0f  1.0f ]
+    m_transform[0][0] = sx;
+    m_transform[1][1] = sy;
+    m_transform[3][0] = tx;
+    m_transform[3][1] = ty;
+
     return QQuickFramebufferObject::Renderer::createFramebufferObject(m_size);
 }
 
@@ -262,20 +480,31 @@ void LinePlotRenderer::render()
         updateColormap();
     }
 
+    if (m_offsets.size() < 2) {
+        // Nothing to draw
+        return;
+    }
+
     m_program->bind();
-    m_program->setUniformValue("transform", m_transform);
 
     gl.glActiveTexture(GL_TEXTURE0);
     gl.glBindTexture(GL_TEXTURE_2D, m_colormapTex);
     m_program->setUniformValue("colormap", 0);
+    m_program->setUniformValue("transform", m_transform);
 
     gl.glClearColor(0, 0, 0, 0);
     gl.glClear(GL_COLOR_BUFFER_BIT);
 
     m_VAO.bind();
-    for (int i = 0; i < m_offsets.size() - 1; i++) {
-        gl.glDrawArrays(GL_LINES, m_offsets[i], m_offsets[i + 1]);
+    gl.glEnable(GL_LINE_SMOOTH);
+    gl.glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    gl.glEnable(GL_BLEND);
+    gl.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    for (int i = 1; i < m_offsets.size(); i++) {
+        gl.glDrawArrays(GL_LINE_STRIP, m_offsets[i - 1], m_offsets[i] - m_offsets[i - 1]);
     }
+    gl.glDisable(GL_LINE_SMOOTH);
+    gl.glDisable(GL_BLEND);
     m_VAO.release();
 
     m_program->release();
@@ -290,22 +519,20 @@ void LinePlotRenderer::copyPolylines(const GraphDrawing *gd)
 
     int pointsNum = 0;
     m_offsets.clear();
+    m_offsets.reserve(gd->draw_order.size() + 1);
     m_offsets.push_back(0);
-    for (std::pair<float, const GraphDrawing::Polyline *> p : gd->draw_order) {
+    for (auto &p : gd->draw_order) {
         pointsNum += p.second->size();
         m_offsets.push_back(pointsNum);
     }
-    m_points.resize(2 * pointsNum);
 
-    arma::uword i = 0, k = 0;
-    for (std::pair<float, const GraphDrawing::Polyline *> p : gd->draw_order) {
-        for (arma::uword j = 0; j < p.second->size(); j++) {
-            m_points[i + j + 0] = (*p.second)[j].x;
-            m_points[i + j + 1] = (*p.second)[j].y;
+    m_points.clear();
+    m_points.reserve(2 * pointsNum);
+    for (auto &p : gd->draw_order) {
+        for (auto &point : *p.second) {
+            m_points.push_back(point.x);
+            m_points.push_back(point.y);
         }
-
-        i += p.second->size();
-        k++;
     }
 }
 
@@ -313,45 +540,21 @@ void LinePlotRenderer::synchronize(QQuickFramebufferObject *item)
 {
     LinePlot *plot = static_cast<LinePlot *>(item);
 
-    m_pointsChanged   = plot->xyChanged();
+    m_pointsChanged   = plot->linesChanged();
     m_valuesChanged   = plot->valuesChanged();
     m_colormapChanged = plot->colorScaleChanged();
 
-    copyPolylines(plot->graphDrawing());
+    if (m_pointsChanged) {
+        copyPolylines(plot->bundleGraphDrawing());
+    }
     m_values = &(plot->values());
-    m_sx     = plot->scaleX();
-    m_sy     = plot->scaleY();
+    m_cmap   = &(plot->colorScale());
     m_window = plot->window();
 
     // Reset so that we have the correct values by the next synchronize()
-    plot->setXYChanged(false);
+    plot->setLinesChanged(false);
     plot->setValuesChanged(false);
     plot->setColorScaleChanged(false);
-}
-
-void LinePlotRenderer::updateTransform()
-{
-    GLfloat w = m_size.width(), h = m_size.height();
-
-    GLfloat rangeOffset = Scatterplot::PADDING / w;
-    m_sx.setRange(rangeOffset, 1.0f - rangeOffset);
-    GLfloat sx = 2.0f * m_sx.slope();
-    GLfloat tx = 2.0f * m_sx.offset() - 1.0f;
-
-    rangeOffset = Scatterplot::PADDING / h;
-    m_sy.setRange(1.0f - rangeOffset, rangeOffset);
-    GLfloat sy = 2.0f * m_sy.slope();
-    GLfloat ty = 2.0f * m_sy.offset() - 1.0f;
-
-    // The transform matrix should be this (but transposed -- column major):
-    // [   sx  0.0f  0.0f   -tx ]
-    // [ 0.0f    sy  0.0f   -ty ]
-    // [ 0.0f  0.0f  0.0f  0.0f ]
-    // [ 0.0f  0.0f  0.0f  1.0f ]
-    m_transform[0][0] = sx;
-    m_transform[1][1] = sy;
-    m_transform[3][0] = tx;
-    m_transform[3][1] = ty;
 }
 
 void LinePlotRenderer::updatePoints()
@@ -360,7 +563,6 @@ void LinePlotRenderer::updatePoints()
     gl.glBufferData(GL_ARRAY_BUFFER, m_points.size() * sizeof(float),
             m_points.data(), GL_DYNAMIC_DRAW);
 
-    updateTransform();
     m_pointsChanged = false;
 }
 
@@ -376,8 +578,8 @@ void LinePlotRenderer::updateValues()
 void LinePlotRenderer::updateColormap()
 {
     gl.glBindTexture(GL_TEXTURE_2D, m_colormapTex);
-    //gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_cmap->size() / 3, 1, 0, GL_RGB,
-    //        GL_FLOAT, m_cmap->data());
+    gl.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_cmap->size() / 3, 1, 0, GL_RGB,
+            GL_FLOAT, m_cmap->data());
 
     m_colormapChanged = false;
 }

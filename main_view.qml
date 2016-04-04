@@ -14,9 +14,6 @@ ApplicationWindow {
     Component.onCompleted: {
         setX(Screen.width / 2 - width / 2);
         setY(Screen.height / 2 - height / 2);
-
-        this.minimumWidth = width;
-        this.minimumHeight = height;
     }
 
     menuBar: MenuBar {
@@ -37,6 +34,11 @@ ApplicationWindow {
             title: "Select"
             MenuItem { action: selectRPsAction }
             MenuItem { action: selectCPsAction }
+        }
+
+        Menu {
+            title: "View"
+            MenuItem { action: toggleOptionsAction }
         }
     }
 
@@ -78,12 +80,21 @@ ApplicationWindow {
                         anchors.fill: parent
                     }
 
+                    LinePlot {
+                        id: bundlePlot
+                        objectName: "bundlePlot"
+                        x: parent.x
+                        y: parent.y
+                        z: 1
+                        anchors.fill: parent
+                    }
+
                     Scatterplot {
                         id: rpPlot
                         objectName: "rpPlot"
                         x: parent.x
                         y: parent.y
-                        z: 1
+                        z: 2
                         anchors.fill: parent
                         glyphSize: 3.0
                     }
@@ -91,15 +102,6 @@ ApplicationWindow {
                     Scatterplot {
                         id: cpPlot
                         objectName: "cpPlot"
-                        x: parent.x
-                        y: parent.y
-                        z: 2
-                        anchors.fill: parent
-                    }
-
-                    LinePlot {
-                        id: linePlot
-                        objectName: "linePlot"
                         x: parent.x
                         y: parent.y
                         z: 3
@@ -237,234 +239,434 @@ ApplicationWindow {
         }
 
         // Options panel
-        ColumnLayout {
-            Layout.alignment: Qt.AlignTop | Qt.AlignLeft
+        RowLayout {
+            id: optionsPanel
 
-            GroupBox {
-                Layout.fillWidth: true
-                title: "Control points"
-                checkable: true
-                __checkbox.onClicked: {
-                    cpPlot.visible = this.checked;
+            ColumnLayout {
+                Layout.alignment: Qt.AlignTop | Qt.AlignLeft
 
-                    if (this.checked) {
-                        cpPlot.z = 0;
-                        rpPlot.z = 0;
-                    } else {
-                        cpPlot.z = 0;
-                        rpPlot.z = 1;
-                    }
-                }
+                GroupBox {
+                    Layout.fillWidth: true
+                    title: "Control points"
+                    checkable: true
+                    __checkbox.onClicked: {
+                        cpPlot.visible = this.checked;
 
-                ColumnLayout {
-                    GroupBox {
-                        flat: true
-                        title: "Colors"
-
-                        GridLayout {
-                            columns: 2
-
-                            Label { text: "Map to:" }
-                            ComboBox {
-                                id: cpPlotMetricComboBox
-                                model: metricsModel
-                            }
-
-                            Label { text: "Color map:" }
-                            ComboBox {
-                                id: cpPlotColormapCombo
-                                model: colormapModel
-                                onActivated:
-                                    Main.setCPColorScale(model.get(index).value);
-                            }
+                        if (this.checked) {
+                            cpPlot.z = 0;
+                            rpPlot.z = 0;
+                        } else {
+                            cpPlot.z = 0;
+                            rpPlot.z = 1;
                         }
                     }
 
-                    GroupBox {
-                        flat: true
-                        title: "Glyphs"
+                    ColumnLayout {
+                        GroupBox {
+                            flat: true
+                            title: "Colors"
 
-                        GridLayout {
-                            columns: 2
+                            GridLayout {
+                                columns: 2
 
-                            Label { text: "Size:" }
-                            SpinBox {
-                                id: cpGlyphSizeSpinBox
-                                maximumValue: 100
-                                minimumValue: 6
-                                decimals: 1
-                                stepSize: 1
-                                value: cpPlot.glyphSize
-                                onValueChanged: cpPlot.glyphSize = this.value
+                                Label { text: "Map to:" }
+                                ComboBox {
+                                    id: cpPlotMetricComboBox
+                                    model: metricsModel
+                                }
+
+                                Label { text: "Color map:" }
+                                ComboBox {
+                                    id: cpPlotColormapCombo
+                                    model: colormapModel
+                                    onActivated:
+                                        Main.setCPColorScale(model.get(index).value);
+                                }
                             }
+                        }
 
-                            Label { text: "Opacity:" }
-                            Slider {
-                                id: cpPlotOpacitySlider
-                                tickmarksEnabled: true
-                                stepSize: 0.1
-                                maximumValue: 1
-                                minimumValue: 0
-                                value: cpPlot.opacity
-                                onValueChanged: cpPlot.opacity = this.value
+                        GroupBox {
+                            flat: true
+                            title: "Glyphs"
+
+                            GridLayout {
+                                columns: 2
+
+                                Label { text: "Size:" }
+                                SpinBox {
+                                    id: cpGlyphSizeSpinBox
+                                    maximumValue: 100
+                                    minimumValue: 6
+                                    decimals: 1
+                                    stepSize: 1
+                                    value: cpPlot.glyphSize
+                                    onValueChanged: cpPlot.glyphSize = this.value
+                                }
+
+                                Label { text: "Opacity:" }
+                                Slider {
+                                    id: cpPlotOpacitySlider
+                                    tickmarksEnabled: true
+                                    stepSize: 0.1
+                                    maximumValue: 1
+                                    minimumValue: 0
+                                    value: cpPlot.opacity
+                                    onValueChanged: cpPlot.opacity = this.value
+                                }
+                            }
+                        }
+                    }
+                }
+
+                GroupBox {
+                    Layout.fillWidth: true
+                    title: "Regular points"
+                    checked: true
+                    checkable: true
+                    __checkbox.onClicked: {
+                        rpPlot.visible = this.checked;
+                        splat.visible  = this.checked;
+                    }
+
+                    ColumnLayout {
+                        GroupBox {
+                            flat: true
+                            title: "Colors"
+
+                            GridLayout {
+                                columns: 2
+
+                                Label { text: "Map to:" }
+                                ComboBox {
+                                    id: rpPlotMetricComboBox
+                                    model: metricsModel
+                                }
+
+                                Label { text: "Color map:" }
+                                ComboBox {
+                                    id: rpPlotColormapCombo
+                                    model: colormapModel
+                                    onActivated:
+                                        Main.setRPColorScale(model.get(index).value);
+                                }
+                            }
+                        }
+
+                        GroupBox {
+                            flat: true
+                            title: "Splat"
+
+                            GridLayout {
+                                columns: 2
+
+                                Label { text: "Blur (α):" }
+                                SpinBox {
+                                    id: alphaSpinBox
+                                    maximumValue: 100
+                                    minimumValue: 1
+                                    value: splat.alpha
+                                    decimals: 2
+                                    stepSize: 1
+                                    onValueChanged: splat.alpha = this.value
+                                }
+
+                                Label { text: "Radius (β):" }
+                                SpinBox {
+                                    id: betaSpinBox
+                                    maximumValue: 100
+                                    minimumValue: 1
+                                    value: splat.beta
+                                    decimals: 2
+                                    stepSize: 1
+                                    onValueChanged: splat.beta = this.value
+                                }
+
+                                Label { text: "Opacity:" }
+                                Slider {
+                                    id: splatOpacitySlider
+                                    tickmarksEnabled: true
+                                    stepSize: 0.1
+                                    maximumValue: 1
+                                    minimumValue: 0
+                                    value: splat.opacity
+                                    onValueChanged: splat.opacity = this.value
+                                }
+                            }
+                        }
+
+                        GroupBox {
+                            flat: true
+                            title: "Glyphs"
+
+                            GridLayout {
+                                columns: 2
+
+                                Label { text: "Size:" }
+                                SpinBox {
+                                    id: rpGlyphSizeSpinBox
+                                    maximumValue: 100
+                                    minimumValue: 2
+                                    decimals: 1
+                                    stepSize: 1
+                                    value: rpPlot.glyphSize
+                                    onValueChanged: rpPlot.glyphSize = this.value
+                                }
+
+                                Label { text: "Opacity:" }
+                                Slider {
+                                    id: rpPlotOpacitySlider
+                                    tickmarksEnabled: true
+                                    stepSize: 0.1
+                                    maximumValue: 1
+                                    minimumValue: 0
+                                    value: rpPlot.opacity
+                                    onValueChanged: rpPlot.opacity = this.value
+                                }
+                            }
+                        }
+                    }
+                }
+
+                GroupBox {
+                    Layout.fillWidth: true
+                    id: metricsGroupBox
+                    title: "Projection metrics"
+                    property RadioButton current: currentMetricRadioButton
+
+                    Column {
+                        ExclusiveGroup { id: wrtMetricsGroup }
+
+                        RadioButton {
+                            id: currentMetricRadioButton
+                            text: "Current"
+                            exclusiveGroup: wrtMetricsGroup
+                            checked: true
+                            onClicked: {
+                                if (!Main.setObserverType(Main.ObserverCurrent)) {
+                                    metricsGroupBox.current.checked = true;
+                                } else {
+                                    metricsGroupBox.current = this;
+                                }
+                            }
+                        }
+                        RadioButton {
+                            id: diffPreviousMetricRadioButton
+                            text: "Diff. to previous"
+                            exclusiveGroup: wrtMetricsGroup
+                            onClicked: {
+                                if (!Main.setObserverType(Main.ObserverDiffPrevious)) {
+                                    metricsGroupBox.current.checked = true;
+                                } else {
+                                    metricsGroupBox.current = this;
+                                }
+                            }
+                        }
+                        RadioButton {
+                            id: diffFirstMetricRadioButton
+                            text: "Diff. to first"
+                            exclusiveGroup: wrtMetricsGroup
+                            onClicked: {
+                                if (!Main.setObserverType(Main.ObserverDiffFirst)) {
+                                    metricsGroupBox.current.checked = true;
+                                } else {
+                                    metricsGroupBox.current = this;
+                                }
                             }
                         }
                     }
                 }
             }
 
-            GroupBox {
-                Layout.fillWidth: true
-                title: "Regular points"
-                checked: true
-                checkable: true
-                __checkbox.onClicked: {
-                    rpPlot.visible = this.checked;
-                    splat.visible  = this.checked;
-                }
+            ColumnLayout {
+                Layout.alignment: Qt.AlignTop | Qt.AlignLeft
 
-                ColumnLayout {
-                    GroupBox {
-                        flat: true
-                        title: "Colors"
-
-                        GridLayout {
-                            columns: 2
-
-                            Label { text: "Map to:" }
-                            ComboBox {
-                                id: rpPlotMetricComboBox
-                                model: metricsModel
-                            }
-
-                            Label { text: "Color map:" }
-                            ComboBox {
-                                id: rpPlotColormapCombo
-                                model: colormapModel
-                                onActivated:
-                                    Main.setRPColorScale(model.get(index).value);
-                            }
-                        }
+                GroupBox {
+                    Layout.fillWidth: true
+                    id: bundlingGroupBox
+                    title: "Bundling"
+                    checked: true
+                    checkable: true
+                    __checkbox.onClicked: {
+                        bundlePlot.visible = this.checked;
                     }
 
-                    GroupBox {
-                        flat: true
-                        title: "Splat"
+                    ColumnLayout {
+                        GroupBox {
+                            flat: true
+                            title: "Main bundling"
 
-                        GridLayout {
-                            columns: 2
+                            GridLayout {
+                                columns: 2
 
-                            Label { text: "Blur (α):" }
-                            SpinBox {
-                                id: alphaSpinBox
-                                maximumValue: 100
-                                minimumValue: 1
-                                value: splat.alpha
-                                decimals: 2
-                                stepSize: 1
-                                onValueChanged: splat.alpha = this.value
-                            }
+                                Label { text: "Iterations:" }
+                                SpinBox {
+                                    maximumValue: 100
+                                    minimumValue: 0
+                                    decimals: 0
+                                    stepSize: 1
+                                    value: bundlePlot.iterations
+                                    onValueChanged: bundlePlot.iterations = this.value
+                                }
 
-                            Label { text: "Radius (β):" }
-                            SpinBox {
-                                id: betaSpinBox
-                                maximumValue: 100
-                                minimumValue: 1
-                                value: splat.beta
-                                decimals: 2
-                                stepSize: 1
-                                onValueChanged: splat.beta = this.value
-                            }
+                                Label { text: "Kernel size:" }
+                                SpinBox {
+                                    maximumValue: 100
+                                    minimumValue: 3
+                                    decimals: 1
+                                    stepSize: 1
+                                    value: bundlePlot.kernelSize
+                                    onValueChanged: bundlePlot.kernelSize = this.value
+                                }
 
-                            Label { text: "Opacity:" }
-                            Slider {
-                                id: splatOpacitySlider
-                                tickmarksEnabled: true
-                                stepSize: 0.1
-                                maximumValue: 1
-                                minimumValue: 0
-                                value: splat.opacity
-                                onValueChanged: splat.opacity = this.value
-                            }
-                        }
-                    }
+                                Label { text: "Smoothing factor:" }
+                                Slider {
+                                    tickmarksEnabled: true
+                                    stepSize: 0.1
+                                    maximumValue: 1
+                                    minimumValue: 0
+                                    value: bundlePlot.smoothingFactor
+                                    onValueChanged: bundlePlot.smoothingFactor = this.value
+                                }
 
-                    GroupBox {
-                        flat: true
-                        title: "Glyphs"
-
-                        GridLayout {
-                            columns: 2
-
-                            Label { text: "Size:" }
-                            SpinBox {
-                                id: rpGlyphSizeSpinBox
-                                maximumValue: 100
-                                minimumValue: 2
-                                decimals: 1
-                                stepSize: 1
-                                value: rpPlot.glyphSize
-                                onValueChanged: rpPlot.glyphSize = this.value
-                            }
-
-                            Label { text: "Opacity:" }
-                            Slider {
-                                id: rpPlotOpacitySlider
-                                tickmarksEnabled: true
-                                stepSize: 0.1
-                                maximumValue: 1
-                                minimumValue: 0
-                                value: rpPlot.opacity
-                                onValueChanged: rpPlot.opacity = this.value
+                                Label { text: "Smoothing iterations:" }
+                                SpinBox {
+                                    maximumValue: 100
+                                    minimumValue: 0
+                                    decimals: 0
+                                    stepSize: 1
+                                    value: bundlePlot.smoothingIterations
+                                    onValueChanged: bundlePlot.smoothingIterations = this.value
+                                }
                             }
                         }
-                    }
-                }
-            }
 
-            GroupBox {
-                Layout.fillWidth: true
-                id: metricsGroupBox
-                title: "Projection metrics"
-                property RadioButton current: currentMetricRadioButton
+                        GroupBox {
+                            flat: true
+                            title: "Ends bundling"
 
-                Column {
-                    ExclusiveGroup { id: wrtMetricsGroup }
+                            GridLayout {
+                                columns: 2
 
-                    RadioButton {
-                        id: currentMetricRadioButton
-                        text: "Current"
-                        exclusiveGroup: wrtMetricsGroup
-                        checked: true
-                        onClicked: {
-                            if (!Main.setObserverType(Main.ObserverCurrent)) {
-                                metricsGroupBox.current.checked = true;
-                            } else {
-                                metricsGroupBox.current = this;
+                                CheckBox {
+                                    Layout.columnSpan: 2
+                                    text: "Block endpoints"
+                                    checked: bundlePlot.blockEndpoints
+                                    onClicked: bundlePlot.blockEndpoints = this.checked
+                                }
+
+                                Label { text: "Iterations:" }
+                                SpinBox {
+                                    maximumValue: 100
+                                    minimumValue: 0
+                                    decimals: 0
+                                    stepSize: 1
+                                    value: bundlePlot.endsIterations
+                                    onValueChanged: bundlePlot.endsIterations = this.value
+                                }
+
+                                Label { text: "Kernel size:" }
+                                SpinBox {
+                                    maximumValue: 100
+                                    minimumValue: 3
+                                    decimals: 1
+                                    stepSize: 1
+                                    value: bundlePlot.endsKernelSize
+                                    onValueChanged: bundlePlot.endsKernelSize = this.value
+                                }
+
+                                Label { text: "Smoothing factor:" }
+                                Slider {
+                                    tickmarksEnabled: true
+                                    stepSize: 0.1
+                                    maximumValue: 1
+                                    minimumValue: 0
+                                    value: bundlePlot.endsSmoothingFactor
+                                    onValueChanged: bundlePlot.endsSmoothingFactor = this.value
+                                }
                             }
                         }
-                    }
-                    RadioButton {
-                        id: diffPreviousMetricRadioButton
-                        text: "Diff. to previous"
-                        exclusiveGroup: wrtMetricsGroup
-                        onClicked: {
-                            if (!Main.setObserverType(Main.ObserverDiffPrevious)) {
-                                metricsGroupBox.current.checked = true;
-                            } else {
-                                metricsGroupBox.current = this;
-                            }
-                        }
-                    }
-                    RadioButton {
-                        id: diffFirstMetricRadioButton
-                        text: "Diff. to first"
-                        exclusiveGroup: wrtMetricsGroup
-                        onClicked: {
-                            if (!Main.setObserverType(Main.ObserverDiffFirst)) {
-                                metricsGroupBox.current.checked = true;
-                            } else {
-                                metricsGroupBox.current = this;
+
+                        GroupBox {
+                            flat: true
+                            title: "General"
+
+                            GridLayout {
+                                columns: 2
+
+                                Label { text: "Opacity:" }
+                                Slider {
+                                    tickmarksEnabled: true
+                                    stepSize: 0.1
+                                    maximumValue: 1
+                                    minimumValue: 0
+                                    value: bundlePlot.opacity
+                                    onValueChanged: bundlePlot.opacity = this.value
+                                }
+
+                                Label { text: "Edge sampling:" }
+                                SpinBox {
+                                    maximumValue: 100
+                                    minimumValue: 3
+                                    decimals: 1
+                                    stepSize: 1
+                                    value: bundlePlot.edgeSampling
+                                    onValueChanged: bundlePlot.edgeSampling = this.value
+                                }
+
+                                Label { text: "Advection speed:" }
+                                Slider {
+                                    tickmarksEnabled: true
+                                    stepSize: 0.1
+                                    maximumValue: 1
+                                    minimumValue: 0
+                                    value: bundlePlot.advectionSpeed
+                                    onValueChanged: bundlePlot.advectionSpeed = this.value
+                                }
+
+                                Label { text: "Density estimation:" }
+				RowLayout {
+				    ExclusiveGroup { id: densityEstimationGroup }
+				    RadioButton {
+					text: "Exact"
+					exclusiveGroup: densityEstimationGroup
+				    }
+				    RadioButton {
+					text: "Fast"
+					exclusiveGroup: densityEstimationGroup
+					checked: true
+				    }
+				}
+
+                                Label { text: "Bundle shape:" }
+				RowLayout {
+				    ExclusiveGroup { id: bundleShapeGroup }
+				    RadioButton {
+					text: "FDEB"
+					exclusiveGroup: bundleShapeGroup
+					checked: true
+				    }
+				    RadioButton {
+					text: "HEB"
+					exclusiveGroup: bundleShapeGroup
+				    }
+				}
+
+                                Label { text: "Relaxation:" }
+                                Slider {
+                                    tickmarksEnabled: true
+                                    stepSize: 0.1
+                                    maximumValue: 1
+                                    minimumValue: 0
+                                    value: bundlePlot.relaxation
+                                    onValueChanged: bundlePlot.relaxation = this.value
+                                }
+
+                                CheckBox {
+                                    Layout.columnSpan: 2
+                                    text: "Use GPU"
+                                    checked: bundlePlot.bundleGPU
+                                    onClicked: bundlePlot.bundleGPU = this.checked
+                                }
                             }
                         }
                     }
@@ -558,6 +760,17 @@ ApplicationWindow {
         onTriggered: {
             Main.setSelectRPs();
             statusLabel.text = "Selecting regular points";
+        }
+    }
+
+    Action {
+        id: toggleOptionsAction
+        text: "&Options"
+        shortcut: "Ctrl+O"
+        checkable: true
+        checked: true
+        onToggled: {
+            optionsPanel.visible = this.checked;
         }
     }
 

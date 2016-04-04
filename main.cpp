@@ -153,9 +153,10 @@ int main(int argc, char **argv)
     // Initialize pointers to visual components
     m->cpPlot = engine.rootObjects()[0]->findChild<Scatterplot *>("cpPlot");
     m->rpPlot = engine.rootObjects()[0]->findChild<Scatterplot *>("rpPlot");
+    m->splat = engine.rootObjects()[0]->findChild<VoronoiSplat *>("splat");
+    m->bundlePlot = engine.rootObjects()[0]->findChild<LinePlot *>("bundlePlot");
     m->cpColormap = engine.rootObjects()[0]->findChild<Colormap *>("cpColormap");
     m->rpColormap = engine.rootObjects()[0]->findChild<Colormap *>("rpColormap");
-    m->splat = engine.rootObjects()[0]->findChild<VoronoiSplat *>("splat");
     m->cpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("cpBarChart");
     m->rpBarChart = engine.rootObjects()[0]->findChild<BarChart *>("rpBarChart");
     TransitionControl *plotTC = engine.rootObjects()[0]->findChild<TransitionControl *>("plotTC");
@@ -170,6 +171,20 @@ int main(int argc, char **argv)
     QObject::connect(m->cpPlot, &Scatterplot::xyInteractivelyChanged,
             m, &Main::setCP);
 
+    // Keep both scatterplots, the splat and line plot scaled equally and
+    // relative to the full plot
+    MapScaleHandler mapScaleHandler;
+    QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
+            m->cpPlot, &Scatterplot::setScale);
+    QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
+            m->rpPlot, &Scatterplot::setScale);
+    QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
+            m->splat, &VoronoiSplat::setScale);
+    QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
+            m->bundlePlot, &LinePlot::setScale);
+    QObject::connect(m->projectionHistory, &ProjectionHistory::currentMapChanged,
+            &mapScaleHandler, &MapScaleHandler::scaleToMap);
+
     // Update projection as the cp are modified (either directly in the
     // manipulationHandler object or interactively in cpPlot
     ManipulationHandler manipulationHandler(X, cpIndices);
@@ -183,18 +198,32 @@ int main(int argc, char **argv)
     // ... and update visual components whenever the history changes
     QObject::connect(m->projectionHistory, &ProjectionHistory::currentMapChanged,
             m, &Main::updateMap);
-
-    // Keep both scatterplots and the splat scaled equally and relative to the
-    // full plot
-    MapScaleHandler mapScaleHandler;
-    QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
-            m->cpPlot, &Scatterplot::setScale);
-    QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
-            m->rpPlot, &Scatterplot::setScale);
-    QObject::connect(&mapScaleHandler, &MapScaleHandler::scaleChanged,
-            m->splat, &VoronoiSplat::setScale);
     QObject::connect(m->projectionHistory, &ProjectionHistory::currentMapChanged,
-            &mapScaleHandler, &MapScaleHandler::scaleToMap);
+            [m](const arma::mat &Y) {
+                // ... and bundling
+                const arma::mat &unreliability = m->projectionHistory->unreliability();
+                arma::uvec indicesLargest = arma::sort_index(unreliability, "descending");
+                auto numLargest = Y.n_rows * 0.1f;
+                indicesLargest = indicesLargest.subvec(0, numLargest-1);
+                m->bundlePlot->setValues(unreliability(indicesLargest));
+
+                const arma::uvec &cpIndices = m->projectionHistory->cpIndices();
+                arma::uvec CPs = cpIndices(indicesLargest / unreliability.n_rows);
+
+                const arma::uvec &rpIndices = m->projectionHistory->rpIndices();
+                arma::uvec RPs = indicesLargest;
+                RPs.transform([&unreliability](arma::uword v) {
+                    return v % unreliability.n_rows;
+                });
+                RPs = rpIndices(RPs);
+
+                arma::uvec indices(CPs.n_elem + RPs.n_elem);
+                for (arma::uword i = 0; i < CPs.n_elem; i++) {
+                    indices(2*i + 0) = CPs(i);
+                    indices(2*i + 1) = RPs(i);
+                }
+                m->bundlePlot->setLines(indices, Y);
+            });
 
     // Linking between selections
     SelectionHandler cpSelectionHandler(cpIndices.n_elem);
