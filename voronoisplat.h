@@ -15,8 +15,6 @@ class VoronoiSplat
     Q_PROPERTY(float alpha READ alpha WRITE setAlpha NOTIFY alphaChanged)
     Q_PROPERTY(float beta  READ beta  WRITE setBeta  NOTIFY betaChanged)
 public:
-    static const int SAMPLES = 128;
-
     VoronoiSplat(QQuickItem *parent = 0);
 
     Renderer *createRenderer() const;

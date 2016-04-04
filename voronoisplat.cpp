@@ -14,6 +14,8 @@
 static const float DEFAULT_ALPHA = 5.0f;
 static const float DEFAULT_BETA = 20.0f;
 
+static const int SAMPLES = 128;
+
 static int nextPow2(int n)
 {
     // TODO: check for overflows
@@ -34,6 +36,7 @@ VoronoiSplat::VoronoiSplat(QQuickItem *parent)
     , m_valuesChanged(false)
     , m_colorScaleChanged(false)
 {
+    setFlag(QQuickItem::ItemHasContents);
     setTextureFollowsItemSize(false);
 }
 
@@ -478,8 +481,8 @@ void VoronoiSplatRenderer::updateTransform()
     GLfloat ty = 2.0f * m_sy.offset() - 1.0f;
 
     // The transform matrix should be this (but transposed -- column major):
-    // [   sx  0.0f  0.0f   -tx ]
-    // [ 0.0f    sy  0.0f   -ty ]
+    // [   sx  0.0f  0.0f    tx ]
+    // [ 0.0f    sy  0.0f    ty ]
     // [ 0.0f  0.0f  0.0f  0.0f ]
     // [ 0.0f  0.0f  0.0f  1.0f ]
     m_transform[0][0] = sx;
