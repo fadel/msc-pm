@@ -60,20 +60,18 @@ void LinePlot::setColorScale(const ColorScale *scale)
 
 void LinePlot::relax()
 {
-    m_gdFinalPtr.reset(new GraphDrawing);
-    *m_gdFinalPtr.get() = *m_gdBundlePtr.get();
-    m_gdFinalPtr.get()->interpolate(*m_gdPtr.get(), m_relaxation);
+    m_gdFinal = m_gdBundle;
+    m_gdFinal.interpolate(*m_gdPtr.get(), m_relaxation);
 
     setLinesChanged(true);
 }
 
 void LinePlot::bundle()
 {
-    m_gdBundlePtr.reset(new GraphDrawing);
-    *m_gdBundlePtr.get() = *m_gdPtr.get();
+    m_gdBundle = *m_gdPtr.get();
 
     CPUBundling bundling(std::min(width(), height()));
-    bundling.setInput(m_gdBundlePtr.get());
+    bundling.setInput(&m_gdBundle);
 
     bundling.niter  = m_iterations;
     bundling.h      = m_kernelSize;

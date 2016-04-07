@@ -44,9 +44,9 @@ public:
 
     void setColorScale(const ColorScale *scale);
 
-    const GraphDrawing *graphDrawing() const { return m_gdFinalPtr.get(); }
-    const std::vector<float> &values()       const { return m_values; }
-    const std::vector<float> &colorScale()   const { return m_cmap; }
+    const GraphDrawing *graphDrawing()     const { return &m_gdFinal; }
+    const std::vector<float> &values()     const { return m_values; }
+    const std::vector<float> &colorScale() const { return m_cmap; }
     LinearScale<float> scaleX() const { return m_sx; }
     LinearScale<float> scaleY() const { return m_sy; }
 
@@ -140,7 +140,8 @@ private:
     // Visuals
     std::vector<float> m_cmap;
     LinearScale<float> m_sx, m_sy;
-    std::unique_ptr<GraphDrawing> m_gdPtr, m_gdBundlePtr, m_gdFinalPtr;
+    std::unique_ptr<GraphDrawing> m_gdPtr;
+    GraphDrawing m_gdBundle, m_gdFinal;
 
     // Internal state
     bool m_linesChanged, m_valuesChanged, m_colorScaleChanged;
