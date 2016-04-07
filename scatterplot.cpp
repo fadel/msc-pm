@@ -366,7 +366,8 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
         }
         if (m_shouldUpdateMaterials) {
             QSGFlatColorMaterial *material = static_cast<QSGFlatColorMaterial *>(glyphOutlineNode->material());
-            material->setColor(isSelected ? GLYPH_OUTLINE_COLOR_SELECTED : GLYPH_OUTLINE_COLOR);
+            material->setColor(isSelected ? GLYPH_OUTLINE_COLOR_SELECTED
+                                          : GLYPH_OUTLINE_COLOR);
             glyphOutlineNode->markDirty(QSGNode::DirtyMaterial);
 
             material = static_cast<QSGFlatColorMaterial *>(glyphNode->material());
@@ -380,6 +381,13 @@ void Scatterplot::updateGlyphs(QSGNode *glyphsNode)
 
         node = node->nextSibling();
     }
+
+    // XXX: Beware: QSGNode::DirtyForceUpdate is undocumented
+    //
+    // This causes the scene graph to correctly update the materials of glyphs,
+    // even though we individually mark dirty materials. Used to work in Qt 5.5,
+    // though.
+    glyphsNode->markDirty(QSGNode::DirtyForceUpdate);
 }
 
 void Scatterplot::updateBrush(QSGNode *node)
@@ -410,6 +418,8 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
                 m_dragOriginPos = event->localPos();
                 m_dragCurrentPos = m_dragOriginPos;
             } else {
+                // We say 'brushing', but we mean 'selecting the current brushed
+                // item'
                 m_interactionState = StateBrushing;
             }
             break;
@@ -417,6 +427,8 @@ void Scatterplot::mousePressEvent(QMouseEvent *event)
             m_interactionState = StateNone;
             m_selection.assign(m_selection.size(), false);
             emit selectionInteractivelyChanged(m_selection);
+            m_shouldUpdateMaterials = true;
+            update();
             break;
         }
         break;
@@ -432,9 +444,9 @@ void Scatterplot::mouseMoveEvent(QMouseEvent *event)
 {
     switch (m_interactionState) {
     case StateBrushing:
+        // Move while brushing becomes selecting, hence the 'fall through'
         m_interactionState = StateSelecting;
         m_dragOriginPos = event->localPos();
-        m_dragCurrentPos = m_dragOriginPos;
         // fall through
     case StateSelecting:
         m_dragCurrentPos = event->localPos();
@@ -462,32 +474,37 @@ void Scatterplot::mouseReleaseEvent(QMouseEvent *event)
         if (!mergeSelection) {
             m_selection.assign(m_selection.size(), false);
         }
+
         if (m_brushedItem == -1) {
             m_interactionState = StateNone;
+            if (m_anySelected && !mergeSelection) {
+                m_anySelected = false;
+                emit selectionInteractivelyChanged(m_selection);
+                m_shouldUpdateMaterials = true;
+                update();
+            }
         } else {
             m_interactionState = StateSelected;
             m_selection[m_brushedItem] = !m_selection[m_brushedItem];
             if (m_selection[m_brushedItem]) {
                 m_anySelected = true;
             }
-        }
 
-        emit selectionInteractivelyChanged(m_selection);
-        m_shouldUpdateMaterials = true;
-        update();
+            emit selectionInteractivelyChanged(m_selection);
+            m_shouldUpdateMaterials = true;
+            update();
+        }
         break;
     case StateSelecting:
         {
         // Selecting points and mouse is now released; update selection and
         // brush
         interactiveSelection(mergeSelection);
-        m_interactionState = m_anySelected ? StateSelected
-                                           : StateNone;
-
+        m_interactionState = m_anySelected ? StateSelected : StateNone;
         QPoint pos = event->pos();
         m_brushedItem = m_quadtree->nearestTo(pos.x(), pos.y());
-        emit itemInteractivelyBrushed(m_brushedItem);
 
+        emit itemInteractivelyBrushed(m_brushedItem);
         m_shouldUpdateMaterials = true;
         update();
         }
