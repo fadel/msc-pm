@@ -44,7 +44,7 @@ public:
 
     void setColorScale(const ColorScale *scale);
 
-    const GraphDrawing *bundleGraphDrawing() const { return m_gdBundlePtr.get(); }
+    const GraphDrawing *graphDrawing() const { return m_gdFinalPtr.get(); }
     const std::vector<float> &values()       const { return m_values; }
     const std::vector<float> &colorScale()   const { return m_cmap; }
     LinearScale<float> scaleX() const { return m_sx; }
@@ -131,6 +131,7 @@ public slots:
 
 private:
     void bundle();
+    void relax();
 
     // Data
     arma::mat m_lines;
@@ -139,7 +140,7 @@ private:
     // Visuals
     std::vector<float> m_cmap;
     LinearScale<float> m_sx, m_sy;
-    std::unique_ptr<GraphDrawing> m_gdPtr, m_gdBundlePtr;
+    std::unique_ptr<GraphDrawing> m_gdPtr, m_gdBundlePtr, m_gdFinalPtr;
 
     // Internal state
     bool m_linesChanged, m_valuesChanged, m_colorScaleChanged;

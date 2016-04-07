@@ -58,6 +58,15 @@ void LinePlot::setColorScale(const ColorScale *scale)
     update();
 }
 
+void LinePlot::relax()
+{
+    m_gdFinalPtr.reset(new GraphDrawing);
+    *m_gdFinalPtr.get() = *m_gdBundlePtr.get();
+    m_gdFinalPtr.get()->interpolate(*m_gdPtr.get(), m_relaxation);
+
+    setLinesChanged(true);
+}
+
 void LinePlot::bundle()
 {
     m_gdBundlePtr.reset(new GraphDrawing);
@@ -78,7 +87,6 @@ void LinePlot::bundle()
 
     bundling.spl = m_edgeSampling;
     bundling.eps = m_advectionSpeed;
-    // TODO: use m_relaxation as lerp param towards original (without bundling)
 
     if (m_bundleGPU) {
         bundling.bundleGPU();
@@ -86,7 +94,7 @@ void LinePlot::bundle()
         bundling.bundleCPU();
     }
 
-    setLinesChanged(true);
+    relax();
 }
 
 void LinePlot::setLines(const arma::uvec &indices, const arma::mat &Y)
@@ -288,7 +296,7 @@ void LinePlot::setRelaxation(float relaxation)
     m_relaxation = relaxation;
     emit relaxationChanged(m_relaxation);
 
-    bundle();
+    relax();
     update();
 }
 
@@ -545,7 +553,7 @@ void LinePlotRenderer::synchronize(QQuickFramebufferObject *item)
     m_colormapChanged = plot->colorScaleChanged();
 
     if (m_pointsChanged) {
-        copyPolylines(plot->bundleGraphDrawing());
+        copyPolylines(plot->graphDrawing());
     }
     m_values = &(plot->values());
     m_cmap   = &(plot->colorScale());
