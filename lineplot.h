@@ -2,6 +2,7 @@
 #define LINEPLOT_H
 
 #include <memory>
+#include <set>
 #include <vector>
 
 #include <QQuickFramebufferObject>
@@ -13,6 +14,9 @@
 
 #include "colorscale.h"
 #include "scale.h"
+
+// (private) Implementation of QQuickFramebufferObject::Renderer
+class LinePlotRenderer;
 
 class LinePlot
     : public QQuickFramebufferObject
@@ -36,6 +40,7 @@ class LinePlot
     Q_PROPERTY(float advectionSpeed READ advectionSpeed WRITE setAdvectionSpeed NOTIFY advectionSpeedChanged)
     Q_PROPERTY(float relaxation     READ relaxation     WRITE setRelaxation     NOTIFY relaxationChanged)
     Q_PROPERTY(bool  bundleGPU      READ bundleGPU      WRITE setBundleGPU      NOTIFY bundleGPUChanged)
+    Q_PROPERTY(float lineWidth      READ lineWidth      WRITE setLineWidth      NOTIFY lineWidthChanged)
 
 public:
     static const int PADDING = 20;
@@ -45,6 +50,8 @@ public:
     void setColorScale(const ColorScale *scale);
 
     const GraphDrawing *graphDrawing()     const { return &m_gdFinal; }
+    const arma::uvec &indices()            const { return m_indices; }
+    const arma::mat &points()              const { return m_Y; }
     const std::vector<float> &values()     const { return m_values; }
     const std::vector<float> &colorScale() const { return m_cmap; }
     LinearScale<float> scaleX() const { return m_sx; }
@@ -91,17 +98,22 @@ public:
     float advectionSpeed() const { return m_advectionSpeed; }
     float relaxation()     const { return m_relaxation; }
     bool  bundleGPU()      const { return m_bundleGPU; }
+    float lineWidth()      const { return m_lineWidth; }
 
     void setEdgeSampling(float edgeSampling);
     void setAdvectionSpeed(float advectionSpeed);
     void setRelaxation(float relaxation);
     void setBundleGPU(bool bundleGPU);
+    void setLineWidth(float lineWidth);
 
 signals:
-    void linesChanged(const arma::mat &xy);
+    void indicesChanged(const arma::uvec &indices);
+    void pointsChanged(const arma::mat &Y);
     void valuesChanged(const arma::vec &values) const;
     void scaleChanged(const LinearScale<float> &sx,
                       const LinearScale<float> &sy) const;
+    void itemBrushed(int item) const;
+    void selectionChanged(const std::vector<bool> &selection) const;
 
     // Q_PROPERTY's
     void iterationsChanged(int iterations) const;
@@ -118,6 +130,7 @@ signals:
     void advectionSpeedChanged(float advectionSpeed) const;
     void relaxationChanged(float relaxation) const;
     void bundleGPUChanged(bool bundleGPU) const;
+    void lineWidthChanged(float lineWidth) const;
 
 public slots:
     // Lines are two consecutive elements in 'indices' (ref. points in 'Y')
@@ -129,12 +142,17 @@ public slots:
     void setScale(const LinearScale<float> &sx,
                   const LinearScale<float> &sy);
 
+    void brushItem(int item);
+    void setSelection(const std::vector<bool> &selection);
+
 private:
+    void buildGraph();
     void bundle();
     void relax();
 
     // Data
-    arma::mat m_lines;
+    arma::uvec m_indices;
+    arma::mat m_Y;
     std::vector<float> m_values;
 
     // Visuals
@@ -144,7 +162,10 @@ private:
     GraphDrawing m_gdBundle, m_gdFinal;
 
     // Internal state
-    bool m_linesChanged, m_valuesChanged, m_colorScaleChanged;
+    int m_brushedItem;
+    std::vector<bool> m_selection;
+    bool m_anySelected;
+    bool m_linesChanged, m_valuesChanged, m_colorScaleChanged, m_updateOffsets;
 
     // Q_PROPERTY's
     int   m_iterations;
@@ -161,6 +182,9 @@ private:
     float m_advectionSpeed;
     float m_relaxation;
     bool  m_bundleGPU;
+    float m_lineWidth;
+
+    friend class LinePlotRenderer;
 };
 
 #endif // LINEPLOT_H

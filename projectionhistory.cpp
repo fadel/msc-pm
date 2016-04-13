@@ -105,6 +105,8 @@ void ProjectionHistory::addMap(const arma::mat &Y)
         m_firstY = m_Y;
         m_firstDistY = m_distY;
         m_firstValues = m_values;
+
+        m_selection.assign(m_values.n_elem, false);
     }
 
     emit currentMapChanged(m_Y);
@@ -135,14 +137,26 @@ bool ProjectionHistory::setType(ObserverType type)
 
 void ProjectionHistory::setCPSelection(const std::vector<bool> &cpSelection)
 {
+    if (cpSelection.size() != m_cpIndices.n_elem) {
+        return;
+    }
+
     m_cpSelection.clear();
     for (int i = 0; i < cpSelection.size(); i++) {
+        m_selection[m_cpIndices[i]] = cpSelection[i];
         if (cpSelection[i]) {
             m_cpSelection.push_back(i);
         }
     }
     m_cpSelectionEmpty = m_cpSelection.empty();
 
+    cpSelectionPostProcess();
+
+    emit selectionChanged(m_selection);
+}
+
+void ProjectionHistory::cpSelectionPostProcess()
+{
     if (!m_cpSelectionEmpty) {
         // compute the influence of CP selection on each RP
         for (arma::uword rp = 0; rp < m_rpIndices.n_elem; rp++) {
@@ -157,18 +171,31 @@ void ProjectionHistory::setCPSelection(const std::vector<bool> &cpSelection)
     } else {
         emitValuesChanged();
     }
+
+    // TODO: emit cpSelectionChanged()?
 }
 
 void ProjectionHistory::setRPSelection(const std::vector<bool> &rpSelection)
 {
+    if (rpSelection.size() != m_rpIndices.n_elem) {
+        return;
+    }
+
     m_rpSelection.clear();
     for (int i = 0; i < rpSelection.size(); i++) {
+        m_selection[m_rpIndices[i]] = rpSelection[i];
         if (rpSelection[i]) {
             m_rpSelection.push_back(i);
         }
     }
     m_rpSelectionEmpty = m_rpSelection.empty();
+    rpSelectionPostProcess();
 
+    emit selectionChanged(m_selection);
+}
+
+void ProjectionHistory::rpSelectionPostProcess()
+{
     if (!m_rpSelectionEmpty) {
         // compute how influent is each CP on RP selection
         for (arma::uword cp = 0; cp < m_cpIndices.n_elem; cp++) {
@@ -182,6 +209,33 @@ void ProjectionHistory::setRPSelection(const std::vector<bool> &rpSelection)
     } else {
         emit cpValuesChanged(arma::vec(), false);
     }
+
+    // TODO: emit rpSelectionChanged()?
+}
+
+void ProjectionHistory::setSelection(const std::vector<bool> &selection)
+{
+    m_selection = selection;
+
+    m_rpSelection.clear();
+    for (auto i: m_rpIndices) {
+        if (m_selection[i]) {
+            m_rpSelection.push_back(i);
+        }
+    }
+    m_rpSelectionEmpty = m_rpSelection.empty();
+    rpSelectionPostProcess();
+
+    m_cpSelection.clear();
+    for (auto i: m_cpIndices) {
+        if (m_selection[i]) {
+            m_cpSelection.push_back(i);
+        }
+    }
+    m_cpSelectionEmpty = m_cpSelection.empty();
+    cpSelectionPostProcess();
+
+    emit selectionChanged(m_selection);
 }
 
 bool ProjectionHistory::emitValuesChanged() const

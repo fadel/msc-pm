@@ -1,6 +1,8 @@
 #ifndef PROJECTIONHISTORY_H
 #define PROJECTIONHISTORY_H
 
+#include <vector>
+
 #include <QObject>
 
 #include <armadillo>
@@ -46,18 +48,26 @@ signals:
     void cpValuesRewound(const arma::vec &values) const;
     void rpValuesRewound(const arma::vec &values) const;
 
+    void cpSelectionChanged(const std::vector<bool> &cpSelection) const;
+    void rpSelectionChanged(const std::vector<bool> &rpSelection) const;
+    void selectionChanged(const std::vector<bool> &selection) const;
+
 public slots:
     void addMap(const arma::mat &Y);
 
     bool setType(ObserverType type);
     void setCPSelection(const std::vector<bool> &cpSelection);
     void setRPSelection(const std::vector<bool> &rpSelection);
+    void setSelection(const std::vector<bool> &selection);
 
     void setRewind(double t);
 
 private:
     bool emitValuesChanged() const;
     void updateUnreliability();
+
+    void cpSelectionPostProcess();
+    void rpSelectionPostProcess();
 
     ObserverType m_type;
 
@@ -68,6 +78,7 @@ private:
 
     bool m_cpSelectionEmpty, m_rpSelectionEmpty;
     std::vector<int> m_cpSelection, m_rpSelection;
+    std::vector<bool> m_selection;
 
     // alpha(i, j): the influence CP j has on RP i
     void computeAlphas();

@@ -43,6 +43,32 @@ arma::uvec extractCPs(const arma::mat &X)
     return indices.subvec(0, numCPs-1);
 }
 
+void overviewBundles(const Main *m)
+{
+    const arma::mat &unreliability = m->projectionHistory->unreliability();
+    arma::uvec indicesLargest = arma::sort_index(unreliability, "descending");
+    arma::uword numLargest = m->projectionHistory->Y().n_rows * 0.1f;
+    indicesLargest = indicesLargest.subvec(0, numLargest-1);
+    m->bundlePlot->setValues(unreliability(indicesLargest));
+
+    const arma::uvec &cpIndices = m->projectionHistory->cpIndices();
+    arma::uvec CPs = cpIndices(indicesLargest / unreliability.n_rows);
+
+    const arma::uvec &rpIndices = m->projectionHistory->rpIndices();
+    arma::uvec RPs = indicesLargest;
+    RPs.transform([&unreliability](arma::uword v) {
+        return v % unreliability.n_rows;
+    });
+    RPs = rpIndices(RPs);
+
+    arma::uvec indices(CPs.n_elem + RPs.n_elem);
+    for (arma::uword i = 0; i < CPs.n_elem; i++) {
+        indices[2*i + 0] = CPs(i);
+        indices[2*i + 1] = RPs(i);
+    }
+    m->bundlePlot->setLines(indices, m->projectionHistory->Y());
+}
+
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
@@ -201,28 +227,7 @@ int main(int argc, char **argv)
     QObject::connect(m->projectionHistory, &ProjectionHistory::currentMapChanged,
             [m](const arma::mat &Y) {
                 // ... and bundling
-                const arma::mat &unreliability = m->projectionHistory->unreliability();
-                arma::uvec indicesLargest = arma::sort_index(unreliability, "descending");
-                auto numLargest = Y.n_rows * 0.1f;
-                indicesLargest = indicesLargest.subvec(0, numLargest-1);
-                m->bundlePlot->setValues(unreliability(indicesLargest));
-
-                const arma::uvec &cpIndices = m->projectionHistory->cpIndices();
-                arma::uvec CPs = cpIndices(indicesLargest / unreliability.n_rows);
-
-                const arma::uvec &rpIndices = m->projectionHistory->rpIndices();
-                arma::uvec RPs = indicesLargest;
-                RPs.transform([&unreliability](arma::uword v) {
-                    return v % unreliability.n_rows;
-                });
-                RPs = rpIndices(RPs);
-
-                arma::uvec indices(CPs.n_elem + RPs.n_elem);
-                for (arma::uword i = 0; i < CPs.n_elem; i++) {
-                    indices(2*i + 0) = CPs(i);
-                    indices(2*i + 1) = RPs(i);
-                }
-                m->bundlePlot->setLines(indices, Y);
+                overviewBundles(m);
             });
 
     // Linking between selections
@@ -235,6 +240,49 @@ int main(int argc, char **argv)
             m->cpPlot, &Scatterplot::setSelection);
     QObject::connect(&cpSelectionHandler, &SelectionHandler::selectionChanged,
             m->cpBarChart, &BarChart::setSelection);
+    QObject::connect(&cpSelectionHandler, &SelectionHandler::selectionChanged,
+            [m](const std::vector<bool> &cpSelection) {
+                // given some CPs, see unexpected RPs *influenced by* them
+                std::vector<arma::uword> selectedCPIndices;
+                for (int i = 0; i < cpSelection.size(); i++) {
+                    if (cpSelection[i]) {
+                        selectedCPIndices.push_back(i);
+                    }
+                }
+
+                if (selectedCPIndices.empty()) {
+                    overviewBundles(m);
+                    return;
+                }
+
+                arma::uvec selectedCPs(selectedCPIndices.size());
+                std::copy(selectedCPIndices.begin(), selectedCPIndices.end(),
+                        selectedCPs.begin());
+
+                // Only the 10% largest values, filtered by the selected RPs
+                const arma::mat &unreliability = m->projectionHistory->unreliability();
+                arma::uvec indicesLargest = arma::sort_index(unreliability.cols(selectedCPs), "descending");
+                arma::uword numLargest = indicesLargest.n_elem * 0.1f;
+                indicesLargest = indicesLargest.subvec(0, numLargest-1);
+                m->bundlePlot->setValues(unreliability(indicesLargest));
+
+                const arma::uvec &cpIndices = m->projectionHistory->cpIndices();
+                arma::uvec CPs = cpIndices(selectedCPs(indicesLargest / unreliability.n_rows));
+
+                const arma::uvec &rpIndices = m->projectionHistory->rpIndices();
+                arma::uvec RPs = indicesLargest;
+                RPs.transform([&unreliability](arma::uword v) {
+                    return v % unreliability.n_rows;
+                });
+                RPs = rpIndices(RPs);
+
+                arma::uvec indices(CPs.n_elem + RPs.n_elem);
+                for (arma::uword i = 0; i < CPs.n_elem; i++) {
+                    indices[2*i + 0] = CPs(i);
+                    indices[2*i + 1] = RPs(i);
+                }
+                m->bundlePlot->setLines(indices, m->projectionHistory->Y());
+            });
 
     SelectionHandler rpSelectionHandler(X.n_rows - cpIndices.n_elem);
     QObject::connect(m->rpPlot, &Scatterplot::selectionInteractivelyChanged,
@@ -245,6 +293,49 @@ int main(int argc, char **argv)
             m->rpPlot, &Scatterplot::setSelection);
     QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
             m->rpBarChart, &BarChart::setSelection);
+    QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
+            [m](const std::vector<bool> &rpSelection) {
+                // given some RPs, see unexpected CPs *influencing* them
+                std::vector<arma::uword> selectedRPIndices;
+                for (int i = 0; i < rpSelection.size(); i++) {
+                    if (rpSelection[i]) {
+                        selectedRPIndices.push_back(i);
+                    }
+                }
+
+                if (selectedRPIndices.empty()) {
+                    overviewBundles(m);
+                    return;
+                }
+
+                arma::uvec selectedRPs(selectedRPIndices.size());
+                std::copy(selectedRPIndices.begin(), selectedRPIndices.end(),
+                        selectedRPs.begin());
+
+                // Only the 10% largest values, filtered by the selected RPs
+                const arma::mat &unreliability = m->projectionHistory->unreliability();
+                arma::uvec indicesLargest = arma::sort_index(unreliability.rows(selectedRPs), "descending");
+                arma::uword numLargest = indicesLargest.n_elem * 0.1f;
+                indicesLargest = indicesLargest.subvec(0, numLargest-1);
+                m->bundlePlot->setValues(unreliability(indicesLargest));
+
+                const arma::uvec &cpIndices = m->projectionHistory->cpIndices();
+                arma::uvec CPs = cpIndices(indicesLargest / selectedRPs.n_elem);
+
+                const arma::uvec &rpIndices = m->projectionHistory->rpIndices();
+                arma::uvec RPs = indicesLargest;
+                RPs.transform([&selectedRPs](arma::uword v) {
+                    return v % selectedRPs.n_elem;
+                });
+                RPs = rpIndices(selectedRPs(RPs));
+
+                arma::uvec indices(CPs.n_elem + RPs.n_elem);
+                for (arma::uword i = 0; i < CPs.n_elem; i++) {
+                    indices[2*i + 0] = CPs(i);
+                    indices[2*i + 1] = RPs(i);
+                }
+                m->bundlePlot->setLines(indices, m->projectionHistory->Y());
+            });
 
     // Brushing between each bar chart and respective scatterplot
     BrushingHandler cpBrushHandler;
@@ -304,16 +395,17 @@ int main(int argc, char **argv)
     QObject::connect(m->projectionHistory, &ProjectionHistory::rpValuesChanged,
             m->rpBarChart, &BarChart::setValues);
 
-    // Recompute values whenever selection changes
+    // ProjectionHistory takes special care of separate CP/RP selections
     QObject::connect(&cpSelectionHandler, &SelectionHandler::selectionChanged,
             m->projectionHistory, &ProjectionHistory::setCPSelection);
     QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
             m->projectionHistory, &ProjectionHistory::setRPSelection);
+    //QObject::connect(m->projectionHistory, &ProjectionHistory::selectionChanged,
+    //        m->bundlePlot, LinePlot::selectionChanged);
 
     // Connect projection components to rewinding mechanism
     QObject::connect(plotTC, &TransitionControl::tChanged,
             m->projectionHistory, &ProjectionHistory::setRewind);
-
     QObject::connect(m->projectionHistory, &ProjectionHistory::mapRewound,
             m, &Main::updateMap);
     QObject::connect(m->projectionHistory, &ProjectionHistory::cpValuesRewound,

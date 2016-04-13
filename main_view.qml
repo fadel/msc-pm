@@ -593,6 +593,16 @@ ApplicationWindow {
                             GridLayout {
                                 columns: 2
 
+                                Label { text: "Line width:" }
+                                SpinBox {
+                                    maximumValue: 100
+                                    minimumValue: 1
+                                    decimals: 1
+                                    stepSize: 1
+                                    value: bundlePlot.lineWidth
+                                    onValueChanged: bundlePlot.lineWidth = this.value
+                                }
+
                                 Label { text: "Opacity:" }
                                 Slider {
                                     tickmarksEnabled: true
