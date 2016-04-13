@@ -52,8 +52,7 @@ void BarChart::setValues(const arma::vec &values)
     m_values = values;
 
     if (m_selection.size() != m_values.n_elem) {
-        m_selection.resize(m_values.n_elem);
-        m_selection.assign(m_selection.size(), false);
+        m_selection.assign(m_values.n_elem, false);
     }
 
     m_originalIndices.resize(m_values.n_elem);

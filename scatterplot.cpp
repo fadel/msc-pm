@@ -111,8 +111,7 @@ void Scatterplot::setXY(const arma::mat &xy)
     updateQuadTree();
 
     if (m_selection.size() != m_xy.n_rows) {
-        m_selection.resize(m_xy.n_rows);
-        m_selection.assign(m_selection.size(), false);
+        m_selection.assign(m_xy.n_rows, false);
     }
 
     if (m_opacityData.n_elem != m_xy.n_rows) {

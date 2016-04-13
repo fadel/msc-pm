@@ -48,7 +48,6 @@ void VoronoiSplat::setSites(const arma::mat &points)
 
     if (m_values.size() > 0 && m_values.size() != points.n_rows) {
         // Old values are no longer valid, clean up
-        m_values.resize(points.n_rows);
         m_values.assign(points.n_rows, 0);
     }
 
