@@ -4,7 +4,7 @@
 
 #include "utils.h"
 
-static const double EPSILON = 1e-3;
+static const double EPSILON = 1e-6;
 
 arma::mat mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::mat &Ys)
 {
@@ -50,12 +50,12 @@ void mp::lamp(const arma::mat &X, const arma::uvec &sampleIndices, const arma::m
         arma::mat &B = Yhat;
         B.each_col() %= alphas.t();
 
-        arma::mat U(Ys.n_rows, Ys.n_cols), V(Ys.n_cols, Ys.n_cols);
+        arma::mat U, V;
         arma::vec s(Ys.n_cols);
         arma::svd(U, s, V, At * B);
-        arma::mat M = U.cols(0, 1) * V.t();
+        arma::mat M = U.head_cols(Ys.n_cols) * V.t();
 
-        Y(i, arma::span(0, 1)) = (point - Xtil) * M + Ytil;
+        Y.row(i) = (point - Xtil) * M + Ytil;
     }
 
     for (arma::uword i = 0; i < sampleSize; i++) {
