@@ -16,13 +16,13 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
 # http://arma.sourceforge.net/
-find_package(Armadillo)
+find_package(Armadillo REQUIRED)
 
 # Will probably work with most CUDA releases
-find_package(CUDA)
+find_package(CUDA REQUIRED)
 
 # Qt5 packages
-find_package(Qt5 COMPONENTS Core Qml Quick Widgets)
+find_package(Qt5 COMPONENTS Core Qml Quick Widgets REQUIRED)
 
 # The application can significantly speed up some operations using multiple
 # threads via OpenMP, if supported
