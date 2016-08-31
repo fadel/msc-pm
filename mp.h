@@ -13,7 +13,7 @@ arma::mat dist(const arma::mat &X, DistFunc dfunc = euclidean);
 void knn(const arma::mat &dmat, arma::uword i, arma::uword k, arma::uvec &nn, arma::vec &dist);
 
 // Evaluation measures
-arma::vec neighborhoodPreservation(const arma::mat &distA, const arma::mat &distB, arma::uword k = 10);
+void neighborhoodPreservation(const arma::mat &distA, const arma::mat &distB, arma::uword k, arma::vec &v);
 arma::vec silhouette(const arma::mat &distA, const arma::mat &distB, const arma::vec &labels);
 void aggregatedError(const arma::mat &distX, const arma::mat &distY, arma::vec &v);
 

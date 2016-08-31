@@ -8,31 +8,34 @@
 
 static const float EPSILON = 1e-6f;
 
-arma::vec mp::neighborhoodPreservation(const arma::mat &distA,
-                                       const arma::mat &distB,
-                                       arma::uword k)
+void mp::neighborhoodPreservation(const arma::mat &distA,
+                                  const arma::mat &distB,
+                                  arma::uword k,
+                                  arma::vec &v)
 {
-    int n = uintToInt<arma::uword, int>(distA.n_rows);
-    arma::vec np(n);
+    int n = uintToInt<arma::uword, int>(v.n_elem);
 
-    #pragma omp parallel for shared(np, n)
+    #pragma omp parallel for shared(v, n)
     for (int i = 0; i < n; i++) {
-        arma::uvec nnA(k);
-        arma::uvec nnB(k);
-        arma::vec dist(k);
+        //arma::uvec nnA(k);
+        //arma::uvec nnB(k);
+        //arma::vec dist(k);
 
-        mp::knn(distA, i, k, nnA, dist);
-        mp::knn(distB, i, k, nnB, dist);
+        //mp::knn(distA, i, k, nnA, dist);
+        //mp::knn(distB, i, k, nnB, dist);
+
+        arma::uvec nnA = arma::sort_index(distA.col(i));
+        nnA = nnA.subvec(2, k + 1);
+        arma::uvec nnB = arma::sort_index(distB.col(i));
+        nnB = nnB.subvec(2, k + 1);
 
         std::sort(nnA.begin(), nnA.end());
         std::sort(nnB.begin(), nnB.end());
 
         arma::uword l;
         for (l = 0; nnA[l] == nnB[l] && l < k; l++);
-        np[i] = ((double) l) / k;
+        v[i] = ((double) l) / k;
     }
-
-    return np;
 }
 
 arma::vec mp::silhouette(const arma::mat &distA,
