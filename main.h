@@ -44,7 +44,9 @@ public:
         return ret;
     }
 
-    Q_INVOKABLE bool loadDataset(const std::string &path) { return m_dataset.load(path, arma::raw_ascii); }
+    Q_INVOKABLE bool loadDataset(const std::string &dataPath) {
+        return m_X.load(dataPath, arma::raw_ascii);
+    }
 
     Q_INVOKABLE void setIndicesSavePath(const std::string &path) {
         m_indicesSavePath = path;
@@ -59,8 +61,7 @@ public:
         setCPSavePath(path.toStdString());
     }
 
-    arma::mat X() const { return m_dataset.cols(0, m_dataset.n_cols - 2); }
-    arma::vec labels() const { return m_dataset.col(m_dataset.n_cols - 1); }
+    arma::mat X() const { return m_X; }
 
     Q_INVOKABLE void setSelectRPs() {
         cpPlot->setAcceptedMouseButtons(Qt::NoButton);
@@ -158,8 +159,8 @@ public slots:
     void setCPIndices(const arma::uvec &indices) {
         m_cpIndices = indices;
 
-        m_rpIndices.set_size(m_dataset.n_rows - m_cpIndices.n_elem);
-        NumericRange<arma::uword> allIndices(0, m_dataset.n_rows);
+        m_rpIndices.set_size(m_X.n_rows - m_cpIndices.n_elem);
+        NumericRange<arma::uword> allIndices(0, m_X.n_rows);
         std::set_symmetric_difference(allIndices.cbegin(), allIndices.cend(),
                 m_cpIndices.cbegin(), m_cpIndices.cend(), m_rpIndices.begin());
     }
@@ -220,7 +221,7 @@ private:
         }
     }
 
-    arma::mat m_dataset, m_cp;
+    arma::mat m_X, m_cp;
     arma::uvec m_cpIndices, m_rpIndices;
     std::string m_indicesSavePath, m_cpSavePath;
 };

@@ -43,6 +43,18 @@ arma::uvec extractCPs(const arma::mat &X)
     return indices.subvec(0, numCPs-1);
 }
 
+arma::mat standardize(const arma::mat &X)
+{
+    arma::mat stdX = X;
+    for (arma::uword j = 0; j < X.n_cols; j++) {
+        double sd = arma::stddev(stdX.col(j));
+        double mean = arma::mean(stdX.col(j));
+        stdX.col(j) = (stdX.col(j) - mean) / sd;
+    }
+
+    return stdX;
+}
+
 void overviewBundles(const Main *m)
 {
     const arma::mat &unreliability = m->projectionHistory->unreliability();
@@ -105,8 +117,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    const arma::mat &X = m->X();
-    //arma::vec labels = m->labels();
+    const arma::mat &X = standardize(m->X());
 
     arma::arma_rng::set_seed(RNG_SEED);
     arma::uvec cpIndices;
@@ -121,6 +132,7 @@ int main(int argc, char **argv)
     if (indicesFile.exists()) {
         m->setIndicesSavePath(indicesFilename);
         cpIndices.load(indicesFilename.toStdString(), arma::raw_ascii);
+        cpIndices -= 1;
     } else {
         std::cerr << "No indices file, generating indices...\n";
         cpIndices = extractCPs(X);
@@ -146,6 +158,10 @@ int main(int argc, char **argv)
         std::cerr << "The number of CP indices and the CP map do not match." << std::endl;
         return 1;
     }
+
+    // TODO: maybe put this inside m->setCP() method; for now, will be outside
+    // for more flexibility
+    Ys = arma::normalise(Ys);
 
     // Sort indices (some operations become easier later)
     arma::uvec cpSortedIndices = arma::sort_index(cpIndices);
@@ -262,7 +278,7 @@ int main(int argc, char **argv)
                 // Only the 10% largest values, filtered by the selected RPs
                 const arma::mat &unreliability = m->projectionHistory->unreliability();
                 arma::uvec indicesLargest = arma::sort_index(unreliability.cols(selectedCPs), "descending");
-                arma::uword numLargest = indicesLargest.n_elem * 0.1f;
+                arma::uword numLargest = indicesLargest.n_elem * 0.01f;
                 indicesLargest = indicesLargest.subvec(0, numLargest-1);
                 m->bundlePlot->setValues(unreliability(indicesLargest));
 
@@ -293,7 +309,8 @@ int main(int argc, char **argv)
             m->rpPlot, &Scatterplot::setSelection);
     QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
             m->rpBarChart, &BarChart::setSelection);
-    QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
+    // This still needs more tests
+    /*QObject::connect(&rpSelectionHandler, &SelectionHandler::selectionChanged,
             [m](const std::vector<bool> &rpSelection) {
                 // given some RPs, see unexpected CPs *influencing* them
                 std::vector<arma::uword> selectedRPIndices;
@@ -315,7 +332,7 @@ int main(int argc, char **argv)
                 // Only the 10% largest values, filtered by the selected RPs
                 const arma::mat &unreliability = m->projectionHistory->unreliability();
                 arma::uvec indicesLargest = arma::sort_index(unreliability.rows(selectedRPs), "descending");
-                arma::uword numLargest = indicesLargest.n_elem * 0.1f;
+                arma::uword numLargest = indicesLargest.n_elem * 0.01f;
                 indicesLargest = indicesLargest.subvec(0, numLargest-1);
                 m->bundlePlot->setValues(unreliability(indicesLargest));
 
@@ -335,7 +352,7 @@ int main(int argc, char **argv)
                     indices[2*i + 1] = RPs(i);
                 }
                 m->bundlePlot->setLines(indices, m->projectionHistory->Y());
-            });
+            });*/
 
     // Brushing between each bar chart and respective scatterplot
     BrushingHandler cpBrushHandler;
