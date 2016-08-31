@@ -1,5 +1,9 @@
 #include "colorscale.h"
 
+#include <cmath>
+
+const float EPSILON = 1e-3f;
+
 ColorScale::ColorScale(const QColor &firstColor, const QColor &lastColor)
     : m_colors{{firstColor, lastColor}}
 {
@@ -60,6 +64,14 @@ QColor ColorScale::color(float t) const
     // two colors, use a simpler solution
     if (m_colors.size() == 2) {
         return lerp(m_colors.first(), m_colors.last(), t);
+    }
+
+    if (fabs(t - m_min) < EPSILON) {
+        return m_colors.first();
+    }
+
+    if (fabs(t - m_max) < EPSILON) {
+        return m_colors.last();
     }
 
     // find which colors in the scale are adjacent to ours
