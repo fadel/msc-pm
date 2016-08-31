@@ -61,6 +61,5 @@ else. Note that the number of lines of this file and the indices file are
 supposed to be the same.
 
 **Dataset files** are the same as CP map files, except they are allowed to have
-any number of columns. In addition, the last column is assumed to be the class
-labels (currently unused, but must be present). Node that the number of columns
-must be the same on each line.
+any number of columns. Note that the number of columns must be the same on each
+line.
